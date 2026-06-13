@@ -1,6 +1,12 @@
 import { DocumentBuilder } from '@nestjs/swagger';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { version as apiVersion } from '../../package.json';
+const { version: apiVersion } = JSON.parse(
+  readFileSync(join(process.cwd(), 'package.json'), 'utf8'),
+) as {
+  version: string;
+};
 
 const swaggerConfig = new DocumentBuilder()
   .setTitle('API Documentation') // 문서 제목

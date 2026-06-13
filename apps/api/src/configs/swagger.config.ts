@@ -2,9 +2,7 @@ import { DocumentBuilder } from '@nestjs/swagger';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const { version: apiVersion } = JSON.parse(
-  readFileSync(join(process.cwd(), 'package.json'), 'utf8'),
-) as {
+const { version: apiVersion } = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as {
   version: string;
 };
 

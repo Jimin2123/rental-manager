@@ -101,12 +101,14 @@ CREATE TABLE "SaleOrderItem" (
         AND "supplyAmount" >= 0
         AND "vatAmount" >= 0
         AND "totalAmount" >= 0
+    ),
+    CONSTRAINT "SaleOrderItem_amount_calculation_check" CHECK (
+        "supplyAmount" = "quantity" * "unitPrice"
+        AND "totalAmount" = "supplyAmount" + "vatAmount"
     )
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Customer_id_organizationId_key" ON "Customer"("id", "organizationId");
-
 CREATE UNIQUE INDEX "Product_id_organizationId_key" ON "Product"("id", "organizationId");
 CREATE INDEX "Product_organizationId_idx" ON "Product"("organizationId");
 CREATE INDEX "Product_organizationId_isActive_idx" ON "Product"("organizationId", "isActive");

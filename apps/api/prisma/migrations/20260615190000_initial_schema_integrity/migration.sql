@@ -184,6 +184,7 @@ CREATE INDEX "Customer_organizationId_type_idx" ON "Customer"("organizationId", 
 CREATE INDEX "Customer_organizationId_deletedAt_idx" ON "Customer"("organizationId", "deletedAt");
 CREATE INDEX "Customer_individualProfileId_idx" ON "Customer"("individualProfileId");
 CREATE INDEX "Customer_businessPartnerId_idx" ON "Customer"("businessPartnerId");
+CREATE UNIQUE INDEX "Customer_id_organizationId_key" ON "Customer"("id", "organizationId");
 CREATE UNIQUE INDEX "Customer_active_individual_profile_unique"
     ON "Customer"("individualProfileId")
     WHERE "deletedAt" IS NULL AND "individualProfileId" IS NOT NULL;
@@ -271,8 +272,9 @@ ALTER TABLE "CustomerAssignment"
     FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE "CustomerAssignment"
-    ADD CONSTRAINT "CustomerAssignment_customerId_fkey"
-    FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    ADD CONSTRAINT "CustomerAssignment_customerId_organizationId_fkey"
+    FOREIGN KEY ("customerId", "organizationId")
+    REFERENCES "Customer"("id", "organizationId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE "CustomerAssignment"
     ADD CONSTRAINT "CustomerAssignment_organizationMemberId_organizationId_fkey"

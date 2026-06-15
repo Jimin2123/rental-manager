@@ -14,6 +14,8 @@ model RentalContract {
   startDate DateTime
   endDate   DateTime
 
+  contractMonths Int
+
   // 매월 청구 기준일
   billingDay Int?
 

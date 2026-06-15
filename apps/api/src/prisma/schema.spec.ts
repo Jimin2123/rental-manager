@@ -81,6 +81,9 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('CREATE TABLE "BusinessPartnerRole"');
     expect(migration).toContain('"BusinessPartnerRole_businessPartnerId_organizationId_fkey"');
     expect(migration).toContain('"BusinessPartnerRole_businessPartnerId_organizationId_type_key"');
+    expect(migration).toContain('assert_customer_business_partner_sales_role');
+    expect(migration).toContain('assert_order_customer_sales_role');
+    expect(migration).toContain('assert_business_partner_sales_role_removal');
   });
 
   it('models internal staff assignment to customer contacts', () => {
@@ -112,6 +115,9 @@ describe('Prisma customer schema', () => {
     expect(individualProfileSchema).toContain('customerAssignments CustomerAssignment[]');
 
     expect(customerAssignmentSchema).toContain('model CustomerAssignment');
+    expect(customerAssignmentSchema).toContain(
+      'customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
     expect(customerAssignmentSchema).toContain(
       'organizationMember   OrganizationMember @relation(fields: [organizationMemberId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
@@ -250,7 +256,7 @@ describe('Prisma customer schema', () => {
     );
     expect(rentalOrderItemSchema).toContain('monthlyRentalPrice Int');
     expect(rentalOrderItemSchema).toContain('depositAmount Int?');
-    expect(rentalOrderItemSchema).toContain('contractMonths Int');
+    expect(rentalOrderItemSchema).not.toContain('contractMonths Int');
     expect(rentalOrderItemSchema).toContain('installationLocation String?');
     expect(rentalOrderItemSchema).toContain('specialTerms String?');
     expect(rentalOrderItemSchema).toContain('@@unique([id, organizationId])');
@@ -264,6 +270,7 @@ describe('Prisma customer schema', () => {
     expect(rentalContractSchema).toContain('status RentalContractStatus @default(ACTIVE)');
     expect(rentalContractSchema).toContain('startDate DateTime');
     expect(rentalContractSchema).toContain('endDate   DateTime');
+    expect(rentalContractSchema).toContain('contractMonths Int');
     expect(rentalContractSchema).toContain('billingDay Int?');
     expect(rentalContractSchema).toContain('billings RentalBilling[]');
     expect(rentalContractSchema).toContain('@@unique([rentalOrderId, organizationId])');
@@ -314,6 +321,7 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('"SaleOrderItem_assetId_organizationId_productId_fkey"');
     expect(migration).toContain('"SaleOrderItem_quantity_positive_check"');
     expect(migration).toContain('"SaleOrderItem_amount_non_negative_check"');
+    expect(migration).toContain('"SaleOrderItem_amount_calculation_check"');
     expect(migration).toContain('assert_sale_order_type');
   });
 
@@ -334,9 +342,14 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('"RentalOrder_orderId_organizationId_fkey"');
     expect(migration).toContain('"RentalOrderItem_assetId_organizationId_productId_fkey"');
     expect(migration).toContain('"RentalBillingItem_rentalOrderItemId_organizationId_fkey"');
-    expect(migration).toContain('"RentalOrderItem_contract_months_positive_check"');
+    expect(migration).toContain('"RentalContract_contract_months_positive_check"');
+    expect(migration).not.toContain('"RentalOrderItem_contract_months_positive_check"');
     expect(migration).toContain('"RentalBillingItem_amount_non_negative_check"');
+    expect(migration).toContain('"RentalBillingItem_amount_calculation_check"');
+    expect(migration).toContain('"RentalBilling_total_amount_check"');
     expect(migration).toContain('assert_rental_order_type');
+    expect(migration).toContain('assert_rental_billing_item_scope');
+    expect(migration).toContain('assert_rental_billing_totals_match_items');
   });
 
   it('adds database integrity guards for cross-model rules Prisma cannot express', () => {
@@ -355,5 +368,7 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('CustomerAssignment_contact_target_check');
     expect(migration).toContain('CustomerAssignment_one_primary_active_assignee');
     expect(migration).toContain('assert_customer_assignment_scope');
+    expect(migration).toContain('Customer_id_organizationId_key');
+    expect(migration).toContain('"CustomerAssignment_customerId_organizationId_fkey"');
   });
 });

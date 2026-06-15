@@ -32,7 +32,6 @@ CREATE TABLE "RentalOrderItem" (
     "isUsedAssetShipment" BOOLEAN NOT NULL DEFAULT false,
     "purchaseAmount" INTEGER,
     "warrantyExpiresAt" TIMESTAMP(3),
-    "contractMonths" INTEGER NOT NULL,
     "monthlyRentalPrice" INTEGER NOT NULL,
     "depositAmount" INTEGER,
     "installationLocation" TEXT,
@@ -42,7 +41,6 @@ CREATE TABLE "RentalOrderItem" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "RentalOrderItem_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "RentalOrderItem_contract_months_positive_check" CHECK ("contractMonths" > 0),
     CONSTRAINT "RentalOrderItem_amount_non_negative_check" CHECK (
         "monthlyRentalPrice" >= 0
         AND ("depositAmount" IS NULL OR "depositAmount" >= 0)
@@ -59,6 +57,7 @@ CREATE TABLE "RentalContract" (
     "status" "RentalContractStatus" NOT NULL DEFAULT 'ACTIVE',
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3) NOT NULL,
+    "contractMonths" INTEGER NOT NULL,
     "billingDay" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -67,7 +66,8 @@ CREATE TABLE "RentalContract" (
     CONSTRAINT "RentalContract_billing_day_range_check" CHECK (
         "billingDay" IS NULL OR ("billingDay" >= 1 AND "billingDay" <= 31)
     ),
-    CONSTRAINT "RentalContract_date_range_check" CHECK ("endDate" >= "startDate")
+    CONSTRAINT "RentalContract_date_range_check" CHECK ("endDate" >= "startDate"),
+    CONSTRAINT "RentalContract_contract_months_positive_check" CHECK ("contractMonths" > 0)
 );
 
 -- CreateTable
@@ -93,6 +93,9 @@ CREATE TABLE "RentalBilling" (
         "supplyAmount" >= 0
         AND "vatAmount" >= 0
         AND "totalAmount" >= 0
+    ),
+    CONSTRAINT "RentalBilling_total_amount_check" CHECK (
+        "totalAmount" = "supplyAmount" + "vatAmount"
     )
 );
 
@@ -120,6 +123,10 @@ CREATE TABLE "RentalBillingItem" (
         AND "supplyAmount" >= 0
         AND "vatAmount" >= 0
         AND "totalAmount" >= 0
+    ),
+    CONSTRAINT "RentalBillingItem_amount_calculation_check" CHECK (
+        "supplyAmount" = "quantity" * "unitPrice"
+        AND "totalAmount" = "supplyAmount" + "vatAmount"
     )
 );
 
@@ -268,3 +275,151 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER "Order_rental_order_type_guard"
 BEFORE UPDATE OF "type" ON "Order"
 FOR EACH ROW EXECUTE FUNCTION "assert_order_type_with_rental_order"();
+
+CREATE OR REPLACE FUNCTION "assert_rental_billing_item_scope"()
+RETURNS trigger AS $$
+DECLARE
+    contract_rental_order_id TEXT;
+    matched_item_count INTEGER;
+BEGIN
+    IF NEW."rentalOrderItemId" IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT contract."rentalOrderId"
+    INTO contract_rental_order_id
+    FROM "RentalBilling" AS billing
+    INNER JOIN "RentalContract" AS contract
+        ON contract."id" = billing."rentalContractId"
+       AND contract."organizationId" = billing."organizationId"
+    WHERE billing."id" = NEW."rentalBillingId"
+      AND billing."organizationId" = NEW."organizationId";
+
+    IF contract_rental_order_id IS NULL THEN
+        RAISE EXCEPTION 'RentalBillingItem must reference a billing in the same organization';
+    END IF;
+
+    SELECT COUNT(*)
+    INTO matched_item_count
+    FROM "RentalOrderItem"
+    WHERE "id" = NEW."rentalOrderItemId"
+      AND "organizationId" = NEW."organizationId"
+      AND "rentalOrderId" = contract_rental_order_id;
+
+    IF matched_item_count = 0 THEN
+        RAISE EXCEPTION 'RentalBillingItem item must belong to the billing contract rental order';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "RentalBillingItem_scope_guard"
+BEFORE INSERT OR UPDATE OF "organizationId", "rentalBillingId", "rentalOrderItemId" ON "RentalBillingItem"
+FOR EACH ROW EXECUTE FUNCTION "assert_rental_billing_item_scope"();
+
+CREATE OR REPLACE FUNCTION "assert_rental_billing_contract_update_scope"()
+RETURNS trigger AS $$
+DECLARE
+    contract_rental_order_id TEXT;
+    invalid_item_count INTEGER;
+BEGIN
+    SELECT "rentalOrderId"
+    INTO contract_rental_order_id
+    FROM "RentalContract"
+    WHERE "id" = NEW."rentalContractId"
+      AND "organizationId" = NEW."organizationId";
+
+    IF contract_rental_order_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT COUNT(*)
+    INTO invalid_item_count
+    FROM "RentalBillingItem" AS item
+    INNER JOIN "RentalOrderItem" AS order_item
+        ON order_item."id" = item."rentalOrderItemId"
+       AND order_item."organizationId" = item."organizationId"
+    WHERE item."rentalBillingId" = NEW."id"
+      AND item."organizationId" = NEW."organizationId"
+      AND item."rentalOrderItemId" IS NOT NULL
+      AND order_item."rentalOrderId" <> contract_rental_order_id;
+
+    IF invalid_item_count > 0 THEN
+        RAISE EXCEPTION 'RentalBilling contract cannot change while billing items belong to another rental order';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "RentalBilling_contract_scope_guard"
+BEFORE UPDATE OF "organizationId", "rentalContractId" ON "RentalBilling"
+FOR EACH ROW EXECUTE FUNCTION "assert_rental_billing_contract_update_scope"();
+
+CREATE OR REPLACE FUNCTION "assert_rental_billing_totals_match_items"()
+RETURNS trigger AS $$
+DECLARE
+    target_billing_id TEXT;
+    target_organization_id TEXT;
+    header_supply_amount INTEGER;
+    header_vat_amount INTEGER;
+    header_total_amount INTEGER;
+    item_supply_amount INTEGER;
+    item_vat_amount INTEGER;
+    item_total_amount INTEGER;
+BEGIN
+    IF TG_TABLE_NAME = 'RentalBilling' THEN
+        target_billing_id := NEW."id";
+        target_organization_id := NEW."organizationId";
+    ELSE
+        target_billing_id := COALESCE(NEW."rentalBillingId", OLD."rentalBillingId");
+        target_organization_id := COALESCE(NEW."organizationId", OLD."organizationId");
+    END IF;
+
+    SELECT "supplyAmount", "vatAmount", "totalAmount"
+    INTO header_supply_amount, header_vat_amount, header_total_amount
+    FROM "RentalBilling"
+    WHERE "id" = target_billing_id
+      AND "organizationId" = target_organization_id;
+
+    IF header_supply_amount IS NULL THEN
+        IF TG_OP = 'DELETE' THEN
+            RETURN OLD;
+        END IF;
+
+        RETURN NEW;
+    END IF;
+
+    SELECT
+        COALESCE(SUM("supplyAmount"), 0),
+        COALESCE(SUM("vatAmount"), 0),
+        COALESCE(SUM("totalAmount"), 0)
+    INTO item_supply_amount, item_vat_amount, item_total_amount
+    FROM "RentalBillingItem"
+    WHERE "rentalBillingId" = target_billing_id
+      AND "organizationId" = target_organization_id;
+
+    IF header_supply_amount <> item_supply_amount
+       OR header_vat_amount <> item_vat_amount
+       OR header_total_amount <> item_total_amount THEN
+        RAISE EXCEPTION 'RentalBilling totals must match RentalBillingItem totals';
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER "RentalBillingItem_totals_match_billing"
+AFTER INSERT OR UPDATE OR DELETE ON "RentalBillingItem"
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION "assert_rental_billing_totals_match_items"();
+
+CREATE CONSTRAINT TRIGGER "RentalBilling_totals_match_items"
+AFTER INSERT OR UPDATE OF "supplyAmount", "vatAmount", "totalAmount" ON "RentalBilling"
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION "assert_rental_billing_totals_match_items"();

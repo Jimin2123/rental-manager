@@ -23,8 +23,6 @@ model RentalOrderItem {
 
   warrantyExpiresAt DateTime?
 
-  contractMonths Int
-
   monthlyRentalPrice Int
 
   depositAmount Int?

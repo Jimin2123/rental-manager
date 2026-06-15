@@ -23,6 +23,11 @@ model ServiceRequest {
   requestedVisitDate DateTime?
   completedAt        DateTime?
 
+  // 방문 위치 (장비 설치 주소와 다를 수 있음)
+  visitLocationZonecode      String?
+  visitLocationAddress       String?
+  visitLocationAddressDetail String?
+
   memo String?
 
   visits   ServiceVisit[]

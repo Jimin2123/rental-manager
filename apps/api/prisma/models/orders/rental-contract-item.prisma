@@ -38,6 +38,7 @@ model RentalContractItem {
   replacedByItemId String?
   replacedByItem   RentalContractItem?  @relation("ItemReplacement", fields: [replacedByItemId], references: [id])
   replacedItems    RentalContractItem[] @relation("ItemReplacement")
+  replacedAt       DateTime?
 
   meterReadings MeterReading[]
 
@@ -55,4 +56,5 @@ model RentalContractItem {
   @@index([organizationId, assetId])
   @@index([organizationId, status])
   @@index([organizationId, assetId, status])
+  @@index([organizationId, replacedAt])
 }

@@ -11,7 +11,7 @@ model CustomerAssignment {
   organizationMember   OrganizationMember @relation(fields: [organizationMemberId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   customerContactId String?
-  customerContact   BusinessPartnerContact? @relation(fields: [customerContactId], references: [id], onDelete: Restrict)
+  customerContact   BusinessPartnerContact? @relation(fields: [customerContactId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   individualProfileId String?
   individualProfile   IndividualProfile? @relation(fields: [individualProfileId], references: [id], onDelete: Restrict)

@@ -32,6 +32,7 @@ model BusinessPartnerContact {
 
   customerAssignments CustomerAssignment[]
 
+  @@unique([id, organizationId])
   @@index([organizationId])
   @@index([organizationId, businessPartnerId])
   @@index([organizationId, name])

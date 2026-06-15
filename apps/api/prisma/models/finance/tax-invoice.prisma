@@ -10,6 +10,7 @@ model TaxInvoice {
   status TaxInvoiceStatus @default(DRAFT)
 
   // 수정세금계산서인 경우 원본 참조
+  // DB trigger가 invoice/customer/original 의미 제약을 검증
   originalTaxInvoiceId String?
   originalTaxInvoice   TaxInvoice?  @relation("TaxInvoiceAmendment", fields: [originalTaxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
   amendments           TaxInvoice[] @relation("TaxInvoiceAmendment")

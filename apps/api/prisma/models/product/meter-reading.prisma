@@ -16,7 +16,8 @@ model MeterReading {
   blackCount Int
   colorCount Int?
 
-  // 이번 기간 사용량 (서비스 레이어에서 직전 MeterReading.blackCount 조회 후 계산하여 저장)
+  // 이번 기간 사용량
+  // DB trigger가 중복 검침과 이전/다음 검침 대비 카운터 단조 증가를 검증
   blackUsage Int
   colorUsage Int?
 

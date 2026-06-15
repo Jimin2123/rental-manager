@@ -382,7 +382,7 @@ describe('Prisma customer schema', () => {
     const taxInvoiceSchema = readFileSync(join(prismaModelsPath, 'finance/tax-invoice.prisma'), 'utf8');
     const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
     const migration = readFileSync(
-      join(prismaMigrationsPath, '20260616107000_harden_model_integrity/migration.sql'),
+      join(prismaMigrationsPath, '20260616108000_harden_model_integrity/migration.sql'),
       'utf8',
     );
 
@@ -409,13 +409,13 @@ describe('Prisma customer schema', () => {
     const assetEventSchema = readFileSync(join(prismaModelsPath, 'product/asset-event.prisma'), 'utf8');
     const invoiceSchema = readFileSync(join(prismaModelsPath, 'finance/invoice.prisma'), 'utf8');
     const migration = readFileSync(
-      join(prismaMigrationsPath, '20260616107000_harden_model_integrity/migration.sql'),
+      join(prismaMigrationsPath, '20260616108000_harden_model_integrity/migration.sql'),
       'utf8',
     );
 
     expect(auditLogSchema).toContain('DB trigger가 지원 targetType/targetId 존재 여부를 검증');
     expect(attachmentSchema).toContain('DB trigger가 지원 sourceType/sourceId 존재 여부를 검증');
-    expect(assetEventSchema).toContain('DB trigger가 sourceType별 sourceId 존재 여부 검증');
+    expect(assetEventSchema).toContain('DB trigger가 sourceType별 sourceId 존재 여부와 source asset 일치까지 검증');
     expect(invoiceSchema).toContain('DB trigger가 InvoiceItem/InvoiceAdjustment 변경 시 자동 재계산');
 
     expect(migration).toContain('assert_audit_log_target_integrity');
@@ -441,5 +441,56 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('assert_refund_integrity');
     expect(migration).toContain('assert_refund_cap_for_invoice');
     expect(migration).toContain('assert_refund_cap_after_payment_status_change');
+  });
+
+  it('adds database guards for remaining high-risk model invariants', () => {
+    const taxInvoiceSchema = readFileSync(join(prismaModelsPath, 'finance/tax-invoice.prisma'), 'utf8');
+    const meterReadingSchema = readFileSync(join(prismaModelsPath, 'product/meter-reading.prisma'), 'utf8');
+    const assetEventSchema = readFileSync(join(prismaModelsPath, 'product/asset-event.prisma'), 'utf8');
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616109000_resolve_remaining_model_risks/migration.sql'),
+      'utf8',
+    );
+
+    expect(taxInvoiceSchema).toContain('DB trigger가 invoice/customer/original 의미 제약을 검증');
+    expect(meterReadingSchema).toContain('DB trigger가 중복 검침과 이전/다음 검침 대비 카운터 단조 증가를 검증');
+    expect(assetEventSchema).toContain('source asset 일치까지 검증');
+
+    expect(migration).toContain('"TaxInvoice_type_original_check"');
+    expect(migration).toContain('"TaxInvoice_nts_confirmed_requires_confirm_num_check"');
+    expect(migration).toContain('assert_tax_invoice_invoice_consistency');
+    expect(migration).toContain('assert_invoice_item_tax_invoice_consistency');
+    expect(migration).toContain('"TaxInvoice_invoice_consistency_guard"');
+    expect(migration).toContain('"InvoiceItem_tax_invoice_consistency_guard"');
+
+    expect(migration).toContain('assert_status_transition');
+    expect(migration).toContain('"Order_status_transition_guard"');
+    expect(migration).toContain('"RentalContract_status_transition_guard"');
+    expect(migration).toContain('"RentalContractItem_status_transition_guard"');
+    expect(migration).toContain('"ServiceRequest_status_transition_guard"');
+    expect(migration).toContain('"ServiceVisit_status_transition_guard"');
+    expect(migration).toContain('"Invoice_status_transition_guard"');
+    expect(migration).toContain('"Payment_status_transition_guard"');
+    expect(migration).toContain('"Refund_status_transition_guard"');
+
+    expect(migration).toContain('CREATE OR REPLACE FUNCTION "assert_asset_event_source_integrity"');
+    expect(migration).toContain('asset mismatch');
+    expect(migration).toContain('"MeterReading_asset_reading_date_key"');
+    expect(migration).toContain('"MeterReading_color_pair_check"');
+    expect(migration).toContain('assert_meter_reading_sequence_integrity');
+    expect(migration).toContain('"MeterReading_sequence_guard"');
+
+    expect(migration).toContain('"SaleOrderItem_vat_type_check"');
+    expect(migration).toContain('"InvoiceItem_vat_type_check"');
+    expect(migration).toContain('"QuotationItem_vat_type_check"');
+  });
+
+  it('uses unique ordered migration timestamps for the final model integrity migrations', () => {
+    expect(existsSync(join(prismaMigrationsPath, '20260616107000_add_audit_log/migration.sql'))).toBe(true);
+    expect(existsSync(join(prismaMigrationsPath, '20260616108000_harden_model_integrity/migration.sql'))).toBe(true);
+    expect(existsSync(join(prismaMigrationsPath, '20260616109000_resolve_remaining_model_risks/migration.sql'))).toBe(
+      true,
+    );
+    expect(existsSync(join(prismaMigrationsPath, '20260616107000_harden_model_integrity/migration.sql'))).toBe(false);
   });
 });

@@ -10,7 +10,7 @@ model AssetEvent {
   fromStatus AssetStatus?
   toStatus   AssetStatus
 
-  // 이벤트를 발생시킨 출처 (polymorphic — DB trigger가 sourceType별 sourceId 존재 여부 검증)
+  // 이벤트를 발생시킨 출처 (polymorphic — DB trigger가 sourceType별 sourceId 존재 여부와 source asset 일치까지 검증)
   // MANUAL은 sourceId 생략 가능
   sourceType AssetEventSourceType
   sourceId   String?

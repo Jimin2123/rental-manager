@@ -1,0 +1,39 @@
+model Quotation {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  quotationNo String
+
+  status QuotationStatus @default(DRAFT)
+  type   QuotationType
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  validUntil DateTime?
+
+  // 수락 시 Order로 전환 (1:1) — composite FK로 org 경계 보장
+  convertedOrderId String?
+  convertedOrder   Order?    @relation(fields: [convertedOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  convertedAt      DateTime?
+
+  sentAt DateTime?
+
+  memo String?
+
+  items QuotationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, quotationNo])
+  @@unique([convertedOrderId, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, type])
+  @@index([organizationId, customerId])
+  @@index([organizationId, validUntil])
+}

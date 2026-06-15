@@ -1,0 +1,31 @@
+model Attachment {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // Polymorphic 패턴 — DB trigger가 지원 sourceType/sourceId 존재 여부를 검증
+  // 유효값 예: "RentalContract" | "SaleOrder" | "ServiceRequest" | "ServiceVisit"
+  //           | "Invoice" | "Customer" | "Quotation"
+  sourceType String
+  sourceId   String
+
+  // 파일 분류 (자유 입력: "계약서", "설치사진", "AS전사진", "입금증" 등)
+  category String?
+
+  fileName String
+  fileUrl  String
+  mimeType String
+  fileSize Int // bytes
+
+  uploadedById String?
+  uploadedBy   OrganizationMember? @relation(fields: [uploadedById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // Attachment는 불변 기록 — updatedAt 없음
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, sourceType, sourceId])
+  @@index([organizationId, sourceType])
+  @@index([uploadedById])
+}

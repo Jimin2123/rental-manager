@@ -1,0 +1,41 @@
+model Customer {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  type CustomerType
+
+  individualProfileId String?
+  individualProfile   IndividualProfile? @relation(fields: [individualProfileId], references: [id], onDelete: Restrict)
+
+  businessPartnerId String?
+  businessPartner   BusinessPartner? @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // isActive=false: 거래 정지 (삭제 아님, 신규 계약/판매 불가)
+  isActive Boolean @default(true)
+
+  memo String?
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments     CustomerAssignment[]
+  orders          Order[]
+  invoices        Invoice[]
+  taxInvoices     TaxInvoice[]
+  payments        Payment[]
+  refunds         Refund[]
+  quotations      Quotation[]
+  serviceRequests ServiceRequest[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, type])
+  @@index([organizationId, isActive])
+  @@index([organizationId, deletedAt])
+  @@index([individualProfileId])
+  @@index([businessPartnerId])
+}

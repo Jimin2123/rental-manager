@@ -1,0 +1,30 @@
+model BusinessPartner {
+  id String @id @default(uuid())
+
+  // 이 거래처를 관리하는 내 사업장
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // 거래처의 사업자 정보
+  businessProfileId String          @unique
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Restrict)
+
+  // 거래처 상태
+  isActive Boolean @default(true)
+
+  // 거래처에 대한 내부 메모
+  memo String?
+
+  deletedAt DateTime?
+
+  roles     BusinessPartnerRole[]
+  contacts  BusinessPartnerContact[]
+  customers Customer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+}

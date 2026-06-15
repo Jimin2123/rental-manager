@@ -1,0 +1,29 @@
+model RentalOrder {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  orderId String
+  order   Order  @relation(fields: [orderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 렌탈 관리번호
+  managementNo String?
+
+  isRenewal Boolean @default(false)
+
+  contractDate DateTime @default(now())
+
+  items    RentalOrderItem[]
+  contract RentalContract?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([orderId, organizationId])
+  @@unique([organizationId, managementNo])
+  @@index([organizationId])
+  @@index([organizationId, contractDate])
+  @@index([organizationId, isRenewal])
+}

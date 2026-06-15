@@ -1,0 +1,22 @@
+model IndividualProfile {
+  id String @id @default(uuid())
+
+  // 고객명
+  name String
+
+  phone String?
+  email String?
+
+  addressId String?  @unique
+  address   Address? @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  customers           Customer[]
+  customerAssignments CustomerAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([phone])
+  @@index([email])
+}

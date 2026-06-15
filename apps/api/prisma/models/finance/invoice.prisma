@@ -1,0 +1,74 @@
+model Invoice {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  invoiceNo String
+
+  type   InvoiceType
+  status InvoiceStatus @default(DRAFT)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 판매 청구 (type = SALE)
+  saleOrderId String?
+  saleOrder   SaleOrder? @relation(fields: [saleOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 렌탈 월 청구 (type = RENTAL_MONTHLY)
+  rentalContractId String?
+  rentalContract   RentalContract? @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // AS 청구 (type = SERVICE_FEE)
+  serviceRequestId String?
+  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  billingMonth String? // "YYYY-MM"
+  periodStart  DateTime?
+  periodEnd    DateTime?
+
+  dueDate  DateTime?
+  issuedAt DateTime?
+
+  createdById String?
+  createdBy   OrganizationMember? @relation(fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 최종 청구금액 (InvoiceItem 합계 + InvoiceAdjustment 합계)
+  // 미수금 쿼리 성능을 위해 역정규화하여 저장
+  // DB trigger가 InvoiceItem/InvoiceAdjustment 변경 시 자동 재계산
+  finalAmount       Int @default(0)
+  paidAmount        Int @default(0)
+  refundedAmount    Int @default(0)
+  outstandingAmount Int @default(0)
+  settlementStatus  InvoiceSettlementStatus @default(UNPAID)
+
+  memo String?
+
+  items       InvoiceItem[]
+  adjustments InvoiceAdjustment[]
+  allocations PaymentAllocation[]
+  refunds     Refund[]
+  taxInvoice  TaxInvoice?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, invoiceNo])
+  @@unique([organizationId, saleOrderId])
+  // 같은 계약 + 같은 월 + 같은 타입은 1건만 허용
+  // NULL 필드는 PostgreSQL unique 제약에서 제외되므로 정상 동작
+  @@unique([organizationId, rentalContractId, billingMonth, type])
+  @@index([organizationId])
+  @@index([organizationId, type])
+  @@index([organizationId, status])
+  @@index([organizationId, settlementStatus])
+  @@index([organizationId, customerId])
+  @@index([organizationId, dueDate])
+  @@index([organizationId, saleOrderId])
+  @@index([organizationId, rentalContractId])
+  @@index([organizationId, billingMonth])
+  @@index([organizationId, customerId, dueDate, status])
+  @@index([organizationId, customerId, settlementStatus, dueDate])
+}

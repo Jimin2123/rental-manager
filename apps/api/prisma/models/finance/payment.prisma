@@ -1,0 +1,43 @@
+model Payment {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  paymentNo String
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  status   PaymentStatus   @default(COMPLETED)
+  method   PaymentMethod
+  provider PaymentProvider @default(MANUAL)
+
+  // 항상 양수. 잘못 등록된 입금은 status = CANCELED 처리
+  amount Int
+
+  paidAt DateTime
+
+  createdById String?
+  createdBy   OrganizationMember? @relation(fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 나중에 PG 연동 대비
+  externalRef String?
+
+  memo String?
+
+  allocations PaymentAllocation[]
+  refunds     Refund[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, paymentNo])
+  @@index([organizationId])
+  @@index([organizationId, customerId])
+  @@index([organizationId, status])
+  @@index([organizationId, paidAt])
+  @@index([organizationId, method])
+  @@index([organizationId, customerId, paidAt])
+}

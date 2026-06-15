@@ -6,6 +6,9 @@ model Organization {
 
   memo String?
 
+  products Product[]
+  assets   Asset[]
+
   businessPartners        BusinessPartner[]
   businessPartnerContacts BusinessPartnerContact[]
   members                 OrganizationMember[]

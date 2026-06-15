@@ -1,0 +1,34 @@
+model Asset {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  productId String
+  product   Product @relation(fields: [productId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 일련 번호
+  serialNumber String?
+
+  // 현재 상태
+  status AssetStatus @default(AVAILABLE)
+
+  // 매입일
+  purchaseDate DateTime?
+
+  // 매입가 (원화 Int, 판매가/렌탈료와 다른 개념)
+  purchasePrice Int?
+
+  memo String?
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, serialNumber])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, productId])
+  @@index([productId])
+}

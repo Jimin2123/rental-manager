@@ -33,7 +33,7 @@ model RentalOrderItem {
 
   memo String?
 
-  billingItems RentalBillingItem[]
+  invoiceItems InvoiceItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

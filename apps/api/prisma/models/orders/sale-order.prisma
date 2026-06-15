@@ -13,7 +13,8 @@ model SaleOrder {
 
   saleDate DateTime @default(now())
 
-  items SaleOrderItem[]
+  items    SaleOrderItem[]
+  invoices Invoice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

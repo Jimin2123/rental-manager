@@ -37,6 +37,8 @@ model SaleOrderItem {
 
   memo String?
 
+  invoiceItems InvoiceItem[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

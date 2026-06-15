@@ -1,0 +1,41 @@
+model Refund {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  refundNo String
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 어떤 입금에서 환불하는지 (없으면 직접 환불)
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  status RefundStatus @default(PENDING)
+  reason RefundReason
+
+  // 항상 양수
+  amount Int
+
+  method PaymentMethod?
+
+  refundedAt DateTime?
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, refundNo])
+  @@index([organizationId])
+  @@index([organizationId, customerId])
+  @@index([organizationId, invoiceId])
+  @@index([organizationId, paymentId])
+  @@index([organizationId, status])
+}

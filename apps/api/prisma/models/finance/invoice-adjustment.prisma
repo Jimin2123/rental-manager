@@ -1,0 +1,23 @@
+model InvoiceAdjustment {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  type InvoiceAdjustmentType
+
+  // 차감은 음수, 추가 청구는 양수
+  amount Int
+
+  reason String?
+  memo   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, invoiceId])
+  @@index([organizationId, type])
+}

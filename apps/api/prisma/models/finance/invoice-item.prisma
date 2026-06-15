@@ -1,0 +1,38 @@
+model InvoiceItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 출처 추적 (optional)
+  saleOrderItemId String?
+  saleOrderItem   SaleOrderItem? @relation(fields: [saleOrderItemId], references: [id], onDelete: Restrict)
+
+  rentalOrderItemId String?
+  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
+
+  type InvoiceItemType
+
+  description String?
+
+  quantity  Int @default(1)
+  unitPrice Int
+
+  supplyAmount Int
+  vatType      VatType @default(INCLUDED)
+  vatAmount    Int
+  totalAmount  Int
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, invoiceId])
+  @@index([organizationId, type])
+  @@index([saleOrderItemId])
+  @@index([rentalOrderItemId])
+}

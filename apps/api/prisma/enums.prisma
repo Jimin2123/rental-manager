@@ -13,9 +13,10 @@ enum AssetStatus {
   AVAILABLE // 판매/렌탈 가능
   RENTED // 렌탈 중
   SOLD // 판매 완료
+  REPAIR // 수리 중
   DISPOSED // 폐기
   LOST // 분실
-  UNAVAILABLE // 사용 불가 
+  UNAVAILABLE // 사용 불가
 }
 
 enum OrderType {
@@ -39,16 +40,83 @@ enum RentalContractStatus {
   CANCELLED // 취소
 }
 
-enum RentalBillingStatus {
-  SCHEDULED // 예정
-  ISSUED // 청구
-  PAID // 수납 완료
-  CANCELLED // 취소
+// 청구서
+enum InvoiceType {
+  SALE // 판매 청구
+  RENTAL_MONTHLY // 월 렌탈료 청구
+  SERVICE_FEE // AS/출장/부품비 청구
+  MANUAL // 수동 청구
 }
 
-enum RentalBillingItemType {
-  MONTHLY_RENT // 월 렌탈료
+enum InvoiceStatus {
+  DRAFT // 작성 중
+  ISSUED // 발행됨
+  CANCELED // 취소됨
+}
+
+enum InvoiceItemType {
+  SALE_PRICE // 판매금액
+  RENTAL_FEE // 월 렌탈료
+  SERVICE_FEE // AS/출장비
+  INSTALLATION_FEE // 설치비
+  REMOVAL_FEE // 철거비
+  DELIVERY_FEE // 배송비
   DEPOSIT // 보증금
-  INSTALLATION // 설치비
-  ADJUSTMENT // 조정
+  PENALTY // 위약금
+  ETC // 기타
+}
+
+enum InvoiceAdjustmentType {
+  DISCOUNT // 할인
+  CANCELLATION // 판매/계약 취소
+  RETURN // 반품
+  RENTAL_PRORATION // 렌탈 중도 해지 일할 차감
+  BILLING_ERROR // 청구 오류 수정
+  EXTRA_CHARGE // 추가 청구
+  ETC // 기타
+}
+
+// 입금
+enum PaymentMethod {
+  CASH // 현금
+  BANK_TRANSFER // 계좌이체
+  CARD // 카드
+  VIRTUAL_ACCOUNT // 가상계좌
+  CMS // CMS 자동이체
+  ETC // 기타
+}
+
+enum PaymentProvider {
+  MANUAL // 수동 등록
+  TOSS_PAYMENTS
+  PORTONE
+  INICIS
+  KCP
+  BANK_API
+  OPEN_BANKING
+}
+
+enum PaymentStatus {
+  PENDING // 입금 대기
+  COMPLETED // 입금 완료
+  CANCELED // 취소
+  FAILED // 실패
+}
+
+// 환불
+enum RefundStatus {
+  PENDING // 환불 대기
+  COMPLETED // 환불 완료
+  FAILED // 실패
+  CANCELED // 취소
+}
+
+enum RefundReason {
+  SALE_CANCEL // 판매 취소
+  SALE_RETURN // 반품
+  RENTAL_CANCEL // 렌탈 취소
+  RENTAL_PRORATION // 중도 해지 일할 환불
+  OVERPAYMENT // 초과 입금
+  BILLING_ERROR // 청구 오류
+  ETC // 기타
 }

@@ -21,6 +21,9 @@ model Customer {
 
   assignments CustomerAssignment[]
   orders      Order[]
+  invoices    Invoice[]
+  payments    Payment[]
+  refunds     Refund[]
 
   @@unique([id, organizationId])
   @@index([organizationId])

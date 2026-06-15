@@ -1,0 +1,46 @@
+model InvoiceItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 출처 추적 (optional)
+  saleOrderItemId String?
+  saleOrderItem   SaleOrderItem? @relation(fields: [saleOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  rentalOrderItemId String?
+  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  rentalContractItemId String?
+  rentalContractItem   RentalContractItem? @relation(fields: [rentalContractItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  type InvoiceItemType
+
+  description String?
+
+  quantity  Int @default(1)
+  unitPrice Int
+
+  supplyAmount Int
+  vatType      VatType @default(INCLUDED)
+  vatAmount    Int
+  totalAmount  Int
+
+  memo String?
+
+  // MeterReading 역방향 참조 (카운터 과금 항목인 경우)
+  meterReadings MeterReading[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, invoiceId])
+  @@index([organizationId, type])
+  @@index([saleOrderItemId])
+  @@index([rentalOrderItemId])
+  @@index([rentalContractItemId])
+}

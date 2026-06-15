@@ -1,0 +1,54 @@
+model SaleOrderItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  saleOrderId String
+  saleOrder   SaleOrder @relation(fields: [saleOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  productId String
+  product   Product @relation(fields: [productId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId, organizationId, productId], references: [id, organizationId, productId], onDelete: Restrict)
+
+  // 일련번호 직접 입력값
+  serialNumber String?
+
+  // 중고장비 출고
+  isUsedAssetShipment Boolean @default(false)
+
+  quantity  Int
+  unitPrice Int
+
+  // 공급가액
+  supplyAmount Int
+
+  vatType VatType @default(INCLUDED)
+
+  // 부가세
+  vatAmount Int
+
+  // 금액
+  totalAmount Int
+
+  // 마진
+  marginAmount Int?
+
+  // 보증기간
+  warrantyStartDate DateTime?
+  warrantyEndDate   DateTime?
+
+  memo String?
+
+  invoiceItems InvoiceItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, saleOrderId])
+  @@index([organizationId, productId])
+  @@index([assetId])
+}

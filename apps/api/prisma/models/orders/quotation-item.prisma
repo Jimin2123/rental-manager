@@ -1,0 +1,40 @@
+model QuotationItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  productId String
+  product   Product @relation(fields: [productId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 특정 장비 지정 견적 — (assetId, organizationId, productId) 3-컬럼 FK로 product-asset 불일치 방지
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId, organizationId, productId], references: [id, organizationId, productId], onDelete: Restrict)
+
+  description String?
+
+  quantity  Int @default(1)
+  unitPrice Int
+
+  // 렌탈 견적인 경우
+  monthlyRentalPrice Int?
+  contractMonths     Int?
+  depositAmount      Int?
+
+  supplyAmount Int
+  vatType      VatType @default(INCLUDED)
+  vatAmount    Int
+  totalAmount  Int
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, quotationId])
+  @@index([organizationId, productId])
+  @@index([assetId])
+}

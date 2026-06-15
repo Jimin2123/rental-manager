@@ -1,0 +1,23 @@
+model PaymentAllocation {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  paymentId String
+  payment   Payment @relation(fields: [paymentId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 이 Invoice에 배분한 금액
+  amount Int
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, paymentId])
+  @@index([organizationId, invoiceId])
+}

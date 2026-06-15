@@ -1,0 +1,36 @@
+model Organization {
+  id String @id @default(uuid())
+
+  businessProfileId String          @unique
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Restrict)
+
+  memo String?
+
+  products Product[]
+  assets   Asset[]
+
+  businessPartners        BusinessPartner[]
+  businessPartnerRoles    BusinessPartnerRole[]
+  businessPartnerContacts BusinessPartnerContact[]
+  members                 OrganizationMember[]
+  customers               Customer[]
+  customerAssignments     CustomerAssignment[]
+  orders                  Order[]
+  saleOrders              SaleOrder[]
+  rentalOrders            RentalOrder[]
+  rentalContracts         RentalContract[]
+  invoices                Invoice[]
+  taxInvoices             TaxInvoice[]
+  payments                Payment[]
+  refunds                 Refund[]
+  quotations              Quotation[]
+  serviceRequests         ServiceRequest[]
+  assetEvents             AssetEvent[]
+  meterReadings           MeterReading[]
+  attachments             Attachment[]
+  auditLogs               AuditLog[]
+  documentSequences       DocumentSequence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

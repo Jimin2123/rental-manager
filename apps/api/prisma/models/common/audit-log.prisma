@@ -1,0 +1,35 @@
+model AuditLog {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // 행위자 — User 시스템 추가 전까지 OrganizationMember로 식별
+  // User 도입 시 userId String? 필드를 추가하고 actorId는 유지
+  actorId String?
+  actor   OrganizationMember? @relation(fields: [actorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  action AuditAction
+
+  // 변경 대상 (polymorphic — DB trigger가 지원 targetType/targetId 존재 여부를 검증)
+  // 유효값: "RentalContract" | "Invoice" | "Payment" | "Refund"
+  //        | "Asset" | "SaleOrder" | "ServiceRequest" | "Customer" 등
+  targetType String
+  targetId   String
+
+  // 변경 전/후 상태 스냅샷
+  before Json?
+  after  Json?
+
+  // 변경 사유 (취소·수정 등 사유 기록)
+  reason String?
+
+  // 불변 기록 — updatedAt 없음
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, targetType, targetId])
+  @@index([organizationId, actorId])
+  @@index([organizationId, action])
+  @@index([organizationId, createdAt])
+}

@@ -1,0 +1,19 @@
+model BusinessPartnerRole {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  businessPartnerId String
+  businessPartner   BusinessPartner @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  type BusinessPartnerRoleType
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessPartnerId, organizationId, type])
+  @@index([organizationId])
+  @@index([organizationId, businessPartnerId])
+  @@index([organizationId, type])
+}

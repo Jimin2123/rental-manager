@@ -1,0 +1,37 @@
+model Product {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // 제품명
+  name String
+
+  // 제조사
+  manufacturer String?
+
+  // 모델명
+  modelName String?
+
+  // 카테고리 (예: 복합기, 노트북, 프린터)
+  category String?
+
+  memo String?
+
+  assets           Asset[]
+  saleOrderItems   SaleOrderItem[]
+  rentalOrderItems RentalOrderItem[]
+  quotationItems   QuotationItem[]
+
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@index([organizationId, category])
+  @@index([name])
+}

@@ -1,0 +1,42 @@
+model Order {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // 주문/등록 번호
+  orderNo String
+
+  type   OrderType
+  status OrderStatus @default(REGISTERED)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 우리 사업장 담당 직원
+  managerId String?
+  manager   OrganizationMember? @relation("OrderManager", fields: [managerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  orderDate DateTime @default(now())
+
+  createdById String?
+  createdBy   OrganizationMember? @relation("OrderCreatedBy", fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  memo String?
+
+  saleOrder   SaleOrder?
+  rentalOrder RentalOrder?
+  quotation   Quotation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, orderNo])
+  @@index([organizationId])
+  @@index([organizationId, customerId])
+  @@index([organizationId, managerId])
+  @@index([organizationId, type])
+  @@index([organizationId, status])
+  @@index([organizationId, orderDate])
+}

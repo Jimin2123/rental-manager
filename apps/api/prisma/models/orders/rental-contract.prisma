@@ -1,0 +1,32 @@
+model RentalContract {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  rentalOrderId String
+  rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  contractNo String
+
+  status RentalContractStatus @default(ACTIVE)
+
+  startDate DateTime
+  endDate   DateTime
+
+  // 매월 청구 기준일
+  billingDay Int?
+
+  billings RentalBilling[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([rentalOrderId, organizationId])
+  @@unique([organizationId, contractNo])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, startDate])
+  @@index([organizationId, endDate])
+}

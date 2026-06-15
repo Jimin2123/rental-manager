@@ -1,0 +1,32 @@
+model RentalBillingItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  rentalBillingId String
+  rentalBilling   RentalBilling @relation(fields: [rentalBillingId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  rentalOrderItemId String?
+  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  type RentalBillingItemType
+
+  description String?
+
+  quantity  Int @default(1)
+  unitPrice Int
+
+  supplyAmount Int
+  vatAmount    Int
+  totalAmount  Int
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, rentalBillingId])
+  @@index([organizationId, rentalOrderItemId])
+  @@index([organizationId, type])
+}

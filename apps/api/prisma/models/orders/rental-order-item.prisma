@@ -1,0 +1,48 @@
+model RentalOrderItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  rentalOrderId String
+  rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  productId String
+  product   Product @relation(fields: [productId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId, organizationId, productId], references: [id, organizationId, productId], onDelete: Restrict)
+
+  // 일련번호 직접 입력값
+  serialNumber String?
+
+  // 중고장비 출고
+  isUsedAssetShipment Boolean @default(false)
+
+  // 매입금액
+  purchaseAmount Int?
+
+  warrantyExpiresAt DateTime?
+
+  contractMonths Int
+
+  monthlyRentalPrice Int
+
+  depositAmount Int?
+
+  installationLocation String?
+
+  specialTerms String?
+
+  memo String?
+
+  billingItems RentalBillingItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, rentalOrderId])
+  @@index([organizationId, productId])
+  @@index([assetId])
+}

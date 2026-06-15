@@ -23,7 +23,8 @@ model Asset {
 
   deletedAt DateTime?
 
-  saleOrderItems SaleOrderItem[]
+  saleOrderItems   SaleOrderItem[]
+  rentalOrderItems RentalOrderItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

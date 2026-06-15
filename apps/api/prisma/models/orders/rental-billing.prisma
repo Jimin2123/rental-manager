@@ -1,0 +1,37 @@
+model RentalBilling {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  rentalContractId String
+  rentalContract   RentalContract @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  billingNo String
+
+  status RentalBillingStatus @default(SCHEDULED)
+
+  billingDate DateTime
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  supplyAmount Int
+  vatAmount    Int
+  totalAmount  Int
+
+  paidAt DateTime?
+
+  items RentalBillingItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, billingNo])
+  @@index([organizationId])
+  @@index([organizationId, rentalContractId])
+  @@index([organizationId, status])
+  @@index([organizationId, billingDate])
+  @@index([organizationId, periodStart, periodEnd])
+}

@@ -16,6 +16,9 @@ model Organization {
   customerAssignments     CustomerAssignment[]
   orders                  Order[]
   saleOrders              SaleOrder[]
+  rentalOrders            RentalOrder[]
+  rentalContracts         RentalContract[]
+  rentalBillings          RentalBilling[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

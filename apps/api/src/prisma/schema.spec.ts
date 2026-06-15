@@ -116,8 +116,8 @@ describe('Prisma customer schema', () => {
     );
     expect(customerSchema).toContain('orders      Order[]');
     expect(customerSchema).toContain('@@unique([id, organizationId])');
-    expect(productSchema).toContain('saleOrderItems SaleOrderItem[]');
-    expect(assetSchema).toContain('saleOrderItems SaleOrderItem[]');
+    expect(productSchema).toContain('saleOrderItems   SaleOrderItem[]');
+    expect(assetSchema).toContain('saleOrderItems   SaleOrderItem[]');
     expect(assetSchema).toContain('@@unique([id, organizationId, productId])');
 
     expect(orderSchema).toContain('model Order');
@@ -130,7 +130,7 @@ describe('Prisma customer schema', () => {
     expect(orderSchema).toContain(
       'manager   OrganizationMember? @relation("OrderManager", fields: [managerId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
-    expect(orderSchema).toContain('saleOrder SaleOrder?');
+    expect(orderSchema).toContain('saleOrder   SaleOrder?');
     expect(orderSchema).toContain('@@unique([organizationId, orderNo])');
     expect(orderSchema).toContain('@@unique([id, organizationId])');
 
@@ -166,6 +166,100 @@ describe('Prisma customer schema', () => {
     expect(saleOrderItemSchema).toContain('marginAmount Int?');
   });
 
+  it('models rental order, contract, and billing foundations without printer-specific options', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
+    const productSchema = readFileSync(join(prismaModelsPath, 'product/product.prisma'), 'utf8');
+    const assetSchema = readFileSync(join(prismaModelsPath, 'product/asset.prisma'), 'utf8');
+    const orderSchema = readFileSync(join(prismaModelsPath, 'orders/order.prisma'), 'utf8');
+    const rentalOrderSchema = readFileSync(join(prismaModelsPath, 'orders/rental-order.prisma'), 'utf8');
+    const rentalOrderItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-order-item.prisma'), 'utf8');
+    const rentalContractSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract.prisma'), 'utf8');
+    const rentalBillingSchema = readFileSync(join(prismaModelsPath, 'orders/rental-billing.prisma'), 'utf8');
+    const rentalBillingItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-billing-item.prisma'), 'utf8');
+
+    expect(enumSchema).toContain('enum RentalContractStatus');
+    expect(enumSchema).toContain('ACTIVE');
+    expect(enumSchema).toContain('ENDED');
+    expect(enumSchema).toContain('enum RentalBillingStatus');
+    expect(enumSchema).toContain('ISSUED');
+    expect(enumSchema).toContain('PAID');
+    expect(enumSchema).toContain('enum RentalBillingItemType');
+    expect(enumSchema).toContain('MONTHLY_RENT');
+
+    expect(organizationSchema).toContain('rentalOrders            RentalOrder[]');
+    expect(organizationSchema).toContain('rentalContracts         RentalContract[]');
+    expect(organizationSchema).toContain('rentalBillings          RentalBilling[]');
+    expect(productSchema).toContain('rentalOrderItems RentalOrderItem[]');
+    expect(assetSchema).toContain('rentalOrderItems RentalOrderItem[]');
+    expect(orderSchema).toContain('rentalOrder RentalOrder?');
+
+    expect(rentalOrderSchema).toContain('model RentalOrder');
+    expect(rentalOrderSchema).toContain(
+      'order   Order  @relation(fields: [orderId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalOrderSchema).toContain('isRenewal Boolean @default(false)');
+    expect(rentalOrderSchema).toContain('items    RentalOrderItem[]');
+    expect(rentalOrderSchema).toContain('contract RentalContract?');
+    expect(rentalOrderSchema).toContain('@@unique([orderId, organizationId])');
+    expect(rentalOrderSchema).not.toContain('Printer');
+
+    expect(rentalOrderItemSchema).toContain('model RentalOrderItem');
+    expect(rentalOrderItemSchema).toContain(
+      'rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalOrderItemSchema).toContain(
+      'product   Product @relation(fields: [productId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalOrderItemSchema).toContain(
+      'asset   Asset?  @relation(fields: [assetId, organizationId, productId], references: [id, organizationId, productId], onDelete: Restrict)',
+    );
+    expect(rentalOrderItemSchema).toContain('monthlyRentalPrice Int');
+    expect(rentalOrderItemSchema).toContain('depositAmount Int?');
+    expect(rentalOrderItemSchema).toContain('contractMonths Int');
+    expect(rentalOrderItemSchema).toContain('installationLocation String?');
+    expect(rentalOrderItemSchema).toContain('specialTerms String?');
+    expect(rentalOrderItemSchema).toContain('@@unique([id, organizationId])');
+    expect(rentalOrderItemSchema).not.toContain('includedQuantity');
+    expect(rentalOrderItemSchema).not.toContain('overageUnitPrice');
+
+    expect(rentalContractSchema).toContain('model RentalContract');
+    expect(rentalContractSchema).toContain(
+      'rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalContractSchema).toContain('status RentalContractStatus @default(ACTIVE)');
+    expect(rentalContractSchema).toContain('startDate DateTime');
+    expect(rentalContractSchema).toContain('endDate   DateTime');
+    expect(rentalContractSchema).toContain('billingDay Int?');
+    expect(rentalContractSchema).toContain('billings RentalBilling[]');
+    expect(rentalContractSchema).toContain('@@unique([rentalOrderId, organizationId])');
+    expect(rentalContractSchema).toContain('@@unique([id, organizationId])');
+
+    expect(rentalBillingSchema).toContain('model RentalBilling');
+    expect(rentalBillingSchema).toContain(
+      'rentalContract   RentalContract @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalBillingSchema).toContain('billingNo String');
+    expect(rentalBillingSchema).toContain('status RentalBillingStatus @default(SCHEDULED)');
+    expect(rentalBillingSchema).toContain('periodStart DateTime');
+    expect(rentalBillingSchema).toContain('periodEnd   DateTime');
+    expect(rentalBillingSchema).toContain('items RentalBillingItem[]');
+    expect(rentalBillingSchema).toContain('@@unique([organizationId, billingNo])');
+    expect(rentalBillingSchema).toContain('@@unique([id, organizationId])');
+
+    expect(rentalBillingItemSchema).toContain('model RentalBillingItem');
+    expect(rentalBillingItemSchema).toContain(
+      'rentalBilling   RentalBilling @relation(fields: [rentalBillingId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalBillingItemSchema).toContain(
+      'rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(rentalBillingItemSchema).toContain('type RentalBillingItemType');
+    expect(rentalBillingItemSchema).toContain('supplyAmount Int');
+    expect(rentalBillingItemSchema).toContain('vatAmount    Int');
+    expect(rentalBillingItemSchema).toContain('totalAmount  Int');
+  });
+
   it('adds a product and sale order migration in dependency order', () => {
     const migration = readFileSync(
       join(prismaMigrationsPath, '20260616090000_product_asset_order_sales/migration.sql'),
@@ -187,6 +281,28 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('"SaleOrderItem_quantity_positive_check"');
     expect(migration).toContain('"SaleOrderItem_amount_non_negative_check"');
     expect(migration).toContain('assert_sale_order_type');
+  });
+
+  it('adds a rental order, contract, and billing migration after order registration', () => {
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616093000_rental_order_contract_billing/migration.sql'),
+      'utf8',
+    );
+
+    expect(migration).toContain('CREATE TYPE "RentalContractStatus"');
+    expect(migration).toContain('CREATE TYPE "RentalBillingStatus"');
+    expect(migration).toContain('CREATE TYPE "RentalBillingItemType"');
+    expect(migration).toContain('CREATE TABLE "RentalOrder"');
+    expect(migration).toContain('CREATE TABLE "RentalOrderItem"');
+    expect(migration).toContain('CREATE TABLE "RentalContract"');
+    expect(migration).toContain('CREATE TABLE "RentalBilling"');
+    expect(migration).toContain('CREATE TABLE "RentalBillingItem"');
+    expect(migration).toContain('"RentalOrder_orderId_organizationId_fkey"');
+    expect(migration).toContain('"RentalOrderItem_assetId_organizationId_productId_fkey"');
+    expect(migration).toContain('"RentalBillingItem_rentalOrderItemId_organizationId_fkey"');
+    expect(migration).toContain('"RentalOrderItem_contract_months_positive_check"');
+    expect(migration).toContain('"RentalBillingItem_amount_non_negative_check"');
+    expect(migration).toContain('assert_rental_order_type');
   });
 
   it('adds database integrity guards for cross-model rules Prisma cannot express', () => {

@@ -27,3 +27,23 @@ enum VatType {
   NONE // 부가세 없음
   INCLUDED // 부가세 포함
 }
+
+enum RentalContractStatus {
+  ACTIVE // 진행 중
+  ENDED // 종료
+  CANCELLED // 취소
+}
+
+enum RentalBillingStatus {
+  SCHEDULED // 예정
+  ISSUED // 청구
+  PAID // 수납 완료
+  CANCELLED // 취소
+}
+
+enum RentalBillingItemType {
+  MONTHLY_RENT // 월 렌탈료
+  DEPOSIT // 보증금
+  INSTALLATION // 설치비
+  ADJUSTMENT // 조정
+}

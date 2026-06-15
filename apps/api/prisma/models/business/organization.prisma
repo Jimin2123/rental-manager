@@ -10,6 +10,7 @@ model Organization {
   assets   Asset[]
 
   businessPartners        BusinessPartner[]
+  businessPartnerRoles    BusinessPartnerRole[]
   businessPartnerContacts BusinessPartnerContact[]
   members                 OrganizationMember[]
   customers               Customer[]

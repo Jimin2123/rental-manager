@@ -49,6 +49,40 @@ describe('Prisma customer schema', () => {
     expect(addressSchema).toContain('individualProfile IndividualProfile?');
   });
 
+  it('models sales and purchase roles as assignable business partner roles', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
+    const businessPartnerSchema = readFileSync(join(prismaModelsPath, 'customers/business-partner.prisma'), 'utf8');
+    const businessPartnerRoleSchema = readFileSync(
+      join(prismaModelsPath, 'customers/business-partner-role.prisma'),
+      'utf8',
+    );
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616094500_business_partner_roles/migration.sql'),
+      'utf8',
+    );
+
+    expect(enumSchema).toContain('enum BusinessPartnerRoleType');
+    expect(enumSchema).toContain('SALES');
+    expect(enumSchema).toContain('PURCHASE');
+
+    expect(organizationSchema).toContain('businessPartnerRoles');
+    expect(businessPartnerSchema).toContain('roles     BusinessPartnerRole[]');
+
+    expect(businessPartnerRoleSchema).toContain('model BusinessPartnerRole');
+    expect(businessPartnerRoleSchema).toContain('type BusinessPartnerRoleType');
+    expect(businessPartnerRoleSchema).toContain(
+      'businessPartner   BusinessPartner @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(businessPartnerRoleSchema).toContain('@@unique([businessPartnerId, organizationId, type])');
+    expect(businessPartnerRoleSchema).toContain('@@index([organizationId, type])');
+
+    expect(migration).toContain('CREATE TYPE "BusinessPartnerRoleType"');
+    expect(migration).toContain('CREATE TABLE "BusinessPartnerRole"');
+    expect(migration).toContain('"BusinessPartnerRole_businessPartnerId_organizationId_fkey"');
+    expect(migration).toContain('"BusinessPartnerRole_businessPartnerId_organizationId_type_key"');
+  });
+
   it('models internal staff assignment to customer contacts', () => {
     const organizationMemberPath = join(prismaModelsPath, 'business/organization-member.prisma');
     const customerAssignmentPath = join(prismaModelsPath, 'customers/customer-assignment.prisma');

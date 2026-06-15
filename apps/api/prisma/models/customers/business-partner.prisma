@@ -17,6 +17,7 @@ model BusinessPartner {
 
   deletedAt DateTime?
 
+  roles     BusinessPartnerRole[]
   contacts  BusinessPartnerContact[]
   customers Customer[]
 

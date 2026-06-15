@@ -3,6 +3,11 @@ enum CustomerType {
   BUSINESS // 거래처
 }
 
+enum BusinessPartnerRoleType {
+  SALES // 매출 거래처
+  PURCHASE // 매입 거래처
+}
+
 enum AssetStatus {
   INCOMING // 입고 예정 (발주 후 미도착)
   AVAILABLE // 판매/렌탈 가능

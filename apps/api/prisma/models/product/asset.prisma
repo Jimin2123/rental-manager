@@ -21,6 +21,10 @@ model Asset {
 
   memo String?
 
+  // DISPOSED / LOST 전환 시 근거 기록
+  disposedAt     DateTime?
+  disposedReason String?
+
   deletedAt DateTime?
 
   saleOrderItems    SaleOrderItem[]

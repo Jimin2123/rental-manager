@@ -19,6 +19,9 @@ model Order {
 
   orderDate DateTime @default(now())
 
+  createdById String?
+  createdBy   OrganizationMember? @relation("OrderCreatedBy", fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   memo String?
 
   saleOrder   SaleOrder?

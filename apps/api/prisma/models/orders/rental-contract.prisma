@@ -9,7 +9,8 @@ model RentalContract {
 
   contractNo String
 
-  status RentalContractStatus @default(DRAFT)
+  status    RentalContractStatus @default(DRAFT)
+  isRenewal Boolean              @default(false)
 
   startDate DateTime
   endDate   DateTime
@@ -20,6 +21,9 @@ model RentalContract {
   billingDay     Int?           // 매월 청구 기준일
   paymentDueDay  Int?           // 매월 납부 기한일
   billingTiming  BillingTiming @default(PREPAID)
+
+  createdById String?
+  createdBy   OrganizationMember? @relation(fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   invoices Invoice[]
   items    RentalContractItem[]

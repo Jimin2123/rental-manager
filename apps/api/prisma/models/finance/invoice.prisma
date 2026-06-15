@@ -31,6 +31,9 @@ model Invoice {
   dueDate  DateTime?
   issuedAt DateTime?
 
+  createdById String?
+  createdBy   OrganizationMember? @relation(fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   // 최종 청구금액 (InvoiceItem 합계 + InvoiceAdjustment 합계)
   // 미수금 쿼리 성능을 위해 역정규화하여 저장
   // ⚠️ DB 자동 갱신 없음 — InvoiceItem/InvoiceAdjustment 생성·수정·삭제 시
@@ -62,4 +65,5 @@ model Invoice {
   @@index([organizationId, saleOrderId])
   @@index([organizationId, rentalContractId])
   @@index([organizationId, billingMonth])
+  @@index([organizationId, customerId, dueDate, status])
 }

@@ -18,6 +18,9 @@ model Payment {
 
   paidAt DateTime
 
+  createdById String?
+  createdBy   OrganizationMember? @relation(fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   // 나중에 PG 연동 대비
   externalRef String?
 
@@ -36,4 +39,5 @@ model Payment {
   @@index([organizationId, status])
   @@index([organizationId, paidAt])
   @@index([organizationId, method])
+  @@index([organizationId, customerId, paidAt])
 }

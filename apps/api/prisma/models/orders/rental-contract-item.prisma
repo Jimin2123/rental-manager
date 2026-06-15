@@ -57,4 +57,5 @@ model RentalContractItem {
   @@index([organizationId, status])
   @@index([organizationId, assetId, status])
   @@index([organizationId, replacedAt])
+  @@index([organizationId, status, endedAt])
 }

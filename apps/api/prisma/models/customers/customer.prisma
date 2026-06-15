@@ -12,6 +12,9 @@ model Customer {
   businessPartnerId String?
   businessPartner   BusinessPartner? @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
+  // isActive=false: 거래 정지 (삭제 아님, 신규 계약/판매 불가)
+  isActive Boolean @default(true)
+
   memo String?
 
   deletedAt DateTime?
@@ -31,6 +34,7 @@ model Customer {
   @@unique([id, organizationId])
   @@index([organizationId])
   @@index([organizationId, type])
+  @@index([organizationId, isActive])
   @@index([organizationId, deletedAt])
   @@index([individualProfileId])
   @@index([businessPartnerId])

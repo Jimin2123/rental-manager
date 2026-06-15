@@ -23,9 +23,13 @@ model Asset {
 
   deletedAt DateTime?
 
+  saleOrderItems SaleOrderItem[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([id, organizationId])
+  @@unique([id, organizationId, productId])
   @@unique([organizationId, serialNumber])
   @@index([organizationId])
   @@index([organizationId, status])

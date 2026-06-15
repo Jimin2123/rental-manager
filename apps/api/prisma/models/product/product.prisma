@@ -18,7 +18,8 @@ model Product {
 
   memo String?
 
-  assets Asset[]
+  assets         Asset[]
+  saleOrderItems SaleOrderItem[]
 
   isActive  Boolean   @default(true)
   deletedAt DateTime?

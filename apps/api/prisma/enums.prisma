@@ -12,3 +12,18 @@ enum AssetStatus {
   LOST // 분실
   UNAVAILABLE // 사용 불가 
 }
+
+enum OrderType {
+  SALE // 판매
+  RENTAL // 렌탈
+}
+
+enum OrderStatus {
+  REGISTERED // 등록
+  CANCELLED // 취소
+}
+
+enum VatType {
+  NONE // 부가세 없음
+  INCLUDED // 부가세 포함
+}

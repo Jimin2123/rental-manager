@@ -17,6 +17,8 @@ model OrganizationMember {
   memo String?
 
   customerAssignments CustomerAssignment[]
+  managedOrders       Order[]              @relation("OrderManager")
+  deliveredSaleOrders SaleOrder[]          @relation("SaleDeliveryStaff")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

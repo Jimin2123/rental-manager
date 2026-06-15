@@ -20,7 +20,9 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   assignments CustomerAssignment[]
+  orders      Order[]
 
+  @@unique([id, organizationId])
   @@index([organizationId])
   @@index([organizationId, type])
   @@index([organizationId, deletedAt])

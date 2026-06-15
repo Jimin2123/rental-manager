@@ -1,0 +1,26 @@
+model SaleOrder {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  orderId String
+  order   Order  @relation(fields: [orderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 납품 직원
+  deliveryStaffId String?
+  deliveryStaff   OrganizationMember? @relation("SaleDeliveryStaff", fields: [deliveryStaffId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  saleDate DateTime @default(now())
+
+  items SaleOrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([orderId, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, deliveryStaffId])
+  @@index([organizationId, saleDate])
+}

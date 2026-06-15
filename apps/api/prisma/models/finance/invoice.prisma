@@ -37,7 +37,11 @@ model Invoice {
   // 최종 청구금액 (InvoiceItem 합계 + InvoiceAdjustment 합계)
   // 미수금 쿼리 성능을 위해 역정규화하여 저장
   // DB trigger가 InvoiceItem/InvoiceAdjustment 변경 시 자동 재계산
-  finalAmount Int @default(0)
+  finalAmount       Int @default(0)
+  paidAmount        Int @default(0)
+  refundedAmount    Int @default(0)
+  outstandingAmount Int @default(0)
+  settlementStatus  InvoiceSettlementStatus @default(UNPAID)
 
   memo String?
 
@@ -59,10 +63,12 @@ model Invoice {
   @@index([organizationId])
   @@index([organizationId, type])
   @@index([organizationId, status])
+  @@index([organizationId, settlementStatus])
   @@index([organizationId, customerId])
   @@index([organizationId, dueDate])
   @@index([organizationId, saleOrderId])
   @@index([organizationId, rentalContractId])
   @@index([organizationId, billingMonth])
   @@index([organizationId, customerId, dueDate, status])
+  @@index([organizationId, customerId, settlementStatus, dueDate])
 }

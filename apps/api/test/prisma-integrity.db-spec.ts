@@ -770,4 +770,367 @@ describe('Prisma database integrity guards', () => {
       ),
     ).rejects.toThrow(/InvoiceItem_source_type_check/);
   });
+
+  it('recalculates invoice settlement summary after payment allocation and refund completion', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const now = new Date();
+    const invoiceId = randomUUID();
+    const paymentId = randomUUID();
+    const refundId = randomUUID();
+
+    await client.query(
+      `
+        INSERT INTO "Invoice" (
+          "id",
+          "organizationId",
+          "invoiceNo",
+          "type",
+          "status",
+          "customerId",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+      `,
+      [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "InvoiceItem" (
+          "id",
+          "organizationId",
+          "invoiceId",
+          "type",
+          "quantity",
+          "unitPrice",
+          "supplyAmount",
+          "vatType",
+          "vatAmount",
+          "totalAmount",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'ETC', 1, 10000, 10000, 'NONE', 0, 10000, $4)
+      `,
+      [randomUUID(), organizationId, invoiceId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "Payment" (
+          "id",
+          "organizationId",
+          "paymentNo",
+          "customerId",
+          "status",
+          "method",
+          "amount",
+          "paidAt",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, 'COMPLETED', 'BANK_TRANSFER', 6000, $5, $5)
+      `,
+      [paymentId, organizationId, `PAY-${randomUUID()}`, customerId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "PaymentAllocation" (
+          "id",
+          "organizationId",
+          "paymentId",
+          "invoiceId",
+          "amount",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, 6000, $5)
+      `,
+      [randomUUID(), organizationId, paymentId, invoiceId, now],
+    );
+
+    const partial = await client.query<{
+      finalAmount: number;
+      paidAmount: number;
+      refundedAmount: number;
+      outstandingAmount: number;
+      settlementStatus: string;
+    }>(
+      `
+        SELECT
+          "finalAmount",
+          "paidAmount",
+          "refundedAmount",
+          "outstandingAmount",
+          "settlementStatus"::TEXT
+        FROM "Invoice"
+        WHERE "id" = $1
+      `,
+      [invoiceId],
+    );
+
+    expect(partial.rows[0]).toEqual({
+      finalAmount: 10000,
+      paidAmount: 6000,
+      refundedAmount: 0,
+      outstandingAmount: 4000,
+      settlementStatus: 'PARTIALLY_PAID',
+    });
+
+    await client.query(
+      `
+        INSERT INTO "Refund" (
+          "id",
+          "organizationId",
+          "refundNo",
+          "customerId",
+          "invoiceId",
+          "paymentId",
+          "status",
+          "reason",
+          "amount",
+          "method",
+          "refundedAt",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, 'COMPLETED', 'OVERPAYMENT', 1000, 'BANK_TRANSFER', $7, $7)
+      `,
+      [refundId, organizationId, `REF-${randomUUID()}`, customerId, invoiceId, paymentId, now],
+    );
+
+    const refunded = await client.query<{
+      paidAmount: number;
+      refundedAmount: number;
+      outstandingAmount: number;
+      settlementStatus: string;
+    }>(
+      `
+        SELECT
+          "paidAmount",
+          "refundedAmount",
+          "outstandingAmount",
+          "settlementStatus"::TEXT
+        FROM "Invoice"
+        WHERE "id" = $1
+      `,
+      [invoiceId],
+    );
+
+    expect(refunded.rows[0]).toEqual({
+      paidAmount: 6000,
+      refundedAmount: 1000,
+      outstandingAmount: 5000,
+      settlementStatus: 'PARTIALLY_PAID',
+    });
+  });
+
+  it('keeps a newly inserted zero-amount invoice unpaid until a financial recalculation changes it', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const invoiceId = randomUUID();
+    const now = new Date();
+
+    await client.query(
+      `
+        INSERT INTO "Invoice" (
+          "id",
+          "organizationId",
+          "invoiceNo",
+          "type",
+          "status",
+          "customerId",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+      `,
+      [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now],
+    );
+
+    const result = await client.query<{
+      finalAmount: number;
+      paidAmount: number;
+      refundedAmount: number;
+      outstandingAmount: number;
+      settlementStatus: string;
+    }>(
+      `
+        SELECT
+          "finalAmount",
+          "paidAmount",
+          "refundedAmount",
+          "outstandingAmount",
+          "settlementStatus"::TEXT
+        FROM "Invoice"
+        WHERE "id" = $1
+      `,
+      [invoiceId],
+    );
+
+    expect(result.rows[0]).toEqual({
+      finalAmount: 0,
+      paidAmount: 0,
+      refundedAmount: 0,
+      outstandingAmount: 0,
+      settlementStatus: 'UNPAID',
+    });
+  });
+
+  it('marks zero-amount invoices with completed payment allocations as overpaid', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const invoiceId = randomUUID();
+    const paymentId = randomUUID();
+    const now = new Date();
+
+    await client.query(
+      `
+        INSERT INTO "Invoice" (
+          "id",
+          "organizationId",
+          "invoiceNo",
+          "type",
+          "status",
+          "customerId",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+      `,
+      [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "Payment" (
+          "id",
+          "organizationId",
+          "paymentNo",
+          "customerId",
+          "status",
+          "method",
+          "amount",
+          "paidAt",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, 'COMPLETED', 'BANK_TRANSFER', 1000, $5, $5)
+      `,
+      [paymentId, organizationId, `PAY-${randomUUID()}`, customerId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "PaymentAllocation" (
+          "id",
+          "organizationId",
+          "paymentId",
+          "invoiceId",
+          "amount",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, 1000, $5)
+      `,
+      [randomUUID(), organizationId, paymentId, invoiceId, now],
+    );
+
+    const result = await client.query<{
+      finalAmount: number;
+      paidAmount: number;
+      refundedAmount: number;
+      outstandingAmount: number;
+      settlementStatus: string;
+    }>(
+      `
+        SELECT
+          "finalAmount",
+          "paidAmount",
+          "refundedAmount",
+          "outstandingAmount",
+          "settlementStatus"::TEXT
+        FROM "Invoice"
+        WHERE "id" = $1
+      `,
+      [invoiceId],
+    );
+
+    expect(result.rows[0]).toEqual({
+      finalAmount: 0,
+      paidAmount: 1000,
+      refundedAmount: 0,
+      outstandingAmount: 0,
+      settlementStatus: 'OVERPAID',
+    });
+  });
+
+  it('rejects direct invoice settlement summary mutations', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const invoiceId = randomUUID();
+    const now = new Date();
+
+    await client.query(
+      `
+        INSERT INTO "Invoice" (
+          "id",
+          "organizationId",
+          "invoiceNo",
+          "type",
+          "status",
+          "customerId",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+      `,
+      [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now],
+    );
+
+    await expect(
+      client.query(
+        `
+          UPDATE "Invoice"
+          SET "paidAmount" = 999,
+              "settlementStatus" = 'PAID',
+              "updatedAt" = $1
+          WHERE "id" = $2
+            AND "organizationId" = $3
+        `,
+        [new Date(), invoiceId, organizationId],
+      ),
+    ).rejects.toThrow(/settlement summary fields are managed/);
+  });
+
+  it('rejects invoice inserts with caller-provided settlement summary values', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const now = new Date();
+
+    await expect(
+      client.query(
+        `
+          INSERT INTO "Invoice" (
+            "id",
+            "organizationId",
+            "invoiceNo",
+            "type",
+            "status",
+            "customerId",
+            "finalAmount",
+            "paidAmount",
+            "outstandingAmount",
+            "settlementStatus",
+            "updatedAt"
+          )
+          VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, 1000, 1000, 0, 'PAID', $5)
+        `,
+        [randomUUID(), organizationId, `INV-${randomUUID()}`, customerId, now],
+      ),
+    ).rejects.toThrow(/settlement summary fields are managed/);
+  });
 });

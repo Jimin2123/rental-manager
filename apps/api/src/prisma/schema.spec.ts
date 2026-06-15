@@ -293,7 +293,7 @@ describe('Prisma customer schema', () => {
     expect(invoiceSchema).toContain('billingMonth');
     expect(invoiceSchema).toContain('periodStart');
     expect(invoiceSchema).toContain('periodEnd');
-    expect(invoiceSchema).toContain('finalAmount Int');
+    expect(invoiceSchema).toContain('finalAmount       Int @default(0)');
     expect(invoiceSchema).toContain('@@unique([organizationId, invoiceNo])');
 
     expect(invoiceItemSchema).toContain('model InvoiceItem');
@@ -422,6 +422,35 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('assert_invoice_item_rental_contract_item_scope');
     expect(migration).toContain('CREATE CONSTRAINT TRIGGER "Invoice_rental_contract_item_scope_guard"');
     expect(migration).toContain('CREATE CONSTRAINT TRIGGER "RentalContractItem_invoice_item_scope_guard"');
+  });
+
+  it('stores invoice settlement summary separately from document status', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const invoiceSchema = readFileSync(join(prismaModelsPath, 'finance/invoice.prisma'), 'utf8');
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616112000_invoice_settlement_summary/migration.sql'),
+      'utf8',
+    );
+
+    expect(enumSchema).toContain('enum InvoiceSettlementStatus');
+    expect(enumSchema).toContain('UNPAID');
+    expect(enumSchema).toContain('PARTIALLY_PAID');
+    expect(enumSchema).toContain('PAID');
+    expect(enumSchema).toContain('OVERPAID');
+    expect(invoiceSchema).toContain('paidAmount        Int @default(0)');
+    expect(invoiceSchema).toContain('refundedAmount    Int @default(0)');
+    expect(invoiceSchema).toContain('outstandingAmount Int @default(0)');
+    expect(invoiceSchema).toContain('settlementStatus  InvoiceSettlementStatus @default(UNPAID)');
+    expect(invoiceSchema).toContain('@@index([organizationId, settlementStatus])');
+    expect(invoiceSchema).toContain('@@index([organizationId, customerId, settlementStatus, dueDate])');
+    expect(migration).toContain('CREATE TYPE "InvoiceSettlementStatus"');
+    expect(migration).toContain('"Invoice_settlement_amount_non_negative_check"');
+    expect(migration).toContain('recalculate_invoice_financials');
+    expect(migration).toContain('assert_invoice_settlement_summary_managed');
+    expect(migration).toContain('sync_invoice_final_amount');
+    expect(migration).toContain('PaymentAllocation_sync_invoice_financials');
+    expect(migration).toContain('Payment_sync_invoice_financials');
+    expect(migration).toContain('Refund_sync_invoice_financials');
   });
 
   it('adds database guards for financial totals, source compatibility, and metered billing values', () => {

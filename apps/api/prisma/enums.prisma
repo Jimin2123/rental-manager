@@ -80,6 +80,13 @@ enum InvoiceStatus {
   CANCELED // 취소됨
 }
 
+enum InvoiceSettlementStatus {
+  UNPAID // 수납 없음
+  PARTIALLY_PAID // 일부 수납
+  PAID // 완납
+  OVERPAID // 초과 수납
+}
+
 enum InvoiceItemType {
   SALE_PRICE // 판매금액
   RENTAL_FEE // 월 렌탈료

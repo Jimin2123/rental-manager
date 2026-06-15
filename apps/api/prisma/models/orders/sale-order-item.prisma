@@ -46,6 +46,7 @@ model SaleOrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([id, organizationId])
   @@index([organizationId])
   @@index([organizationId, saleOrderId])
   @@index([organizationId, productId])

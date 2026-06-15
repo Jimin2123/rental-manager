@@ -145,7 +145,8 @@ describe('Prisma customer schema', () => {
     expect(enumSchema).toContain('RENTAL');
     expect(enumSchema).toContain('enum OrderStatus');
     expect(enumSchema).toContain('REGISTERED');
-    expect(enumSchema).toContain('CANCELLED');
+    expect(enumSchema).toContain('CANCELED');
+    expect(enumSchema).not.toContain('CANCELLED');
     expect(enumSchema).toContain('enum VatType');
 
     expect(organizationSchema).toContain('orders                  Order[]');
@@ -157,7 +158,7 @@ describe('Prisma customer schema', () => {
     expect(customerSchema).toContain('orders      Order[]');
     expect(customerSchema).toContain('@@unique([id, organizationId])');
     expect(productSchema).toContain('saleOrderItems   SaleOrderItem[]');
-    expect(assetSchema).toContain('saleOrderItems   SaleOrderItem[]');
+    expect(assetSchema).toContain('saleOrderItems    SaleOrderItem[]');
     expect(assetSchema).toContain('@@unique([id, organizationId, productId])');
 
     expect(orderSchema).toContain('model Order');
@@ -182,7 +183,7 @@ describe('Prisma customer schema', () => {
       'deliveryStaff   OrganizationMember? @relation("SaleDeliveryStaff", fields: [deliveryStaffId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
     expect(saleOrderSchema).not.toContain('memo String?');
-    expect(saleOrderSchema).toContain('items SaleOrderItem[]');
+    expect(saleOrderSchema).toContain('items    SaleOrderItem[]');
     expect(saleOrderSchema).toContain('@@unique([orderId, organizationId])');
     expect(saleOrderSchema).toContain('@@unique([id, organizationId])');
 
@@ -206,7 +207,7 @@ describe('Prisma customer schema', () => {
     expect(saleOrderItemSchema).toContain('marginAmount Int?');
   });
 
-  it('models rental order, contract, and billing foundations without printer-specific options', () => {
+  it('models rental order, contract, and unified invoice billing without printer-specific options', () => {
     const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
     const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
     const productSchema = readFileSync(join(prismaModelsPath, 'product/product.prisma'), 'utf8');
@@ -215,23 +216,27 @@ describe('Prisma customer schema', () => {
     const rentalOrderSchema = readFileSync(join(prismaModelsPath, 'orders/rental-order.prisma'), 'utf8');
     const rentalOrderItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-order-item.prisma'), 'utf8');
     const rentalContractSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract.prisma'), 'utf8');
-    const rentalBillingSchema = readFileSync(join(prismaModelsPath, 'orders/rental-billing.prisma'), 'utf8');
-    const rentalBillingItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-billing-item.prisma'), 'utf8');
+    const invoiceSchema = readFileSync(join(prismaModelsPath, 'finance/invoice.prisma'), 'utf8');
+    const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
 
+    // RentalBilling이 Invoice로 통합됨 — 관련 enum/모델 없음
+    expect(enumSchema).not.toContain('RentalBillingStatus');
+    expect(enumSchema).not.toContain('RentalBillingItemType');
     expect(enumSchema).toContain('enum RentalContractStatus');
+    expect(enumSchema).toContain('DRAFT');
     expect(enumSchema).toContain('ACTIVE');
     expect(enumSchema).toContain('ENDED');
-    expect(enumSchema).toContain('enum RentalBillingStatus');
+    expect(enumSchema).toContain('enum InvoiceType');
+    expect(enumSchema).toContain('RENTAL_MONTHLY');
+    expect(enumSchema).toContain('enum InvoiceStatus');
     expect(enumSchema).toContain('ISSUED');
-    expect(enumSchema).toContain('PAID');
-    expect(enumSchema).toContain('enum RentalBillingItemType');
-    expect(enumSchema).toContain('MONTHLY_RENT');
 
     expect(organizationSchema).toContain('rentalOrders            RentalOrder[]');
     expect(organizationSchema).toContain('rentalContracts         RentalContract[]');
-    expect(organizationSchema).toContain('rentalBillings          RentalBilling[]');
+    expect(organizationSchema).toContain('invoices        Invoice[]');
+    expect(organizationSchema).not.toContain('rentalBillings');
     expect(productSchema).toContain('rentalOrderItems RentalOrderItem[]');
-    expect(assetSchema).toContain('rentalOrderItems RentalOrderItem[]');
+    expect(assetSchema).toContain('rentalOrderItems  RentalOrderItem[]');
     expect(orderSchema).toContain('rentalOrder RentalOrder?');
 
     expect(rentalOrderSchema).toContain('model RentalOrder');
@@ -267,38 +272,35 @@ describe('Prisma customer schema', () => {
     expect(rentalContractSchema).toContain(
       'rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
-    expect(rentalContractSchema).toContain('status RentalContractStatus @default(ACTIVE)');
+    // DRAFT가 기본값 — ACTIVE 직접 활성화 전까지 장비 미점유
+    expect(rentalContractSchema).toContain('status    RentalContractStatus @default(DRAFT)');
+    expect(rentalContractSchema).toContain('isRenewal Boolean');
     expect(rentalContractSchema).toContain('startDate DateTime');
     expect(rentalContractSchema).toContain('endDate   DateTime');
     expect(rentalContractSchema).toContain('contractMonths Int');
-    expect(rentalContractSchema).toContain('billingDay Int?');
-    expect(rentalContractSchema).toContain('billings RentalBilling[]');
+    expect(rentalContractSchema).toContain('billingDay');
+    expect(rentalContractSchema).toContain('paymentDueDay');
+    expect(rentalContractSchema).toContain('billingTiming');
+    expect(rentalContractSchema).toContain('invoices Invoice[]');
+    expect(rentalContractSchema).not.toContain('billings RentalBilling');
     expect(rentalContractSchema).toContain('@@unique([rentalOrderId, organizationId])');
     expect(rentalContractSchema).toContain('@@unique([id, organizationId])');
 
-    expect(rentalBillingSchema).toContain('model RentalBilling');
-    expect(rentalBillingSchema).toContain(
-      'rentalContract   RentalContract @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)',
-    );
-    expect(rentalBillingSchema).toContain('billingNo String');
-    expect(rentalBillingSchema).toContain('status RentalBillingStatus @default(SCHEDULED)');
-    expect(rentalBillingSchema).toContain('periodStart DateTime');
-    expect(rentalBillingSchema).toContain('periodEnd   DateTime');
-    expect(rentalBillingSchema).toContain('items RentalBillingItem[]');
-    expect(rentalBillingSchema).toContain('@@unique([organizationId, billingNo])');
-    expect(rentalBillingSchema).toContain('@@unique([id, organizationId])');
+    // Invoice가 RentalBilling 역할 통합
+    expect(invoiceSchema).toContain('model Invoice');
+    expect(invoiceSchema).toContain('type   InvoiceType');
+    expect(invoiceSchema).toContain('rentalContractId String?');
+    expect(invoiceSchema).toContain('billingMonth');
+    expect(invoiceSchema).toContain('periodStart');
+    expect(invoiceSchema).toContain('periodEnd');
+    expect(invoiceSchema).toContain('finalAmount Int');
+    expect(invoiceSchema).toContain('@@unique([organizationId, invoiceNo])');
 
-    expect(rentalBillingItemSchema).toContain('model RentalBillingItem');
-    expect(rentalBillingItemSchema).toContain(
-      'rentalBilling   RentalBilling @relation(fields: [rentalBillingId, organizationId], references: [id, organizationId], onDelete: Restrict)',
-    );
-    expect(rentalBillingItemSchema).toContain(
-      'rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)',
-    );
-    expect(rentalBillingItemSchema).toContain('type RentalBillingItemType');
-    expect(rentalBillingItemSchema).toContain('supplyAmount Int');
-    expect(rentalBillingItemSchema).toContain('vatAmount    Int');
-    expect(rentalBillingItemSchema).toContain('totalAmount  Int');
+    expect(invoiceItemSchema).toContain('model InvoiceItem');
+    expect(invoiceItemSchema).toContain('type InvoiceItemType');
+    expect(invoiceItemSchema).toContain('supplyAmount Int');
+    expect(invoiceItemSchema).toContain('vatAmount    Int');
+    expect(invoiceItemSchema).toContain('totalAmount  Int');
   });
 
   it('adds a product and sale order migration in dependency order', () => {

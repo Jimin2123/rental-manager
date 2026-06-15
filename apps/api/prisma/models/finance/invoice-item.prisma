@@ -8,10 +8,10 @@ model InvoiceItem {
 
   // 출처 추적 (optional)
   saleOrderItemId String?
-  saleOrderItem   SaleOrderItem? @relation(fields: [saleOrderItemId], references: [id], onDelete: Restrict)
+  saleOrderItem   SaleOrderItem? @relation(fields: [saleOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   rentalOrderItemId String?
-  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
+  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   type InvoiceItemType
 

@@ -19,7 +19,7 @@ model Attachment {
   fileSize Int    // bytes
 
   uploadedById String?
-  uploadedBy   OrganizationMember? @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  uploadedBy   OrganizationMember? @relation(fields: [uploadedById, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   // Attachment는 불변 기록 — updatedAt 없음
   createdAt DateTime @default(now())

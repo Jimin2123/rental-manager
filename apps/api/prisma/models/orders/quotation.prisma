@@ -16,7 +16,7 @@ model Quotation {
 
   // 수락 시 Order로 전환 (1:1) — composite FK로 org 경계 보장
   convertedOrderId String?
-  convertedOrder   Order?  @relation(fields: [convertedOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  convertedOrder   Order?    @relation(fields: [convertedOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)
   convertedAt      DateTime?
 
   sentAt DateTime?

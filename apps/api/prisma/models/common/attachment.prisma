@@ -4,7 +4,7 @@ model Attachment {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
-  // Polymorphic 패턴 — sourceType을 String으로 유지해 새 도메인 추가 시 migration 불필요
+  // Polymorphic 패턴 — DB trigger가 지원 sourceType/sourceId 존재 여부를 검증
   // 유효값 예: "RentalContract" | "SaleOrder" | "ServiceRequest" | "ServiceVisit"
   //           | "Invoice" | "Customer" | "Quotation"
   sourceType String
@@ -16,7 +16,7 @@ model Attachment {
   fileName String
   fileUrl  String
   mimeType String
-  fileSize Int    // bytes
+  fileSize Int // bytes
 
   uploadedById String?
   uploadedBy   OrganizationMember? @relation(fields: [uploadedById, organizationId], references: [id, organizationId], onDelete: Restrict)

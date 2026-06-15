@@ -11,7 +11,7 @@ model QuotationItem {
 
   // 특정 장비 지정 견적 — (assetId, organizationId, productId) 3-컬럼 FK로 product-asset 불일치 방지
   assetId String?
-  asset   Asset? @relation(fields: [assetId, organizationId, productId], references: [id, organizationId, productId], onDelete: Restrict)
+  asset   Asset?  @relation(fields: [assetId, organizationId, productId], references: [id, organizationId, productId], onDelete: Restrict)
 
   description String?
 

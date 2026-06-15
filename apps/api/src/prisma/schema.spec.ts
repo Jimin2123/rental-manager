@@ -110,7 +110,7 @@ describe('Prisma customer schema', () => {
     expect(organizationMemberSchema).toContain('customerAssignments CustomerAssignment[]');
     expect(organizationMemberSchema).toContain('@@unique([id, organizationId])');
 
-    expect(customerSchema).toContain('assignments CustomerAssignment[]');
+    expect(customerSchema).toMatch(/assignments\s+CustomerAssignment\[\]/);
     expect(businessPartnerContactSchema).toContain('customerAssignments CustomerAssignment[]');
     expect(individualProfileSchema).toContain('customerAssignments CustomerAssignment[]');
 
@@ -155,10 +155,10 @@ describe('Prisma customer schema', () => {
     expect(organizationMemberSchema).toContain(
       'deliveredSaleOrders SaleOrder[]          @relation("SaleDeliveryStaff")',
     );
-    expect(customerSchema).toContain('orders      Order[]');
+    expect(customerSchema).toMatch(/orders\s+Order\[\]/);
     expect(customerSchema).toContain('@@unique([id, organizationId])');
     expect(productSchema).toContain('saleOrderItems   SaleOrderItem[]');
-    expect(assetSchema).toContain('saleOrderItems    SaleOrderItem[]');
+    expect(assetSchema).toMatch(/saleOrderItems\s+SaleOrderItem\[\]/);
     expect(assetSchema).toContain('@@unique([id, organizationId, productId])');
 
     expect(orderSchema).toContain('model Order');
@@ -233,10 +233,10 @@ describe('Prisma customer schema', () => {
 
     expect(organizationSchema).toContain('rentalOrders            RentalOrder[]');
     expect(organizationSchema).toContain('rentalContracts         RentalContract[]');
-    expect(organizationSchema).toContain('invoices        Invoice[]');
+    expect(organizationSchema).toMatch(/invoices\s+Invoice\[\]/);
     expect(organizationSchema).not.toContain('rentalBillings');
     expect(productSchema).toContain('rentalOrderItems RentalOrderItem[]');
-    expect(assetSchema).toContain('rentalOrderItems  RentalOrderItem[]');
+    expect(assetSchema).toMatch(/rentalOrderItems\s+RentalOrderItem\[\]/);
     expect(orderSchema).toContain('rentalOrder RentalOrder?');
 
     expect(rentalOrderSchema).toContain('model RentalOrder');
@@ -372,5 +372,74 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('assert_customer_assignment_scope');
     expect(migration).toContain('Customer_id_organizationId_key');
     expect(migration).toContain('"CustomerAssignment_customerId_organizationId_fkey"');
+  });
+
+  it('keeps replacement and tax-document relations scoped to the organization', () => {
+    const rentalContractItemSchema = readFileSync(
+      join(prismaModelsPath, 'orders/rental-contract-item.prisma'),
+      'utf8',
+    );
+    const taxInvoiceSchema = readFileSync(join(prismaModelsPath, 'finance/tax-invoice.prisma'), 'utf8');
+    const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616107000_harden_model_integrity/migration.sql'),
+      'utf8',
+    );
+
+    expect(rentalContractItemSchema).toContain(
+      'replacedByItem   RentalContractItem?  @relation("ItemReplacement", fields: [replacedByItemId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(taxInvoiceSchema).toContain(
+      'originalTaxInvoice   TaxInvoice?  @relation("TaxInvoiceAmendment", fields: [originalTaxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(invoiceItemSchema).toContain(
+      'taxInvoice   TaxInvoice? @relation(fields: [taxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+
+    expect(migration).toContain('"RentalContractItem_replacedByItemId_organizationId_fkey"');
+    expect(migration).toContain('"TaxInvoice_originalTaxInvoiceId_organizationId_fkey"');
+    expect(migration).toContain('"InvoiceItem_taxInvoiceId_organizationId_fkey"');
+    expect(migration).toContain('"RentalContractItem_no_self_replacement_check"');
+    expect(migration).toContain('"TaxInvoice_no_self_amendment_check"');
+  });
+
+  it('adds database guards for financial totals, source compatibility, and metered billing values', () => {
+    const auditLogSchema = readFileSync(join(prismaModelsPath, 'common/audit-log.prisma'), 'utf8');
+    const attachmentSchema = readFileSync(join(prismaModelsPath, 'common/attachment.prisma'), 'utf8');
+    const assetEventSchema = readFileSync(join(prismaModelsPath, 'product/asset-event.prisma'), 'utf8');
+    const invoiceSchema = readFileSync(join(prismaModelsPath, 'finance/invoice.prisma'), 'utf8');
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616107000_harden_model_integrity/migration.sql'),
+      'utf8',
+    );
+
+    expect(auditLogSchema).toContain('DB trigger가 지원 targetType/targetId 존재 여부를 검증');
+    expect(attachmentSchema).toContain('DB trigger가 지원 sourceType/sourceId 존재 여부를 검증');
+    expect(assetEventSchema).toContain('DB trigger가 sourceType별 sourceId 존재 여부 검증');
+    expect(invoiceSchema).toContain('DB trigger가 InvoiceItem/InvoiceAdjustment 변경 시 자동 재계산');
+
+    expect(migration).toContain('assert_audit_log_target_integrity');
+    expect(migration).toContain('"AuditLog_target_integrity_guard"');
+    expect(migration).toContain('assert_attachment_source_integrity');
+    expect(migration).toContain('"Attachment_source_integrity_guard"');
+    expect(migration).toContain('assert_asset_event_source_integrity');
+    expect(migration).toContain('"AssetEvent_source_integrity_guard"');
+    expect(migration).toContain('"Invoice_type_source_check"');
+    expect(migration).toContain('"Invoice_period_range_check"');
+    expect(migration).toContain('"InvoiceItem_quantity_positive_check"');
+    expect(migration).toContain('"InvoiceItem_source_type_check"');
+    expect(migration).toContain('"QuotationItem_amount_calculation_check"');
+    expect(migration).toContain('"TaxInvoice_amount_calculation_check"');
+    expect(migration).toContain('"ServiceVisit_cost_non_negative_check"');
+    expect(migration).toContain('"MeterReading_count_usage_non_negative_check"');
+    expect(migration).toContain('"RentalContract_payment_due_day_range_check"');
+    expect(migration).toContain('"RentalContractItem_meter_values_check"');
+    expect(migration).toContain('recalculate_invoice_final_amount');
+    expect(migration).toContain('sync_invoice_final_amount');
+    expect(migration).toContain('assert_payment_allocation_integrity');
+    expect(migration).toContain('assert_payment_integrity');
+    expect(migration).toContain('assert_refund_integrity');
+    expect(migration).toContain('assert_refund_cap_for_invoice');
+    expect(migration).toContain('assert_refund_cap_after_payment_status_change');
   });
 });

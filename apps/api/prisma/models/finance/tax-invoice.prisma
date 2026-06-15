@@ -11,7 +11,7 @@ model TaxInvoice {
 
   // 수정세금계산서인 경우 원본 참조
   originalTaxInvoiceId String?
-  originalTaxInvoice   TaxInvoice?  @relation("TaxInvoiceAmendment", fields: [originalTaxInvoiceId], references: [id])
+  originalTaxInvoice   TaxInvoice?  @relation("TaxInvoiceAmendment", fields: [originalTaxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
   amendments           TaxInvoice[] @relation("TaxInvoiceAmendment")
 
   // 연결 청구서 (1:1) — composite FK로 org 경계 보장

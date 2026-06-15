@@ -5,14 +5,13 @@ model AssetEvent {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   assetId String
-  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  asset   Asset  @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   fromStatus AssetStatus?
   toStatus   AssetStatus
 
-  // 이벤트를 발생시킨 출처 (polymorphic — DB 참조 무결성 없음)
-  // ⚠️ sourceId 유효성은 서비스 레이어에서 sourceType에 따라 직접 검증해야 함
-  //    예) RENTAL_CONTRACT → RentalContract.id 존재 확인
+  // 이벤트를 발생시킨 출처 (polymorphic — DB trigger가 sourceType별 sourceId 존재 여부 검증)
+  // MANUAL은 sourceId 생략 가능
   sourceType AssetEventSourceType
   sourceId   String?
 

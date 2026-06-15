@@ -27,7 +27,7 @@ model InvoiceItem {
 
   // 세금계산서 연결 (발행 시 InvoiceItem을 직접 참조)
   taxInvoiceId String?
-  taxInvoice   TaxInvoice? @relation(fields: [taxInvoiceId], references: [id], onDelete: SetNull)
+  taxInvoice   TaxInvoice? @relation(fields: [taxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   memo String?
 

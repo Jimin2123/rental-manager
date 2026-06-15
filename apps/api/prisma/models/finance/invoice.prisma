@@ -24,7 +24,7 @@ model Invoice {
   serviceRequestId String?
   serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
-  billingMonth String?   // "YYYY-MM"
+  billingMonth String? // "YYYY-MM"
   periodStart  DateTime?
   periodEnd    DateTime?
 
@@ -36,8 +36,7 @@ model Invoice {
 
   // 최종 청구금액 (InvoiceItem 합계 + InvoiceAdjustment 합계)
   // 미수금 쿼리 성능을 위해 역정규화하여 저장
-  // ⚠️ DB 자동 갱신 없음 — InvoiceItem/InvoiceAdjustment 생성·수정·삭제 시
-  //    서비스 레이어에서 반드시 재계산하여 업데이트해야 함
+  // DB trigger가 InvoiceItem/InvoiceAdjustment 변경 시 자동 재계산
   finalAmount Int @default(0)
 
   memo String?

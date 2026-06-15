@@ -13,7 +13,7 @@ model ServiceRequest {
   customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   assetId String
-  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  asset   Asset  @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   // 보증기간 내 무상 여부
   isWarranty Boolean @default(false)

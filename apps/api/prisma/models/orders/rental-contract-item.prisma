@@ -11,7 +11,7 @@ model RentalContractItem {
   rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   assetId String
-  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  asset   Asset  @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   status RentalContractItemStatus @default(PENDING)
 
@@ -24,10 +24,10 @@ model RentalContractItem {
 
   // 카운터 과금 설정 (billingType = METER일 때 사용)
   billingType    BillingType @default(FIXED)
-  freeBlackCount Int?        // 무료 흑백 매수
-  blackUnitPrice Int?        // 흑백 초과 단가
-  freeColorCount Int?        // 무료 컬러 매수
-  colorUnitPrice Int?        // 컬러 초과 단가
+  freeBlackCount Int? // 무료 흑백 매수
+  blackUnitPrice Int? // 흑백 초과 단가
+  freeColorCount Int? // 무료 컬러 매수
+  colorUnitPrice Int? // 컬러 초과 단가
 
   // 설치 주소 (Address 모델 1:1 제약 충돌로 비정규화)
   installationZonecode      String?
@@ -36,7 +36,7 @@ model RentalContractItem {
 
   // 교체된 경우: 이 항목을 교체한 새 항목
   replacedByItemId String?
-  replacedByItem   RentalContractItem?  @relation("ItemReplacement", fields: [replacedByItemId], references: [id])
+  replacedByItem   RentalContractItem?  @relation("ItemReplacement", fields: [replacedByItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
   replacedItems    RentalContractItem[] @relation("ItemReplacement")
   replacedAt       DateTime?
 

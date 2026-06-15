@@ -29,6 +29,7 @@ model Organization {
   meterReadings           MeterReading[]
   attachments             Attachment[]
   auditLogs               AuditLog[]
+  documentSequences       DocumentSequence[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

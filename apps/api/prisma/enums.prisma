@@ -218,6 +218,18 @@ enum AuditAction {
   CANCEL // 취소/삭제 (soft)
 }
 
+enum DocumentSequenceType {
+  ORDER
+  QUOTATION
+  RENTAL_CONTRACT
+  RENTAL_MANAGEMENT
+  INVOICE
+  PAYMENT
+  REFUND
+  TAX_INVOICE
+  SERVICE_REQUEST
+}
+
 // 환불
 enum RefundStatus {
   PENDING // 환불 대기

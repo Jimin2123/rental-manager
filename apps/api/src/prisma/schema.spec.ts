@@ -585,4 +585,28 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain("current_setting('rental_manager.status_transition_override', true)");
     expect(migration).toContain('CREATE OR REPLACE FUNCTION "assert_status_transition"');
   });
+
+  it('models document sequences for organization-scoped daily numbering', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
+    const sequencePath = join(prismaModelsPath, 'common/document-sequence.prisma');
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260616115000_document_sequence_and_workflow_services/migration.sql',
+    );
+
+    expect(existsSync(sequencePath)).toBe(true);
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const sequenceSchema = readFileSync(sequencePath, 'utf8');
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    expect(enumSchema).toContain('enum DocumentSequenceType');
+    expect(enumSchema).toContain('ORDER');
+    expect(enumSchema).toContain('INVOICE');
+    expect(organizationSchema).toContain('documentSequences       DocumentSequence[]');
+    expect(sequenceSchema).toContain('@@unique([organizationId, type, dateKey])');
+    expect(migration).toContain('CREATE TYPE "DocumentSequenceType"');
+    expect(migration).toContain('CREATE TABLE "DocumentSequence"');
+  });
 });

@@ -1,0 +1,105 @@
+name: Bugfix
+description: Fix a defect found before production release
+title: 'fix: '
+labels: ['type: bug', 'flow: bugfix']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for bugs found in development, QA, or a release branch. Production emergencies belong in Hotfix.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Bug Summary
+      placeholder: 'rentalPrice is not saved when creating a product'
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target_branch
+    attributes:
+      label: Target Branch
+      description: Select the branch line where the fix should start.
+      options:
+        - develop
+        - release/*
+    validations:
+      required: true
+
+  - type: textarea
+    id: cause
+    attributes:
+      label: Suspected Cause
+      placeholder: 'DTO validation, service mapping, entity column, or unknown.'
+
+  - type: textarea
+    id: fix_plan
+    attributes:
+      label: Fix Plan
+      value: |
+        - [ ] Identify root cause.
+        - [ ] Add or update regression coverage.
+        - [ ] Apply minimal fix.
+        - [ ] Verify target branch behavior.
+
+  - type: dropdown
+    id: semver
+    attributes:
+      label: SemVer Impact
+      options:
+        - PATCH - backward-compatible bug fix
+        - MINOR - behavior changes while remaining compatible
+        - MAJOR - breaking change
+        - Unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: git_flow
+    attributes:
+      label: Git Flow Checklist
+      options:
+        - label: 'Confirm whether the fix starts from `develop` or `release/*`.'
+          required: true
+        - label: 'Use `git flow bugfix start <issue-number>-<slug>` when available, or the matching `bugfix/` branch convention.'
+          required: true
+        - label: 'Open the PR back to the selected target branch.'
+          required: true

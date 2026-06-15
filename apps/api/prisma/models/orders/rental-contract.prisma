@@ -9,17 +9,20 @@ model RentalContract {
 
   contractNo String
 
-  status RentalContractStatus @default(ACTIVE)
+  status RentalContractStatus @default(DRAFT)
 
   startDate DateTime
   endDate   DateTime
 
   contractMonths Int
 
-  // 매월 청구 기준일
-  billingDay Int?
+  // 청구 설정
+  billingDay     Int?           // 매월 청구 기준일
+  paymentDueDay  Int?           // 매월 납부 기한일
+  billingTiming  BillingTiming @default(PREPAID)
 
   invoices Invoice[]
+  items    RentalContractItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

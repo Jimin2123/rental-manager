@@ -23,9 +23,11 @@ model Asset {
 
   deletedAt DateTime?
 
-  saleOrderItems   SaleOrderItem[]
-  rentalOrderItems RentalOrderItem[]
-  serviceRequests  ServiceRequest[]
+  saleOrderItems    SaleOrderItem[]
+  rentalOrderItems  RentalOrderItem[]
+  contractItems     RentalContractItem[]
+  serviceRequests   ServiceRequest[]
+  events            AssetEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

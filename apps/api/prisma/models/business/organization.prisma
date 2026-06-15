@@ -19,10 +19,11 @@ model Organization {
   saleOrders              SaleOrder[]
   rentalOrders            RentalOrder[]
   rentalContracts         RentalContract[]
-  invoices         Invoice[]
-  payments         Payment[]
-  refunds          Refund[]
-  serviceRequests  ServiceRequest[]
+  invoices        Invoice[]
+  payments        Payment[]
+  refunds         Refund[]
+  serviceRequests ServiceRequest[]
+  assetEvents     AssetEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

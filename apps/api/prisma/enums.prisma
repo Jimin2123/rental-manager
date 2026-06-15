@@ -35,9 +35,32 @@ enum VatType {
 }
 
 enum RentalContractStatus {
-  ACTIVE // 진행 중
-  ENDED // 종료
+  DRAFT    // 작성 중 (장비 미점유)
+  ACTIVE   // 진행 중
+  ENDED    // 종료
   CANCELLED // 취소
+}
+
+enum RentalContractItemStatus {
+  PENDING  // 활성화 대기 (계약 DRAFT 상태)
+  ACTIVE   // 렌탈 중
+  RETURNED // 회수 완료
+  REPLACED // 교체됨
+  CANCELED // 취소
+}
+
+enum BillingTiming {
+  PREPAID  // 선불
+  POSTPAID // 후불
+}
+
+enum AssetEventSourceType {
+  RENTAL_CONTRACT      // 렌탈 계약 활성화/종료
+  RENTAL_CONTRACT_ITEM // 계약 내 장비 교체/회수
+  SALE_ORDER           // 판매
+  SERVICE_REQUEST      // AS 접수
+  SERVICE_VISIT        // AS 방문 처리
+  MANUAL               // 수동 기록
 }
 
 // 청구서

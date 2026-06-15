@@ -1,0 +1,26 @@
+model AssetEvent {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  assetId String
+  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  fromStatus AssetStatus?
+  toStatus   AssetStatus
+
+  // 이벤트를 발생시킨 출처
+  sourceType AssetEventSourceType
+  sourceId   String?
+
+  note String?
+
+  // 이벤트는 불변 기록 — updatedAt 없음
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, assetId])
+  @@index([organizationId, assetId, createdAt])
+  @@index([organizationId, sourceType, sourceId])
+}

@@ -1,0 +1,44 @@
+model RentalContractItem {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  rentalContractId String
+  rentalContract   RentalContract @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 원 주문 항목 (가격, 제품 정보 참조)
+  rentalOrderItemId String?
+  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  assetId String
+  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  status RentalContractItemStatus @default(PENDING)
+
+  // 활성화 시점에 RentalOrderItem.monthlyRentalPrice를 복사해 보관
+  monthlyRentalPrice Int
+
+  startedAt  DateTime?
+  endedAt    DateTime?
+  returnedAt DateTime?
+
+  // 교체된 경우: 이 항목을 교체한 새 항목
+  replacedByItemId String?
+  replacedByItem   RentalContractItem?  @relation("ItemReplacement", fields: [replacedByItemId], references: [id])
+  replacedItems    RentalContractItem[] @relation("ItemReplacement")
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // assetId 기준 ACTIVE 항목은 1개만 가능
+  // Prisma는 partial unique index를 지원하지 않으므로
+  // migration SQL에 별도 추가: CREATE UNIQUE INDEX ON "RentalContractItem" ("assetId") WHERE status = 'ACTIVE'
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, rentalContractId])
+  @@index([organizationId, assetId])
+  @@index([organizationId, status])
+  @@index([organizationId, assetId, status])
+}

@@ -103,6 +103,39 @@ enum PaymentStatus {
   FAILED // 실패
 }
 
+// AS
+enum ServiceRequestStatus {
+  RECEIVED    // 접수
+  SCHEDULED   // 방문 예정
+  IN_PROGRESS // 처리 중
+  COMPLETED   // 완료
+  CANCELED    // 취소
+}
+
+enum ServiceRequestType {
+  REPAIR       // 수리
+  MAINTENANCE  // 유지보수
+  INSTALLATION // 설치
+  REMOVAL      // 철거
+  INSPECTION   // 점검
+  ETC          // 기타
+}
+
+enum ServiceVisitStatus {
+  SCHEDULED   // 방문 예정
+  IN_PROGRESS // 처리 중
+  COMPLETED   // 완료
+  CANCELED    // 취소
+}
+
+enum ServiceVisitResult {
+  REPAIRED        // 수리 완료
+  PARTS_REPLACED  // 부품 교체
+  CANNOT_REPAIR   // 수리 불가
+  DEFERRED        // 재방문 필요
+  ETC             // 기타
+}
+
 // 환불
 enum RefundStatus {
   PENDING // 환불 대기

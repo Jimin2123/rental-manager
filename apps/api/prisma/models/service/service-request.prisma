@@ -1,0 +1,41 @@
+model ServiceRequest {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  requestNo String
+
+  status ServiceRequestStatus @default(RECEIVED)
+  type   ServiceRequestType
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  assetId String
+  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 보증기간 내 무상 여부
+  isWarranty Boolean @default(false)
+
+  // 증상/접수 내용
+  description        String?
+  requestedVisitDate DateTime?
+  completedAt        DateTime?
+
+  memo String?
+
+  visits   ServiceVisit[]
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, requestNo])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, type])
+  @@index([organizationId, customerId])
+  @@index([organizationId, assetId])
+}

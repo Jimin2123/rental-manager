@@ -19,6 +19,7 @@ model OrganizationMember {
   customerAssignments CustomerAssignment[]
   managedOrders       Order[]              @relation("OrderManager")
   deliveredSaleOrders SaleOrder[]          @relation("SaleDeliveryStaff")
+  serviceVisits       ServiceVisit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

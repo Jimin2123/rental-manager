@@ -20,6 +20,10 @@ model Invoice {
   rentalContractId String?
   rentalContract   RentalContract? @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
+  // AS 청구 (type = SERVICE_FEE)
+  serviceRequestId String?
+  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   billingMonth String?   // "YYYY-MM"
   periodStart  DateTime?
   periodEnd    DateTime?

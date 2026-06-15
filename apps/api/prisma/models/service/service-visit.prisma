@@ -1,0 +1,34 @@
+model ServiceVisit {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  serviceRequestId String
+  serviceRequest   ServiceRequest @relation(fields: [serviceRequestId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 담당 직원 (미배정 가능)
+  staffId String?
+  staff   OrganizationMember? @relation(fields: [staffId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  status ServiceVisitStatus @default(SCHEDULED)
+
+  scheduledAt DateTime?
+  visitedAt   DateTime?
+
+  workDescription  String?
+  result           ServiceVisitResult?
+
+  requiresFollowUp Boolean @default(false)
+  followUpNote     String?
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, serviceRequestId])
+  @@index([organizationId, staffId])
+  @@index([organizationId, status])
+  @@index([organizationId, scheduledAt])
+}

@@ -35,6 +35,10 @@ model SaleOrderItem {
   // 마진
   marginAmount Int?
 
+  // 보증기간
+  warrantyStartDate DateTime?
+  warrantyEndDate   DateTime?
+
   memo String?
 
   invoiceItems InvoiceItem[]

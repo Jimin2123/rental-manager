@@ -25,6 +25,7 @@ model Asset {
 
   saleOrderItems   SaleOrderItem[]
   rentalOrderItems RentalOrderItem[]
+  serviceRequests  ServiceRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

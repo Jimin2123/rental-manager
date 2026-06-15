@@ -375,10 +375,7 @@ describe('Prisma customer schema', () => {
   });
 
   it('keeps replacement and tax-document relations scoped to the organization', () => {
-    const rentalContractItemSchema = readFileSync(
-      join(prismaModelsPath, 'orders/rental-contract-item.prisma'),
-      'utf8',
-    );
+    const rentalContractItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract-item.prisma'), 'utf8');
     const taxInvoiceSchema = readFileSync(join(prismaModelsPath, 'finance/tax-invoice.prisma'), 'utf8');
     const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
     const migration = readFileSync(
@@ -492,5 +489,22 @@ describe('Prisma customer schema', () => {
       true,
     );
     expect(existsSync(join(prismaMigrationsPath, '20260616107000_harden_model_integrity/migration.sql'))).toBe(false);
+  });
+
+  it('keeps status guards strict by default while allowing transaction-scoped operational overrides', () => {
+    const apiPackage = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')) as {
+      scripts?: Record<string, string>;
+    };
+    const dbJestConfigPath = join(__dirname, '../../test/jest-db.json');
+    const migrationPath = join(prismaMigrationsPath, '20260616110000_status_transition_override/migration.sql');
+
+    expect(apiPackage.scripts?.['test:db']).toBe('jest --config ./test/jest-db.json --runInBand');
+    expect(existsSync(dbJestConfigPath)).toBe(true);
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    expect(migration).toContain("current_setting('rental_manager.status_transition_override', true)");
+    expect(migration).toContain('CREATE OR REPLACE FUNCTION "assert_status_transition"');
   });
 });

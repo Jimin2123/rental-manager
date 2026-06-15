@@ -120,6 +120,35 @@ const seedOrganizationAndCustomer = async (client: Client): Promise<SeededCustom
   return { organizationId, customerId };
 };
 
+const seedAdditionalCustomer = async (client: Client, organizationId: string): Promise<string> => {
+  const individualProfileId = randomUUID();
+  const customerId = randomUUID();
+  const now = new Date();
+
+  await client.query(
+    `
+      INSERT INTO "IndividualProfile" ("id", "name", "updatedAt")
+      VALUES ($1, 'DB Integration Additional Customer', $2)
+    `,
+    [individualProfileId, now],
+  );
+  await client.query(
+    `
+      INSERT INTO "Customer" (
+        "id",
+        "organizationId",
+        "type",
+        "individualProfileId",
+        "updatedAt"
+      )
+      VALUES ($1, $2, 'INDIVIDUAL', $3, $4)
+    `,
+    [customerId, organizationId, individualProfileId, now],
+  );
+
+  return customerId;
+};
+
 const withTransaction = async (client: Client, callback: () => Promise<void>): Promise<void> => {
   await client.query('BEGIN');
 
@@ -555,6 +584,82 @@ const insertAdditionalMeterContractItem = async (
   return contractItemId;
 };
 
+const insertManualInvoice = async (
+  client: Client,
+  seed: SeededCustomer,
+  invoiceId = randomUUID(),
+  now = new Date(),
+): Promise<string> => {
+  await client.query(
+    `
+      INSERT INTO "Invoice" (
+        "id",
+        "organizationId",
+        "invoiceNo",
+        "type",
+        "status",
+        "customerId",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+    `,
+    [invoiceId, seed.organizationId, `INV-${randomUUID()}`, seed.customerId, now],
+  );
+
+  return invoiceId;
+};
+
+const insertTaxInvoice = async (
+  client: Client,
+  input: {
+    organizationId: string;
+    customerId: string;
+    invoiceId?: string | null;
+    originalTaxInvoiceId?: string | null;
+    type?: 'TAX_INVOICE' | 'CREDIT_NOTE';
+    taxInvoiceId?: string;
+    now?: Date;
+  },
+): Promise<string> => {
+  const taxInvoiceId = input.taxInvoiceId ?? randomUUID();
+  const now = input.now ?? new Date();
+
+  await client.query(
+    `
+      INSERT INTO "TaxInvoice" (
+        "id",
+        "organizationId",
+        "taxInvoiceNo",
+        "type",
+        "status",
+        "originalTaxInvoiceId",
+        "invoiceId",
+        "customerId",
+        "buyerBusinessNo",
+        "buyerName",
+        "supplyAmount",
+        "vatAmount",
+        "totalAmount",
+        "issueDate",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4, 'DRAFT', $5, $6, $7, '123-45-67890', 'DB Integration Buyer', 1000, 0, 1000, $8, $8)
+    `,
+    [
+      taxInvoiceId,
+      input.organizationId,
+      `TAX-${randomUUID()}`,
+      input.type ?? 'TAX_INVOICE',
+      input.originalTaxInvoiceId ?? null,
+      input.invoiceId ?? null,
+      input.customerId,
+      now,
+    ],
+  );
+
+  return taxInvoiceId;
+};
+
 describe('Prisma database integrity guards', () => {
   const baseDatabaseUrl = process.env.DB_INTEGRATION_DATABASE_URL ?? process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL;
   const adminDatabaseName = process.env.DB_INTEGRATION_ADMIN_DATABASE ?? 'postgres';
@@ -654,16 +759,14 @@ describe('Prisma database integrity guards', () => {
     expect(result.rows[0]?.status).toBe('DELIVERED');
   });
 
-  it('rejects invoice items that reference a tax invoice for another invoice', async () => {
+  it('prevents changing invoice items after invoice issue for invoice-level tax invoices', async () => {
     if (!client) {
       throw new Error('DB integration client was not initialized.');
     }
 
     const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
     const invoiceId = randomUUID();
-    const otherInvoiceId = randomUUID();
     const invoiceItemId = randomUUID();
-    const taxInvoiceId = randomUUID();
     const now = new Date();
 
     await client.query(
@@ -675,12 +778,84 @@ describe('Prisma database integrity guards', () => {
           "type",
           "status",
           "customerId",
-          "finalAmount",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+      `,
+      [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "InvoiceItem" (
+          "id",
+          "organizationId",
+          "invoiceId",
+          "type",
+          "description",
+          "quantity",
+          "unitPrice",
+          "supplyAmount",
+          "vatType",
+          "vatAmount",
+          "totalAmount",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'ETC', 'Manual charge', 1, 1000, 1000, 'NONE', 0, 1000, $4)
+      `,
+      [invoiceItemId, organizationId, invoiceId, now],
+    );
+    await client.query(
+      `
+        UPDATE "Invoice"
+        SET "status" = 'ISSUED',
+            "issuedAt" = $1,
+            "updatedAt" = $1
+        WHERE "id" = $2
+          AND "organizationId" = $3
+      `,
+      [new Date(), invoiceId, organizationId],
+    );
+
+    await expect(
+      client.query(
+        `
+          UPDATE "InvoiceItem"
+          SET "unitPrice" = 2000,
+              "supplyAmount" = 2000,
+              "totalAmount" = 2000,
+              "updatedAt" = $1
+          WHERE "id" = $2
+        `,
+        [new Date(), invoiceItemId],
+      ),
+    ).rejects.toThrow(/cannot be changed/);
+  });
+
+  it('prevents moving invoice items away from issued invoices', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const invoiceId = randomUUID();
+    const otherInvoiceId = randomUUID();
+    const invoiceItemId = randomUUID();
+    const now = new Date();
+
+    await client.query(
+      `
+        INSERT INTO "Invoice" (
+          "id",
+          "organizationId",
+          "invoiceNo",
+          "type",
+          "status",
+          "customerId",
           "updatedAt"
         )
         VALUES
-          ($1, $2, $3, 'MANUAL', 'DRAFT', $4, 0, $5),
-          ($6, $2, $7, 'MANUAL', 'DRAFT', $4, 0, $5)
+          ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5),
+          ($6, $2, $7, 'MANUAL', 'DRAFT', $4, $5)
       `,
       [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now, otherInvoiceId, `INV-${randomUUID()}`],
     );
@@ -706,38 +881,190 @@ describe('Prisma database integrity guards', () => {
     );
     await client.query(
       `
-        INSERT INTO "TaxInvoice" (
-          "id",
-          "organizationId",
-          "taxInvoiceNo",
-          "type",
-          "status",
-          "invoiceId",
-          "customerId",
-          "buyerBusinessNo",
-          "buyerName",
-          "supplyAmount",
-          "vatAmount",
-          "totalAmount",
-          "issueDate",
-          "updatedAt"
-        )
-        VALUES ($1, $2, $3, 'TAX_INVOICE', 'DRAFT', $4, $5, '123-45-67890', 'DB Integration Buyer', 1000, 0, 1000, $6, $6)
+        UPDATE "Invoice"
+        SET "status" = 'ISSUED',
+            "issuedAt" = $1,
+            "updatedAt" = $1
+        WHERE "id" = $2
+          AND "organizationId" = $3
       `,
-      [taxInvoiceId, organizationId, `TAX-${randomUUID()}`, otherInvoiceId, customerId, now],
+      [new Date(), invoiceId, organizationId],
     );
 
     await expect(
       client.query(
         `
           UPDATE "InvoiceItem"
-          SET "taxInvoiceId" = $1,
+          SET "invoiceId" = $1,
               "updatedAt" = $2
           WHERE "id" = $3
+            AND "organizationId" = $4
         `,
-        [taxInvoiceId, new Date(), invoiceItemId],
+        [otherInvoiceId, new Date(), invoiceItemId, organizationId],
       ),
-    ).rejects.toThrow(/does not match TaxInvoice/);
+    ).rejects.toThrow(/cannot be changed/);
+  });
+
+  it('prevents changing invoice adjustments after invoice issue', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+    const invoiceId = randomUUID();
+    const adjustmentId = randomUUID();
+    const now = new Date();
+
+    await client.query(
+      `
+        INSERT INTO "Invoice" (
+          "id",
+          "organizationId",
+          "invoiceNo",
+          "type",
+          "status",
+          "customerId",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'MANUAL', 'DRAFT', $4, $5)
+      `,
+      [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, now],
+    );
+    await client.query(
+      `
+        INSERT INTO "InvoiceAdjustment" (
+          "id",
+          "organizationId",
+          "invoiceId",
+          "type",
+          "amount",
+          "updatedAt"
+        )
+        VALUES ($1, $2, $3, 'EXTRA_CHARGE', 1000, $4)
+      `,
+      [adjustmentId, organizationId, invoiceId, now],
+    );
+    await client.query(
+      `
+        UPDATE "Invoice"
+        SET "status" = 'ISSUED',
+            "issuedAt" = $1,
+            "updatedAt" = $1
+        WHERE "id" = $2
+          AND "organizationId" = $3
+      `,
+      [new Date(), invoiceId, organizationId],
+    );
+
+    await expect(
+      client.query(
+        `
+          UPDATE "InvoiceAdjustment"
+          SET "amount" = 2000,
+              "updatedAt" = $1
+          WHERE "id" = $2
+            AND "organizationId" = $3
+        `,
+        [new Date(), adjustmentId, organizationId],
+      ),
+    ).rejects.toThrow(/invoice adjustments cannot be changed/);
+  });
+
+  it('allows invoice-level tax invoices for the matching invoice customer', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const seed = await seedOrganizationAndCustomer(client);
+    const invoiceId = await insertManualInvoice(client, seed);
+    const taxInvoiceId = await insertTaxInvoice(client, {
+      organizationId: seed.organizationId,
+      customerId: seed.customerId,
+      invoiceId,
+    });
+
+    const result = await client.query<{ invoiceId: string }>(
+      `
+        SELECT "invoiceId"
+        FROM "TaxInvoice"
+        WHERE "id" = $1
+          AND "organizationId" = $2
+      `,
+      [taxInvoiceId, seed.organizationId],
+    );
+
+    expect(result.rows[0]?.invoiceId).toBe(invoiceId);
+  });
+
+  it('rejects tax invoices whose customer differs from the linked invoice customer', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const invoiceSeed = await seedOrganizationAndCustomer(client);
+    const otherCustomerId = await seedAdditionalCustomer(client, invoiceSeed.organizationId);
+    const invoiceId = await insertManualInvoice(client, invoiceSeed);
+
+    await expect(
+      insertTaxInvoice(client, {
+        organizationId: invoiceSeed.organizationId,
+        customerId: otherCustomerId,
+        invoiceId,
+      }),
+    ).rejects.toThrow(/does not match invoice/);
+  });
+
+  it('rejects credit notes that reference another credit note as original', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const seed = await seedOrganizationAndCustomer(client);
+    const invoiceId = await insertManualInvoice(client, seed);
+    const originalTaxInvoiceId = await insertTaxInvoice(client, {
+      organizationId: seed.organizationId,
+      customerId: seed.customerId,
+      invoiceId,
+    });
+    const creditNoteId = await insertTaxInvoice(client, {
+      organizationId: seed.organizationId,
+      customerId: seed.customerId,
+      originalTaxInvoiceId,
+      type: 'CREDIT_NOTE',
+    });
+
+    await expect(
+      insertTaxInvoice(client, {
+        organizationId: seed.organizationId,
+        customerId: seed.customerId,
+        originalTaxInvoiceId: creditNoteId,
+        type: 'CREDIT_NOTE',
+      }),
+    ).rejects.toThrow(/must reference a TAX_INVOICE/);
+  });
+
+  it('rejects credit notes whose customer differs from the original tax invoice customer', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const originalSeed = await seedOrganizationAndCustomer(client);
+    const otherCustomerId = await seedAdditionalCustomer(client, originalSeed.organizationId);
+    const invoiceId = await insertManualInvoice(client, originalSeed);
+    const originalTaxInvoiceId = await insertTaxInvoice(client, {
+      organizationId: originalSeed.organizationId,
+      customerId: originalSeed.customerId,
+      invoiceId,
+    });
+
+    await expect(
+      insertTaxInvoice(client, {
+        organizationId: originalSeed.organizationId,
+        customerId: otherCustomerId,
+        originalTaxInvoiceId,
+        type: 'CREDIT_NOTE',
+      }),
+    ).rejects.toThrow(/does not match original tax invoice/);
   });
 
   it('rejects rental invoice items whose rental contract item belongs to another contract', async () => {

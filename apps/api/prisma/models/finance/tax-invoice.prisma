@@ -39,9 +39,6 @@ model TaxInvoice {
   externalRef   String?
   sentAt        DateTime?
 
-  // TaxInvoiceItem 별도 없음 — InvoiceItem을 직접 참조
-  items InvoiceItem[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

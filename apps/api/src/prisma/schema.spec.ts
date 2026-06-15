@@ -377,7 +377,6 @@ describe('Prisma customer schema', () => {
   it('keeps replacement and tax-document relations scoped to the organization', () => {
     const rentalContractItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract-item.prisma'), 'utf8');
     const taxInvoiceSchema = readFileSync(join(prismaModelsPath, 'finance/tax-invoice.prisma'), 'utf8');
-    const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
     const migration = readFileSync(
       join(prismaMigrationsPath, '20260616108000_harden_model_integrity/migration.sql'),
       'utf8',
@@ -389,13 +388,9 @@ describe('Prisma customer schema', () => {
     expect(taxInvoiceSchema).toContain(
       'originalTaxInvoice   TaxInvoice?  @relation("TaxInvoiceAmendment", fields: [originalTaxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
-    expect(invoiceItemSchema).toContain(
-      'taxInvoice   TaxInvoice? @relation(fields: [taxInvoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)',
-    );
 
     expect(migration).toContain('"RentalContractItem_replacedByItemId_organizationId_fkey"');
     expect(migration).toContain('"TaxInvoice_originalTaxInvoiceId_organizationId_fkey"');
-    expect(migration).toContain('"InvoiceItem_taxInvoiceId_organizationId_fkey"');
     expect(migration).toContain('"RentalContractItem_no_self_replacement_check"');
     expect(migration).toContain('"TaxInvoice_no_self_amendment_check"');
   });
@@ -467,6 +462,24 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain("type <> 'METER_USAGE'");
   });
 
+  it('models tax invoices at invoice level only', () => {
+    const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
+    const taxInvoiceSchema = readFileSync(join(prismaModelsPath, 'finance/tax-invoice.prisma'), 'utf8');
+
+    expect(invoiceItemSchema).not.toContain('taxInvoiceId');
+    expect(invoiceItemSchema).not.toContain('taxInvoice   TaxInvoice?');
+    expect(taxInvoiceSchema).not.toContain('items InvoiceItem[]');
+    expect(taxInvoiceSchema).toContain('@@unique([invoiceId, organizationId])');
+
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616114000_invoice_level_tax_invoice/migration.sql'),
+      'utf8',
+    );
+
+    expect(migration).toContain('DROP COLUMN "taxInvoiceId"');
+    expect(migration).toContain('assert_issued_invoice_is_immutable');
+  });
+
   it('adds database guards for financial totals, source compatibility, and metered billing values', () => {
     const auditLogSchema = readFileSync(join(prismaModelsPath, 'common/audit-log.prisma'), 'utf8');
     const attachmentSchema = readFileSync(join(prismaModelsPath, 'common/attachment.prisma'), 'utf8');
@@ -523,9 +536,7 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('"TaxInvoice_type_original_check"');
     expect(migration).toContain('"TaxInvoice_nts_confirmed_requires_confirm_num_check"');
     expect(migration).toContain('assert_tax_invoice_invoice_consistency');
-    expect(migration).toContain('assert_invoice_item_tax_invoice_consistency');
     expect(migration).toContain('"TaxInvoice_invoice_consistency_guard"');
-    expect(migration).toContain('"InvoiceItem_tax_invoice_consistency_guard"');
 
     expect(migration).toContain('assert_status_transition');
     expect(migration).toContain('"Order_status_transition_guard"');

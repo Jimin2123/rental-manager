@@ -1,0 +1,28 @@
+model OrganizationMember {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // 직원명
+  name String
+
+  department String?
+  position   String?
+  phone      String?
+  email      String?
+
+  isActive Boolean @default(true)
+
+  memo String?
+
+  customerAssignments CustomerAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, name])
+  @@index([organizationId, isActive])
+}

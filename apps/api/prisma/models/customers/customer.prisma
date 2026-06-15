@@ -1,0 +1,29 @@
+model Customer {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  type CustomerType
+
+  individualProfileId String?
+  individualProfile   IndividualProfile? @relation(fields: [individualProfileId], references: [id], onDelete: Restrict)
+
+  businessPartnerId String?
+  businessPartner   BusinessPartner? @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  memo String?
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments CustomerAssignment[]
+
+  @@index([organizationId])
+  @@index([organizationId, type])
+  @@index([organizationId, deletedAt])
+  @@index([individualProfileId])
+  @@index([businessPartnerId])
+}

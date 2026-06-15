@@ -1,0 +1,40 @@
+model BusinessPartnerContact {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  businessPartnerId String
+  businessPartner   BusinessPartner @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 담당자명
+  name String
+
+  // 부서
+  department String?
+
+  // 직급/직책
+  position String?
+
+  // 역할
+  // 예: 대표 담당자, 계약 담당자, 세금계산서 담당자, AS 담당자
+  role String?
+
+  phone String?
+  email String?
+
+  isPrimary Boolean @default(false)
+
+  memo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerAssignments CustomerAssignment[]
+
+  @@index([organizationId])
+  @@index([organizationId, businessPartnerId])
+  @@index([organizationId, name])
+  @@index([organizationId, phone])
+  @@index([organizationId, isPrimary])
+}

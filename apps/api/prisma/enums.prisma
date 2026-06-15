@@ -1,0 +1,4 @@
+enum CustomerType {
+  INDIVIDUAL // 개인
+  BUSINESS // 거래처
+}

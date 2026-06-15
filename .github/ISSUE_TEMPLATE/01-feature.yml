@@ -1,0 +1,110 @@
+name: Feature
+description: Plan a new backward-compatible feature
+title: 'feat: '
+labels: ['type: feature', 'flow: feature']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for new product or developer-facing behavior. Start from `develop` with `git flow feature start <issue-number>-<slug>`.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: Describe the feature in one sentence.
+      placeholder: 'Add rental product creation API'
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background / Purpose
+      description: Explain the problem this feature solves.
+      placeholder: |
+        Admins need to create rental products without direct database edits.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: List the required behavior as a checklist.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      value: |
+        - [ ] Happy path works.
+        - [ ] Error cases are handled.
+        - [ ] Tests or documented manual checks are included.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - web
+        - api
+        - full-stack
+        - tooling
+        - docs
+    validations:
+      required: true
+
+  - type: textarea
+    id: api_db_changes
+    attributes:
+      label: API / Data Changes
+      description: List endpoint, DTO, entity, schema, or data contract changes.
+      placeholder: |
+        API:
+        - POST /rental-products
+
+        Data:
+        - rental_products table
+
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Validation Plan
+      value: |
+        - [ ] npm run lint
+        - [ ] npm run build
+        - [ ] npm run test -w api
+        - [ ] Manual UI/API check
+
+  - type: dropdown
+    id: semver
+    attributes:
+      label: SemVer Impact
+      options:
+        - MINOR - backward-compatible feature
+        - MAJOR - breaking change
+        - PATCH - internal only
+        - Unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: git_flow
+    attributes:
+      label: Git Flow Checklist
+      options:
+        - label: 'Branch from `develop`.'
+          required: true
+        - label: 'Use `git flow feature start <issue-number>-<slug>`.'
+          required: true
+        - label: 'Open the PR back to `develop`.'
+          required: true

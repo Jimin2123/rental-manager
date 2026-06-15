@@ -25,11 +25,19 @@ model InvoiceItem {
   vatAmount    Int
   totalAmount  Int
 
+  // 세금계산서 연결 (발행 시 InvoiceItem을 직접 참조)
+  taxInvoiceId String?
+  taxInvoice   TaxInvoice? @relation(fields: [taxInvoiceId], references: [id], onDelete: SetNull)
+
   memo String?
+
+  // MeterReading 역방향 참조 (카운터 과금 항목인 경우)
+  meterReadings MeterReading[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([id, organizationId])
   @@index([organizationId])
   @@index([organizationId, invoiceId])
   @@index([organizationId, type])

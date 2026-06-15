@@ -23,6 +23,7 @@ model Order {
 
   saleOrder   SaleOrder?
   rentalOrder RentalOrder?
+  quotation   Quotation?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

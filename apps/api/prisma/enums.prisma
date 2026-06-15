@@ -126,6 +126,45 @@ enum PaymentStatus {
   FAILED // 실패
 }
 
+// 세금계산서
+enum TaxInvoiceType {
+  TAX_INVOICE // 세금계산서
+  CREDIT_NOTE // 수정세금계산서
+}
+
+enum TaxInvoiceStatus {
+  DRAFT         // 작성 중
+  ISSUED        // 발행됨
+  CANCELED      // 취소
+  NTS_CONFIRMED // 국세청 승인
+}
+
+// 견적서
+enum QuotationStatus {
+  DRAFT    // 작성 중
+  SENT     // 발송됨
+  ACCEPTED // 수락됨
+  REJECTED // 거절됨
+  EXPIRED  // 만료됨
+}
+
+enum QuotationType {
+  SALE   // 판매 견적
+  RENTAL // 렌탈 견적
+}
+
+// 카운터 과금
+enum BillingType {
+  FIXED // 고정 월 렌탈료
+  METER // 카운터 과금
+}
+
+enum MeterReadingMethod {
+  MANUAL // 수동 입력
+  PHOTO  // 사진 촬영 후 입력
+  REMOTE // 원격 수집
+}
+
 // AS
 enum ServiceRequestStatus {
   RECEIVED    // 접수

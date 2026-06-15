@@ -22,8 +22,10 @@ model Customer {
   assignments CustomerAssignment[]
   orders      Order[]
   invoices        Invoice[]
+  taxInvoices     TaxInvoice[]
   payments        Payment[]
   refunds         Refund[]
+  quotations      Quotation[]
   serviceRequests ServiceRequest[]
 
   @@unique([id, organizationId])

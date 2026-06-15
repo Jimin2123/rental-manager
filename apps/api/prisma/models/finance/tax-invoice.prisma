@@ -1,0 +1,54 @@
+model TaxInvoice {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  taxInvoiceNo String
+
+  type   TaxInvoiceType   @default(TAX_INVOICE)
+  status TaxInvoiceStatus @default(DRAFT)
+
+  // 수정세금계산서인 경우 원본 참조
+  originalTaxInvoiceId String?
+  originalTaxInvoice   TaxInvoice?  @relation("TaxInvoiceAmendment", fields: [originalTaxInvoiceId], references: [id])
+  amendments           TaxInvoice[] @relation("TaxInvoiceAmendment")
+
+  // 연결 청구서 (1:1)
+  invoiceId String? @unique
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  // 발행 시점 공급받는자 스냅샷 (고객 정보 변경에 영향받지 않음)
+  buyerBusinessNo String
+  buyerName       String
+  buyerCeoName    String?
+  buyerEmail      String?
+
+  supplyAmount Int
+  vatAmount    Int
+  totalAmount  Int
+
+  issueDate DateTime
+
+  // 국세청/외부 발행 서비스 연동
+  ntsConfirmNum String?
+  externalRef   String?
+  sentAt        DateTime?
+
+  // TaxInvoiceItem 별도 없음 — InvoiceItem을 직접 참조
+  items InvoiceItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, taxInvoiceNo])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, customerId])
+  @@index([organizationId, issueDate])
+  @@index([organizationId, type])
+}

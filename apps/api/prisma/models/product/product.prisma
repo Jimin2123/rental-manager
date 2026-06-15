@@ -21,6 +21,7 @@ model Product {
   assets           Asset[]
   saleOrderItems   SaleOrderItem[]
   rentalOrderItems RentalOrderItem[]
+  quotationItems   QuotationItem[]
 
   isActive  Boolean   @default(true)
   deletedAt DateTime?

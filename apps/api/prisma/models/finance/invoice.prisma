@@ -41,6 +41,7 @@ model Invoice {
   adjustments InvoiceAdjustment[]
   allocations PaymentAllocation[]
   refunds     Refund[]
+  taxInvoice  TaxInvoice?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

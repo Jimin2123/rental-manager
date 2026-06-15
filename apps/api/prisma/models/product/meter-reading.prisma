@@ -1,0 +1,40 @@
+model MeterReading {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  assetId String
+  asset   Asset @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  rentalContractItemId String?
+  rentalContractItem   RentalContractItem? @relation(fields: [rentalContractItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  readingDate DateTime
+
+  // 현재 누적 카운터
+  blackCount Int
+  colorCount Int?
+
+  // 이번 기간 사용량 (서비스 레이어에서 직전 MeterReading.blackCount 조회 후 계산하여 저장)
+  blackUsage Int
+  colorUsage Int?
+
+  readingMethod MeterReadingMethod @default(MANUAL)
+
+  // 청구 항목 연결 (N:1 — 여러 MeterReading이 하나의 InvoiceItem에 묶일 수 있음)
+  invoiceItemId String?
+  invoiceItem   InvoiceItem? @relation(fields: [invoiceItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, assetId])
+  @@index([organizationId, assetId, readingDate])
+  @@index([organizationId, rentalContractItemId])
+  @@index([invoiceItemId])
+}

@@ -12,6 +12,18 @@ type SeededCustomer = {
   customerId: string;
 };
 
+type RentalInvoiceTraceFixture = SeededCustomer & {
+  productId: string;
+  rentalOrderItemId: string;
+  otherRentalOrderItemId: string;
+  rentalContractId: string;
+  otherRentalContractId: string;
+  rentalContractItemId: string;
+  otherRentalContractItemId: string;
+  invoiceId: string;
+  now: Date;
+};
+
 const quoteIdentifier = (identifier: string): string => `"${identifier.replaceAll('"', '""')}"`;
 
 const databaseUrlFor = (baseDatabaseUrl: string, databaseName: string): string => {
@@ -118,6 +130,313 @@ const withTransaction = async (client: Client, callback: () => Promise<void>): P
     await client.query('ROLLBACK');
     throw error;
   }
+};
+
+const seedRentalInvoiceTraceFixture = async (client: Client): Promise<RentalInvoiceTraceFixture> => {
+  const { organizationId, customerId } = await seedOrganizationAndCustomer(client);
+  const productId = randomUUID();
+  const assetId = randomUUID();
+  const otherAssetId = randomUUID();
+  const orderId = randomUUID();
+  const otherOrderId = randomUUID();
+  const rentalOrderId = randomUUID();
+  const otherRentalOrderId = randomUUID();
+  const rentalOrderItemId = randomUUID();
+  const otherRentalOrderItemId = randomUUID();
+  const rentalContractId = randomUUID();
+  const otherRentalContractId = randomUUID();
+  const rentalContractItemId = randomUUID();
+  const otherRentalContractItemId = randomUUID();
+  const invoiceId = randomUUID();
+  const now = new Date();
+  const startDate = new Date('2026-06-01T00:00:00.000Z');
+  const endDate = new Date('2027-05-31T00:00:00.000Z');
+
+  await client.query(
+    `
+      INSERT INTO "Product" (
+        "id",
+        "organizationId",
+        "name",
+        "updatedAt"
+      )
+      VALUES ($1, $2, 'DB Integration Rental Product', $3)
+    `,
+    [productId, organizationId, now],
+  );
+  await client.query(
+    `
+      INSERT INTO "Asset" (
+        "id",
+        "organizationId",
+        "productId",
+        "serialNumber",
+        "updatedAt"
+      )
+      VALUES
+        ($1, $2, $3, $4, $6),
+        ($5, $2, $3, $7, $6)
+    `,
+    [assetId, organizationId, productId, `asset-${randomUUID()}`, otherAssetId, now, `asset-${randomUUID()}`],
+  );
+  await client.query(
+    `
+      INSERT INTO "Order" (
+        "id",
+        "organizationId",
+        "orderNo",
+        "type",
+        "status",
+        "customerId",
+        "updatedAt"
+      )
+      VALUES
+        ($1, $2, $3, 'RENTAL', 'REGISTERED', $4, $5),
+        ($6, $2, $7, 'RENTAL', 'REGISTERED', $4, $5)
+    `,
+    [orderId, organizationId, `ORD-${randomUUID()}`, customerId, now, otherOrderId, `ORD-${randomUUID()}`],
+  );
+  await client.query(
+    `
+      INSERT INTO "RentalOrder" (
+        "id",
+        "organizationId",
+        "orderId",
+        "managementNo",
+        "updatedAt"
+      )
+      VALUES
+        ($1, $2, $3, $4, $5),
+        ($6, $2, $7, $8, $5)
+    `,
+    [
+      rentalOrderId,
+      organizationId,
+      orderId,
+      `RNT-${randomUUID()}`,
+      now,
+      otherRentalOrderId,
+      otherOrderId,
+      `RNT-${randomUUID()}`,
+    ],
+  );
+  await client.query(
+    `
+      INSERT INTO "RentalOrderItem" (
+        "id",
+        "organizationId",
+        "rentalOrderId",
+        "productId",
+        "assetId",
+        "monthlyRentalPrice",
+        "updatedAt"
+      )
+      VALUES
+        ($1, $2, $3, $4, $5, 1000, $9),
+        ($6, $2, $7, $4, $8, 1000, $9)
+    `,
+    [
+      rentalOrderItemId,
+      organizationId,
+      rentalOrderId,
+      productId,
+      assetId,
+      otherRentalOrderItemId,
+      otherRentalOrderId,
+      otherAssetId,
+      now,
+    ],
+  );
+  await client.query(
+    `
+      INSERT INTO "RentalContract" (
+        "id",
+        "organizationId",
+        "rentalOrderId",
+        "contractNo",
+        "status",
+        "startDate",
+        "endDate",
+        "contractMonths",
+        "billingDay",
+        "paymentDueDay",
+        "updatedAt"
+      )
+      VALUES
+        ($1, $2, $3, $4, 'DRAFT', $5, $6, 12, 1, 10, $9),
+        ($7, $2, $8, $10, 'DRAFT', $5, $6, 12, 1, 10, $9)
+    `,
+    [
+      rentalContractId,
+      organizationId,
+      rentalOrderId,
+      `CTR-${randomUUID()}`,
+      startDate,
+      endDate,
+      otherRentalContractId,
+      otherRentalOrderId,
+      now,
+      `CTR-${randomUUID()}`,
+    ],
+  );
+  await client.query(
+    `
+      INSERT INTO "RentalContractItem" (
+        "id",
+        "organizationId",
+        "rentalContractId",
+        "rentalOrderItemId",
+        "assetId",
+        "monthlyRentalPrice",
+        "updatedAt"
+      )
+      VALUES
+        ($1, $2, $3, $4, $5, 1000, $9),
+        ($6, $2, $7, $8, $10, 1000, $9)
+    `,
+    [
+      rentalContractItemId,
+      organizationId,
+      rentalContractId,
+      rentalOrderItemId,
+      assetId,
+      otherRentalContractItemId,
+      otherRentalContractId,
+      otherRentalOrderItemId,
+      now,
+      otherAssetId,
+    ],
+  );
+  await client.query(
+    `
+      INSERT INTO "Invoice" (
+        "id",
+        "organizationId",
+        "invoiceNo",
+        "type",
+        "status",
+        "customerId",
+        "rentalContractId",
+        "billingMonth",
+        "periodStart",
+        "periodEnd",
+        "finalAmount",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, 'RENTAL_MONTHLY', 'DRAFT', $4, $5, '2026-06', $6, $7, 0, $8)
+    `,
+    [invoiceId, organizationId, `INV-${randomUUID()}`, customerId, rentalContractId, startDate, endDate, now],
+  );
+
+  return {
+    organizationId,
+    customerId,
+    productId,
+    rentalOrderItemId,
+    otherRentalOrderItemId,
+    rentalContractId,
+    otherRentalContractId,
+    rentalContractItemId,
+    otherRentalContractItemId,
+    invoiceId,
+    now,
+  };
+};
+
+const seedSaleOrderItem = async (
+  client: Client,
+  fixture: Pick<RentalInvoiceTraceFixture, 'organizationId' | 'customerId' | 'productId' | 'now'>,
+): Promise<string> => {
+  const orderId = randomUUID();
+  const saleOrderId = randomUUID();
+  const saleOrderItemId = randomUUID();
+
+  await client.query(
+    `
+      INSERT INTO "Order" (
+        "id",
+        "organizationId",
+        "orderNo",
+        "type",
+        "status",
+        "customerId",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, 'SALE', 'REGISTERED', $4, $5)
+    `,
+    [orderId, fixture.organizationId, `ORD-${randomUUID()}`, fixture.customerId, fixture.now],
+  );
+  await client.query(
+    `
+      INSERT INTO "SaleOrder" (
+        "id",
+        "organizationId",
+        "orderId",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4)
+    `,
+    [saleOrderId, fixture.organizationId, orderId, fixture.now],
+  );
+  await client.query(
+    `
+      INSERT INTO "SaleOrderItem" (
+        "id",
+        "organizationId",
+        "saleOrderId",
+        "productId",
+        "quantity",
+        "unitPrice",
+        "supplyAmount",
+        "vatType",
+        "vatAmount",
+        "totalAmount",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4, 1, 1000, 1000, 'NONE', 0, 1000, $5)
+    `,
+    [saleOrderItemId, fixture.organizationId, saleOrderId, fixture.productId, fixture.now],
+  );
+
+  return saleOrderItemId;
+};
+
+const insertContractBackedRentalInvoiceItem = async (
+  client: Client,
+  fixture: RentalInvoiceTraceFixture,
+  invoiceItemId = randomUUID(),
+): Promise<string> => {
+  await client.query(
+    `
+      INSERT INTO "InvoiceItem" (
+        "id",
+        "organizationId",
+        "invoiceId",
+        "rentalOrderItemId",
+        "rentalContractItemId",
+        "type",
+        "description",
+        "quantity",
+        "unitPrice",
+        "supplyAmount",
+        "vatType",
+        "vatAmount",
+        "totalAmount",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4, $5, 'RENTAL_FEE', 'Monthly rental fee', 1, 1000, 1000, 'NONE', 0, 1000, $6)
+    `,
+    [
+      invoiceItemId,
+      fixture.organizationId,
+      fixture.invoiceId,
+      fixture.rentalOrderItemId,
+      fixture.rentalContractItemId,
+      fixture.now,
+    ],
+  );
+
+  return invoiceItemId;
 };
 
 describe('Prisma database integrity guards', () => {
@@ -303,5 +622,152 @@ describe('Prisma database integrity guards', () => {
         [taxInvoiceId, new Date(), invoiceItemId],
       ),
     ).rejects.toThrow(/does not match TaxInvoice/);
+  });
+
+  it('rejects rental invoice items whose rental contract item belongs to another contract', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = randomUUID();
+
+    await expect(
+      client.query(
+        `
+          INSERT INTO "InvoiceItem" (
+            "id",
+            "organizationId",
+            "invoiceId",
+            "rentalOrderItemId",
+            "rentalContractItemId",
+            "type",
+            "description",
+            "quantity",
+            "unitPrice",
+            "supplyAmount",
+            "vatType",
+            "vatAmount",
+            "totalAmount",
+            "updatedAt"
+          )
+          VALUES ($1, $2, $3, $4, $5, 'RENTAL_FEE', 'Monthly rental fee', 1, 1000, 1000, 'NONE', 0, 1000, $6)
+        `,
+        [
+          invoiceItemId,
+          fixture.organizationId,
+          fixture.invoiceId,
+          fixture.rentalOrderItemId,
+          fixture.otherRentalContractItemId,
+          fixture.now,
+        ],
+      ),
+    ).rejects.toThrow(/rental contract item must belong to invoice rental contract/);
+  });
+
+  it('allows matching rental invoice items to reference their contract item', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = await insertContractBackedRentalInvoiceItem(client, fixture);
+
+    const result = await client.query<{ rentalContractItemId: string }>(
+      `
+        SELECT "rentalContractItemId"
+        FROM "InvoiceItem"
+        WHERE "id" = $1
+          AND "organizationId" = $2
+      `,
+      [invoiceItemId, fixture.organizationId],
+    );
+
+    expect(result.rows[0]?.rentalContractItemId).toBe(fixture.rentalContractItemId);
+  });
+
+  it('rejects invoice parent updates that invalidate contract-item-backed invoice items', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    await insertContractBackedRentalInvoiceItem(client, fixture);
+
+    await expect(
+      client.query(
+        `
+          UPDATE "Invoice"
+          SET "rentalContractId" = $1,
+              "updatedAt" = $2
+          WHERE "id" = $3
+            AND "organizationId" = $4
+        `,
+        [fixture.otherRentalContractId, new Date(), fixture.invoiceId, fixture.organizationId],
+      ),
+    ).rejects.toThrow(/existing InvoiceItems with rentalContractItemId/);
+  });
+
+  it('rejects rental contract item parent updates that invalidate existing invoice items', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    await insertContractBackedRentalInvoiceItem(client, fixture);
+
+    await expect(
+      client.query(
+        `
+          UPDATE "RentalContractItem"
+          SET "rentalContractId" = $1,
+              "updatedAt" = $2
+          WHERE "id" = $3
+            AND "organizationId" = $4
+        `,
+        [fixture.otherRentalContractId, new Date(), fixture.rentalContractItemId, fixture.organizationId],
+      ),
+    ).rejects.toThrow(/existing InvoiceItems with rentalContractItemId/);
+  });
+
+  it('rejects invoice items that mix sale sources with rental contract item sources', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const saleOrderItemId = await seedSaleOrderItem(client, fixture);
+
+    await expect(
+      client.query(
+        `
+          INSERT INTO "InvoiceItem" (
+            "id",
+            "organizationId",
+            "invoiceId",
+            "saleOrderItemId",
+            "rentalContractItemId",
+            "type",
+            "description",
+            "quantity",
+            "unitPrice",
+            "supplyAmount",
+            "vatType",
+            "vatAmount",
+            "totalAmount",
+            "updatedAt"
+          )
+          VALUES ($1, $2, $3, $4, $5, 'SALE_PRICE', 'Mixed source item', 1, 1000, 1000, 'NONE', 0, 1000, $6)
+        `,
+        [
+          randomUUID(),
+          fixture.organizationId,
+          fixture.invoiceId,
+          saleOrderItemId,
+          fixture.rentalContractItemId,
+          fixture.now,
+        ],
+      ),
+    ).rejects.toThrow(/InvoiceItem_source_type_check/);
   });
 });

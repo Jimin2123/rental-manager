@@ -13,6 +13,9 @@ model InvoiceItem {
   rentalOrderItemId String?
   rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
+  rentalContractItemId String?
+  rentalContractItem   RentalContractItem? @relation(fields: [rentalContractItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   type InvoiceItemType
 
   description String?
@@ -43,4 +46,5 @@ model InvoiceItem {
   @@index([organizationId, type])
   @@index([saleOrderItemId])
   @@index([rentalOrderItemId])
+  @@index([rentalContractItemId])
 }

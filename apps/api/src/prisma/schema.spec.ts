@@ -400,6 +400,30 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('"TaxInvoice_no_self_amendment_check"');
   });
 
+  it('tracks rental invoice items down to rental contract items', () => {
+    const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
+    const rentalContractItemSchema = readFileSync(
+      join(prismaModelsPath, 'orders/rental-contract-item.prisma'),
+      'utf8',
+    );
+    const migration = readFileSync(
+      join(prismaMigrationsPath, '20260616111000_invoice_item_contract_item_trace/migration.sql'),
+      'utf8',
+    );
+
+    expect(invoiceItemSchema).toContain('rentalContractItemId String?');
+    expect(invoiceItemSchema).toContain(
+      'rentalContractItem   RentalContractItem? @relation(fields: [rentalContractItemId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(invoiceItemSchema).toContain('@@index([rentalContractItemId])');
+    expect(rentalContractItemSchema).toContain('invoiceItems InvoiceItem[]');
+    expect(migration).toContain('DROP CONSTRAINT "InvoiceItem_source_type_check"');
+    expect(migration).toContain('ADD CONSTRAINT "InvoiceItem_source_type_check" CHECK');
+    expect(migration).toContain('assert_invoice_item_rental_contract_item_scope');
+    expect(migration).toContain('CREATE CONSTRAINT TRIGGER "Invoice_rental_contract_item_scope_guard"');
+    expect(migration).toContain('CREATE CONSTRAINT TRIGGER "RentalContractItem_invoice_item_scope_guard"');
+  });
+
   it('adds database guards for financial totals, source compatibility, and metered billing values', () => {
     const auditLogSchema = readFileSync(join(prismaModelsPath, 'common/audit-log.prisma'), 'utf8');
     const attachmentSchema = readFileSync(join(prismaModelsPath, 'common/attachment.prisma'), 'utf8');

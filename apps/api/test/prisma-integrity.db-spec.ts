@@ -439,6 +439,122 @@ const insertContractBackedRentalInvoiceItem = async (
   return invoiceItemId;
 };
 
+const insertMeterUsageInvoiceItem = async (
+  client: Client,
+  fixture: RentalInvoiceTraceFixture,
+  invoiceItemId = randomUUID(),
+): Promise<string> => {
+  await client.query(
+    `
+      INSERT INTO "InvoiceItem" (
+        "id",
+        "organizationId",
+        "invoiceId",
+        "rentalContractItemId",
+        "type",
+        "description",
+        "quantity",
+        "unitPrice",
+        "supplyAmount",
+        "vatType",
+        "vatAmount",
+        "totalAmount",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4, 'METER_USAGE', 'Meter usage charge', 1, 500, 500, 'NONE', 0, 500, $5)
+    `,
+    [invoiceItemId, fixture.organizationId, fixture.invoiceId, fixture.rentalContractItemId, fixture.now],
+  );
+
+  return invoiceItemId;
+};
+
+const insertMeterReading = async (
+  client: Client,
+  fixture: RentalInvoiceTraceFixture,
+  invoiceItemId: string,
+  readingId = randomUUID(),
+  rentalContractItemId = fixture.rentalContractItemId,
+): Promise<string> => {
+  await client.query(
+    `
+      INSERT INTO "MeterReading" (
+        "id",
+        "organizationId",
+        "assetId",
+        "rentalContractItemId",
+        "readingDate",
+        "blackCount",
+        "blackUsage",
+        "readingMethod",
+        "invoiceItemId",
+        "updatedAt"
+      )
+      VALUES (
+        $1,
+        $2,
+        (
+          SELECT "assetId"
+          FROM "RentalContractItem"
+          WHERE "id" = $3
+            AND "organizationId" = $2
+        ),
+        $3,
+        $4,
+        100,
+        100,
+        'MANUAL',
+        $5,
+        $4
+      )
+    `,
+    [readingId, fixture.organizationId, rentalContractItemId, fixture.now, invoiceItemId],
+  );
+
+  return readingId;
+};
+
+const insertAdditionalMeterContractItem = async (
+  client: Client,
+  fixture: RentalInvoiceTraceFixture,
+  contractItemId = randomUUID(),
+): Promise<string> => {
+  const assetId = randomUUID();
+
+  await client.query(
+    `
+      INSERT INTO "Asset" (
+        "id",
+        "organizationId",
+        "productId",
+        "serialNumber",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4, $5)
+    `,
+    [assetId, fixture.organizationId, fixture.productId, `asset-${randomUUID()}`, fixture.now],
+  );
+  await client.query(
+    `
+      INSERT INTO "RentalContractItem" (
+        "id",
+        "organizationId",
+        "rentalContractId",
+        "assetId",
+        "monthlyRentalPrice",
+        "billingType",
+        "freeBlackCount",
+        "blackUnitPrice",
+        "updatedAt"
+      )
+      VALUES ($1, $2, $3, $4, 1000, 'METER', 100, 10, $5)
+    `,
+    [contractItemId, fixture.organizationId, fixture.rentalContractId, assetId, fixture.now],
+  );
+
+  return contractItemId;
+};
+
 describe('Prisma database integrity guards', () => {
   const baseDatabaseUrl = process.env.DB_INTEGRATION_DATABASE_URL ?? process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL;
   const adminDatabaseName = process.env.DB_INTEGRATION_ADMIN_DATABASE ?? 'postgres';
@@ -1132,5 +1248,131 @@ describe('Prisma database integrity guards', () => {
         [randomUUID(), organizationId, `INV-${randomUUID()}`, customerId, now],
       ),
     ).rejects.toThrow(/settlement summary fields are managed/);
+  });
+
+  it('allows meter readings to link to matching meter usage invoice items', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = await insertMeterUsageInvoiceItem(client, fixture);
+    const meterReadingId = await insertMeterReading(client, fixture, invoiceItemId);
+
+    const result = await client.query<{ invoiceItemId: string }>(
+      `
+        SELECT "invoiceItemId"
+        FROM "MeterReading"
+        WHERE "id" = $1
+          AND "organizationId" = $2
+      `,
+      [meterReadingId, fixture.organizationId],
+    );
+
+    expect(result.rows[0]?.invoiceItemId).toBe(invoiceItemId);
+  });
+
+  it('rejects meter usage invoice items without a rental contract item', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+
+    await expect(
+      client.query(
+        `
+          INSERT INTO "InvoiceItem" (
+            "id",
+            "organizationId",
+            "invoiceId",
+            "type",
+            "description",
+            "quantity",
+            "unitPrice",
+            "supplyAmount",
+            "vatType",
+            "vatAmount",
+            "totalAmount",
+            "updatedAt"
+          )
+          VALUES ($1, $2, $3, 'METER_USAGE', 'Meter usage charge', 1, 500, 500, 'NONE', 0, 500, $4)
+        `,
+        [randomUUID(), fixture.organizationId, fixture.invoiceId, fixture.now],
+      ),
+    ).rejects.toThrow(/InvoiceItem_source_type_check/);
+  });
+
+  it('rejects meter readings linked to non-meter invoice items', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = await insertContractBackedRentalInvoiceItem(client, fixture);
+
+    await expect(insertMeterReading(client, fixture, invoiceItemId)).rejects.toThrow(/METER_USAGE/);
+  });
+
+  it('rejects meter readings linked to meter usage invoice items for another contract item', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = await insertMeterUsageInvoiceItem(client, fixture);
+    const otherContractItemId = await insertAdditionalMeterContractItem(client, fixture);
+
+    await expect(insertMeterReading(client, fixture, invoiceItemId, randomUUID(), otherContractItemId)).rejects.toThrow(
+      /rental contract item must match InvoiceItem/,
+    );
+  });
+
+  it('rejects invoice item parent updates that invalidate linked meter readings', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = await insertMeterUsageInvoiceItem(client, fixture);
+    await insertMeterReading(client, fixture, invoiceItemId);
+
+    await expect(
+      client.query(
+        `
+          UPDATE "InvoiceItem"
+          SET "type" = 'RENTAL_FEE',
+              "rentalOrderItemId" = $1,
+              "updatedAt" = $2
+          WHERE "id" = $3
+            AND "organizationId" = $4
+        `,
+        [fixture.rentalOrderItemId, new Date(), invoiceItemId, fixture.organizationId],
+      ),
+    ).rejects.toThrow(/existing MeterReadings/);
+  });
+
+  it('rejects invoice item contract item updates that invalidate linked meter readings', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const fixture = await seedRentalInvoiceTraceFixture(client);
+    const invoiceItemId = await insertMeterUsageInvoiceItem(client, fixture);
+    const otherContractItemId = await insertAdditionalMeterContractItem(client, fixture);
+    await insertMeterReading(client, fixture, invoiceItemId);
+
+    await expect(
+      client.query(
+        `
+          UPDATE "InvoiceItem"
+          SET "rentalContractItemId" = $1,
+              "updatedAt" = $2
+          WHERE "id" = $3
+            AND "organizationId" = $4
+        `,
+        [otherContractItemId, new Date(), invoiceItemId, fixture.organizationId],
+      ),
+    ).rejects.toThrow(/existing MeterReadings/);
   });
 });

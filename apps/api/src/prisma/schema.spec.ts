@@ -453,6 +453,20 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('Refund_sync_invoice_financials');
   });
 
+  it('models meter usage invoice items for counter billing', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const migrationPath = join(prismaMigrationsPath, '20260616113000_meter_usage_invoice_items/migration.sql');
+
+    expect(enumSchema).toContain('METER_USAGE');
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    expect(migration).toContain('assert_meter_reading_invoice_item_scope');
+    expect(migration).toContain('"InvoiceItem_meter_reading_scope_guard"');
+    expect(migration).toContain("type <> 'METER_USAGE'");
+  });
+
   it('adds database guards for financial totals, source compatibility, and metered billing values', () => {
     const auditLogSchema = readFileSync(join(prismaModelsPath, 'common/audit-log.prisma'), 'utf8');
     const attachmentSchema = readFileSync(join(prismaModelsPath, 'common/attachment.prisma'), 'utf8');

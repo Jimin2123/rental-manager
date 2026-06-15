@@ -90,6 +90,7 @@ enum InvoiceSettlementStatus {
 enum InvoiceItemType {
   SALE_PRICE // 판매금액
   RENTAL_FEE // 월 렌탈료
+  METER_USAGE // 카운터 초과 사용료
   SERVICE_FEE // AS/출장비
   INSTALLATION_FEE // 설치비
   REMOVAL_FEE // 철거비

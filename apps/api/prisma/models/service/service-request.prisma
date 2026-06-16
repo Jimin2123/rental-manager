@@ -28,6 +28,9 @@ model ServiceRequest {
   visitLocationAddress       String?
   visitLocationAddressDetail String?
 
+  maintenanceScheduleId String?
+  maintenanceSchedule   MaintenanceSchedule? @relation(fields: [maintenanceScheduleId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   memo String?
 
   visits   ServiceVisit[]
@@ -43,4 +46,5 @@ model ServiceRequest {
   @@index([organizationId, type])
   @@index([organizationId, customerId])
   @@index([organizationId, assetId])
+  @@index([organizationId, maintenanceScheduleId])
 }

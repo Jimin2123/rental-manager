@@ -27,6 +27,7 @@ model RentalContract {
 
   invoices Invoice[]
   items    RentalContractItem[]
+  maintenanceSchedules MaintenanceSchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

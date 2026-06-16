@@ -586,6 +586,33 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('CREATE OR REPLACE FUNCTION "assert_status_transition"');
   });
 
+  it('enforces Asset status machine and Order-to-RentalContract cancellation cascade at DB level', () => {
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260616116000_asset_status_machine_and_order_contract_sync/migration.sql',
+    );
+
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    // Asset status machine
+    expect(migration).toContain('assert_asset_status_transition');
+    expect(migration).toContain('"Asset_status_transition_guard"');
+    expect(migration).toContain("current_setting('rental_manager.status_transition_override', true)");
+    expect(migration).toContain("'INCOMING'");
+    expect(migration).toContain("'AVAILABLE'");
+    expect(migration).toContain("'RENTED'");
+    expect(migration).toContain("'SOLD'");
+    expect(migration).toContain("'DISPOSED'");
+    expect(migration).toContain("'LOST'");
+
+    // Order → RentalContract cancellation cascade
+    expect(migration).toContain('sync_rental_contract_on_order_cancel');
+    expect(migration).toContain('"Order_cancel_sync_rental_contract"');
+    expect(migration).toContain("rc.\"status\"");
+  });
+
   it('models document sequences for organization-scoped daily numbering', () => {
     const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
     const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');

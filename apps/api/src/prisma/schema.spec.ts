@@ -586,6 +586,33 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('CREATE OR REPLACE FUNCTION "assert_status_transition"');
   });
 
+  it('enforces Asset status machine and Order-to-RentalContract cancellation cascade at DB level', () => {
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260616116000_asset_status_machine_and_order_contract_sync/migration.sql',
+    );
+
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    // Asset status machine
+    expect(migration).toContain('assert_asset_status_transition');
+    expect(migration).toContain('"Asset_status_transition_guard"');
+    expect(migration).toContain("current_setting('rental_manager.status_transition_override', true)");
+    expect(migration).toContain("'INCOMING'");
+    expect(migration).toContain("'AVAILABLE'");
+    expect(migration).toContain("'RENTED'");
+    expect(migration).toContain("'SOLD'");
+    expect(migration).toContain("'DISPOSED'");
+    expect(migration).toContain("'LOST'");
+
+    // Order → RentalContract cancellation cascade
+    expect(migration).toContain('sync_rental_contract_on_order_cancel');
+    expect(migration).toContain('"Order_cancel_sync_rental_contract"');
+    expect(migration).toContain("rc.\"status\"");
+  });
+
   it('models document sequences for organization-scoped daily numbering', () => {
     const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
     const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
@@ -608,5 +635,61 @@ describe('Prisma customer schema', () => {
     expect(sequenceSchema).toContain('@@unique([organizationId, type, dateKey])');
     expect(migration).toContain('CREATE TYPE "DocumentSequenceType"');
     expect(migration).toContain('CREATE TABLE "DocumentSequence"');
+  });
+
+  it('models maintenance schedule for rental contracts with interval-based inspection tracking', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const maintenanceSchedulePath = join(prismaModelsPath, 'service/maintenance-schedule.prisma');
+    const serviceRequestSchema = readFileSync(join(prismaModelsPath, 'service/service-request.prisma'), 'utf8');
+    const rentalContractSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract.prisma'), 'utf8');
+    const organizationMemberSchema = readFileSync(
+      join(prismaModelsPath, 'business/organization-member.prisma'),
+      'utf8',
+    );
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260616117000_maintenance_schedule/migration.sql',
+    );
+
+    expect(enumSchema).toContain('enum MaintenanceIntervalUnit');
+    expect(enumSchema).toContain('MONTH');
+    expect(enumSchema).toContain('DAY');
+
+    expect(existsSync(maintenanceSchedulePath)).toBe(true);
+    const maintenanceScheduleSchema = readFileSync(maintenanceSchedulePath, 'utf8');
+
+    expect(maintenanceScheduleSchema).toContain('model MaintenanceSchedule');
+    expect(maintenanceScheduleSchema).toContain(
+      'rentalContract   RentalContract @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(maintenanceScheduleSchema).toContain('intervalUnit  MaintenanceIntervalUnit');
+    expect(maintenanceScheduleSchema).toContain('intervalValue Int');
+    expect(maintenanceScheduleSchema).toContain('nextScheduledAt DateTime');
+    expect(maintenanceScheduleSchema).toContain('lastInspectedAt DateTime?');
+    expect(maintenanceScheduleSchema).toContain(
+      'assignedStaff   OrganizationMember? @relation(fields: [assignedStaffId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(maintenanceScheduleSchema).toContain('isActive Boolean @default(true)');
+    expect(maintenanceScheduleSchema).toContain('@@unique([id, organizationId])');
+    expect(maintenanceScheduleSchema).toContain('@@index([organizationId, nextScheduledAt])');
+
+    expect(serviceRequestSchema).toContain('maintenanceScheduleId String?');
+    expect(serviceRequestSchema).toContain(
+      'maintenanceSchedule   MaintenanceSchedule? @relation(fields: [maintenanceScheduleId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(serviceRequestSchema).toContain('@@index([organizationId, maintenanceScheduleId])');
+
+    expect(rentalContractSchema).toContain('maintenanceSchedules MaintenanceSchedule[]');
+    expect(organizationMemberSchema).toContain('maintenanceSchedules MaintenanceSchedule[]');
+
+    expect(existsSync(migrationPath)).toBe(true);
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    expect(migration).toContain('CREATE TYPE "MaintenanceIntervalUnit"');
+    expect(migration).toContain('CREATE TABLE "MaintenanceSchedule"');
+    expect(migration).toContain('"MaintenanceSchedule_rentalContractId_organizationId_fkey"');
+    expect(migration).toContain('"MaintenanceSchedule_assignedStaffId_organizationId_fkey"');
+    expect(migration).toContain('"MaintenanceSchedule_interval_value_positive_check"');
+    expect(migration).toContain('"ServiceRequest_maintenanceScheduleId_organizationId_fkey"');
   });
 });

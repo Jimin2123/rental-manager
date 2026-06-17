@@ -176,6 +176,12 @@ enum MeterReadingMethod {
   REMOTE // 원격 수집
 }
 
+// 정기점검
+enum MaintenanceIntervalUnit {
+  MONTH // N개월마다
+  DAY   // N일마다
+}
+
 // AS
 enum ServiceRequestStatus {
   RECEIVED // 접수

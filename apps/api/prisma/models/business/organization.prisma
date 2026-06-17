@@ -25,6 +25,7 @@ model Organization {
   refunds                 Refund[]
   quotations              Quotation[]
   serviceRequests         ServiceRequest[]
+  maintenanceSchedules    MaintenanceSchedule[]
   assetEvents             AssetEvent[]
   meterReadings           MeterReading[]
   attachments             Attachment[]

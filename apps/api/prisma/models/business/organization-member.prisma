@@ -26,6 +26,7 @@ model OrganizationMember {
   createdInvoices     Invoice[]
   createdPayments     Payment[]
   createdContracts    RentalContract[]
+  maintenanceSchedules MaintenanceSchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

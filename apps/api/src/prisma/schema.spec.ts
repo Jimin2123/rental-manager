@@ -692,4 +692,31 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('"MaintenanceSchedule_interval_value_positive_check"');
     expect(migration).toContain('"ServiceRequest_maintenanceScheduleId_organizationId_fkey"');
   });
+
+  describe('User 인증 도메인 schema', () => {
+    const userModelsPath = join(prismaModelsPath, 'user');
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260618118000_user_auth_domain',
+      'migration.sql',
+    );
+
+    it('enums.prisma에 UserType, OAuthProvider, OrganizationMemberRole이 정의되어 있다', () => {
+      const enumsPath = join(__dirname, '../../prisma/enums.prisma');
+      const enums = readFileSync(enumsPath, 'utf8');
+
+      expect(enums).toContain('enum UserType {');
+      expect(enums).toContain('PERSONAL');
+      expect(enums).toContain('BUSINESS');
+      expect(enums).toContain('enum OAuthProvider {');
+      expect(enums).toContain('GOOGLE');
+      expect(enums).toContain('KAKAO');
+      expect(enums).toContain('NAVER');
+      expect(enums).toContain('enum OrganizationMemberRole {');
+      expect(enums).toContain('OWNER');
+      expect(enums).toContain('ADMIN');
+      expect(enums).toContain('MANAGER');
+      expect(enums).toContain('STAFF');
+    });
+  });
 });

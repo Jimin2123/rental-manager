@@ -696,7 +696,27 @@ describe('Prisma customer schema', () => {
   describe('User 인증 도메인 schema', () => {
     const userModelsPath = join(prismaModelsPath, 'user');
     // migration 테스트는 Task 7에서 추가 — 경로 선언만 미리 위치
-    const _migrationPath = join(prismaMigrationsPath, '20260618118000_user_auth_domain', 'migration.sql');
+    const migrationPath = join(prismaMigrationsPath, '20260618118000_user_auth_domain', 'migration.sql');
+
+    it('마이그레이션이 User, Account, AccountIdentity, PasswordHistory, RefreshToken 테이블을 생성하고 OrganizationMember를 변경한다', () => {
+      expect(existsSync(migrationPath)).toBe(true);
+      const migration = readFileSync(migrationPath, 'utf8');
+
+      expect(migration).toContain('CREATE TYPE "UserType"');
+      expect(migration).toContain('CREATE TYPE "OAuthProvider"');
+      expect(migration).toContain('CREATE TYPE "OrganizationMemberRole"');
+      expect(migration).toContain('CREATE TABLE "User"');
+      expect(migration).toContain('CREATE TABLE "Account"');
+      expect(migration).toContain('CREATE TABLE "AccountIdentity"');
+      expect(migration).toContain('CREATE TABLE "PasswordHistory"');
+      expect(migration).toContain('CREATE TABLE "RefreshToken"');
+      expect(migration).toContain('ALTER TABLE "OrganizationMember" ADD COLUMN');
+      expect(migration).toContain('"userId"');
+      expect(migration).toContain('"role"');
+      expect(migration).toContain('"Account_userId_fkey"');
+      expect(migration).toContain('"AccountIdentity_accountId_fkey"');
+      expect(migration).toContain('"OrganizationMember_userId_fkey"');
+    });
 
     it('enums.prisma에 UserType, OAuthProvider, OrganizationMemberRole이 정의되어 있다', () => {
       const enumsPath = join(__dirname, '../../prisma/enums.prisma');

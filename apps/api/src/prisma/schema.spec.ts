@@ -695,11 +695,8 @@ describe('Prisma customer schema', () => {
 
   describe('User 인증 도메인 schema', () => {
     const userModelsPath = join(prismaModelsPath, 'user');
-    const migrationPath = join(
-      prismaMigrationsPath,
-      '20260618118000_user_auth_domain',
-      'migration.sql',
-    );
+    // migration 테스트는 Task 7에서 추가 — 경로 선언만 미리 위치
+    const _migrationPath = join(prismaMigrationsPath, '20260618118000_user_auth_domain', 'migration.sql');
 
     it('enums.prisma에 UserType, OAuthProvider, OrganizationMemberRole이 정의되어 있다', () => {
       const enumsPath = join(__dirname, '../../prisma/enums.prisma');

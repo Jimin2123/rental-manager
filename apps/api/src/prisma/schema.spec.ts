@@ -756,5 +756,28 @@ describe('Prisma customer schema', () => {
       expect(identitySchema).toContain('@@unique([provider, providerId])');
       expect(identitySchema).toContain('@@index([accountId])');
     });
+
+    it('PasswordHistory 모델이 accountId와 createdAt 복합 인덱스를 가진다', () => {
+      const passwordHistorySchema = readFileSync(join(userModelsPath, 'password-history.prisma'), 'utf8');
+
+      expect(passwordHistorySchema).toContain('model PasswordHistory {');
+      expect(passwordHistorySchema).toContain('passwordHash String');
+      expect(passwordHistorySchema).toContain('@@index([accountId])');
+      expect(passwordHistorySchema).toContain('@@index([accountId, createdAt])');
+    });
+
+    it('RefreshToken 모델이 tokenHash만 저장하고 revokedAt으로 무효화를 추적한다', () => {
+      const refreshTokenSchema = readFileSync(join(userModelsPath, 'refresh-token.prisma'), 'utf8');
+
+      expect(refreshTokenSchema).toContain('model RefreshToken {');
+      expect(refreshTokenSchema).toContain('tokenHash String    @unique');
+      expect(refreshTokenSchema).toContain('expiresAt DateTime');
+      expect(refreshTokenSchema).toContain('revokedAt DateTime?');
+      expect(refreshTokenSchema).toContain('userAgent String?');
+      expect(refreshTokenSchema).toContain('ipAddress String?');
+      expect(refreshTokenSchema).toContain('@@index([accountId])');
+      expect(refreshTokenSchema).toContain('@@index([tokenHash])');
+      expect(refreshTokenSchema).toContain('@@index([accountId, revokedAt])');
+    });
   });
 });

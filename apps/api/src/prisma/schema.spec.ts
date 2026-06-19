@@ -779,5 +779,21 @@ describe('Prisma customer schema', () => {
       expect(refreshTokenSchema).toContain('@@index([tokenHash])');
       expect(refreshTokenSchema).toContain('@@index([accountId, revokedAt])');
     });
+
+    it('OrganizationMember에 userId FK와 role이 추가되고 동일 조직 중복 소속을 막는 제약이 있다', () => {
+      const memberSchema = readFileSync(
+        join(prismaModelsPath, 'business/organization-member.prisma'),
+        'utf8',
+      );
+
+      expect(memberSchema).toContain('userId String');
+      expect(memberSchema).toContain(
+        'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
+      );
+      expect(memberSchema).toContain('role OrganizationMemberRole @default(STAFF)');
+      expect(memberSchema).toContain('@@unique([userId, organizationId])');
+      expect(memberSchema).toContain('@@index([organizationId, role])');
+      expect(memberSchema).toContain('@@index([userId])');
+    });
   });
 });

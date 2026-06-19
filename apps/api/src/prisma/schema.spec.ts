@@ -718,5 +718,33 @@ describe('Prisma customer schema', () => {
       expect(enums).toContain('MANAGER');
       expect(enums).toContain('STAFF');
     });
+
+    it('User 모델이 type, account, organizationMembers 관계를 가진다', () => {
+      const userSchema = readFileSync(join(userModelsPath, 'user.prisma'), 'utf8');
+
+      expect(userSchema).toContain('model User {');
+      expect(userSchema).toContain('type UserType @default(PERSONAL)');
+      expect(userSchema).toContain('deletedAt DateTime?');
+      expect(userSchema).toContain('account             Account?');
+      expect(userSchema).toContain('organizationMembers OrganizationMember[]');
+    });
+
+    it('Account 모델이 userId unique FK와 nullable passwordHash를 가진다', () => {
+      const accountSchema = readFileSync(join(userModelsPath, 'account.prisma'), 'utf8');
+
+      expect(accountSchema).toContain('model Account {');
+      expect(accountSchema).toContain('userId String @unique');
+      expect(accountSchema).toContain(
+        'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
+      );
+      expect(accountSchema).toContain('email        String  @unique');
+      expect(accountSchema).toContain('passwordHash String?');
+      expect(accountSchema).toContain('isActive    Boolean   @default(true)');
+      expect(accountSchema).toContain('lastLoginAt DateTime?');
+      expect(accountSchema).toContain('identities        AccountIdentity[]');
+      expect(accountSchema).toContain('passwordHistories PasswordHistory[]');
+      expect(accountSchema).toContain('refreshTokens     RefreshToken[]');
+      expect(accountSchema).toContain('@@index([email])');
+    });
   });
 });

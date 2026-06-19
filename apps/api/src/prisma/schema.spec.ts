@@ -743,5 +743,18 @@ describe('Prisma customer schema', () => {
       expect(accountSchema).toContain('refreshTokens     RefreshToken[]');
       expect(accountSchema).toContain('@@index([email])');
     });
+
+    it('AccountIdentity 모델이 소셜 제공자별 유일성 제약을 가진다', () => {
+      const identitySchema = readFileSync(join(userModelsPath, 'account-identity.prisma'), 'utf8');
+
+      expect(identitySchema).toContain('model AccountIdentity {');
+      expect(identitySchema).toContain('provider   OAuthProvider');
+      expect(identitySchema).toContain('providerId String');
+      expect(identitySchema).toContain('providerEmail String?');
+      expect(identitySchema).toContain('providerData  Json?');
+      expect(identitySchema).toContain('@@unique([accountId, provider])');
+      expect(identitySchema).toContain('@@unique([provider, providerId])');
+      expect(identitySchema).toContain('@@index([accountId])');
+    });
   });
 });

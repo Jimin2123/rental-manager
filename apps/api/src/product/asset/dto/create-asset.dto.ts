@@ -1,4 +1,4 @@
-import { IsInt, IsISO8601, IsOptional, IsString, IsIn } from 'class-validator';
+import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateAssetDto {
   @IsString()
@@ -17,6 +17,7 @@ export class CreateAssetDto {
 
   @IsOptional()
   @IsInt()
+  @Min(0)
   purchasePrice?: number;
 
   @IsOptional()

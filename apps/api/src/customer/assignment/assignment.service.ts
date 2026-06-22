@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateAssignmentDto } from './dto/create-assignment.dto';
 import type { UpdateAssignmentDto } from './dto/update-assignment.dto';
@@ -27,9 +27,13 @@ export class AssignmentService {
   async create(organizationId: string, customerId: string, dto: CreateAssignmentDto): Promise<{ id: string }> {
     const customer = await this.prisma.customer.findUnique({
       where: { id_organizationId: { id: customerId, organizationId } },
-      select: { id: true, deletedAt: true },
+      select: { id: true, deletedAt: true, individualProfileId: true },
     });
     if (!customer || customer.deletedAt) throw new NotFoundException('고객을 찾을 수 없습니다.');
+
+    if (dto.individualProfileId && customer.individualProfileId !== dto.individualProfileId) {
+      throw new BadRequestException('유효하지 않은 개인 프로필입니다.');
+    }
 
     const member = await this.prisma.organizationMember.findUnique({
       where: { id_organizationId: { id: dto.organizationMemberId, organizationId } },

@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AssignmentService } from './assignment.service';
@@ -84,6 +84,15 @@ describe('AssignmentService', () => {
           data: { isPrimary: false },
         }),
       );
+    });
+
+    it('throws BadRequestException when individualProfileId does not match customer profile', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null, individualProfileId: 'p-correct' });
+      prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', isActive: true });
+
+      await expect(
+        service.create('org-1', 'c-1', { organizationMemberId: 'm-1', individualProfileId: 'p-wrong' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('creates assignment and returns id', async () => {

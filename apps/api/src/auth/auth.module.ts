@@ -5,6 +5,8 @@ import { MailModule } from '../mail/mail.module';
 import { JwtStrategy } from './core/jwt.strategy';
 import { EmailAuthController } from './email/email-auth.controller';
 import { EmailAuthService } from './email/email-auth.service';
+import { PasswordController } from './password/password.controller';
+import { PasswordService } from './password/password.service';
 import { SessionService } from './session/session.service';
 import { TokenService } from './session/token.service';
 import { DbVerificationTokenStore } from './verification/token-store/db-verification-token-store.service';
@@ -14,13 +16,14 @@ import { VerificationService } from './verification/verification.service';
 
 @Module({
   imports: [PassportModule, JwtModule.register({}), MailModule],
-  controllers: [EmailAuthController, VerificationController],
+  controllers: [EmailAuthController, VerificationController, PasswordController],
   providers: [
     JwtStrategy,
     TokenService,
     SessionService,
     EmailAuthService,
     VerificationService,
+    PasswordService,
     { provide: VERIFICATION_TOKEN_STORE, useClass: DbVerificationTokenStore },
   ],
   exports: [JwtModule, TokenService, SessionService],

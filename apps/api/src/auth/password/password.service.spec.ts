@@ -114,5 +114,24 @@ describe('PasswordService', () => {
       bcryptCompare.mockResolvedValue(false);
       await expect(service.changePassword('acc-1', 'wrong', 'new')).rejects.toThrow(UnauthorizedException);
     });
+
+    it('updates passwordHash, appends history, and revokes all refresh tokens on success', async () => {
+      prisma.account.findUnique.mockResolvedValue({ id: 'acc-1', passwordHash: '$hash' });
+      bcryptCompare.mockResolvedValue(true); // current password matches
+      prisma.passwordHistory.findMany.mockResolvedValue([]); // no history collision
+      bcryptHash.mockResolvedValue('$new-hash');
+      prisma.account.update.mockResolvedValue({});
+      prisma.passwordHistory.create.mockResolvedValue({});
+      prisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.changePassword('acc-1', 'current-pass', 'new-pass-123');
+
+      expect(prisma.account.update).toHaveBeenCalledWith({ where: { id: 'acc-1' }, data: { passwordHash: '$new-hash' } });
+      expect(prisma.passwordHistory.create).toHaveBeenCalledWith({ data: { accountId: 'acc-1', passwordHash: '$new-hash' } });
+      expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { accountId: 'acc-1', revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
   });
 });

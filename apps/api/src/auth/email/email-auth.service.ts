@@ -36,8 +36,7 @@ export class EmailAuthService {
 
   async validateCredentials(email: string, password: string) {
     const account = await this.prisma.account.findUnique({ where: { email } });
-    if (!account || !account.passwordHash)
-      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+    if (!account || !account.passwordHash) throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     if (!account.isActive) throw new UnauthorizedException('비활성화된 계정입니다.');
 
     const valid = await bcrypt.compare(password, account.passwordHash);
@@ -105,7 +104,13 @@ export class EmailAuthService {
     });
     if (!member || !member.isActive) throw new ForbiddenException('해당 조직의 활성 멤버가 아닙니다.');
 
-    const accessToken = this.tokenService.generateAccessToken({ sub: accountId, userId, email, organizationId, role: member.role });
+    const accessToken = this.tokenService.generateAccessToken({
+      sub: accountId,
+      userId,
+      email,
+      organizationId,
+      role: member.role,
+    });
     return { accessToken };
   }
 }

@@ -41,9 +41,7 @@ describe('EmailAuthService', () => {
       passwordHistory: { create: jest.fn() },
       refreshToken: { findUnique: jest.fn() },
       organizationMember: { findUnique: jest.fn() },
-      $transaction: jest.fn().mockImplementation(
-        (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma),
-      ),
+      $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     tokenService = {
       generateAccessToken: jest.fn().mockReturnValue('access-jwt'),
@@ -185,7 +183,13 @@ describe('EmailAuthService', () => {
 
       const result = await service.refreshSession('raw-token', { userAgent: 'Chrome' });
 
-      expect(sessionService.rotate).toHaveBeenCalledWith('rt-1', 'new-raw-token', 'acc-1', expiresAt, expect.any(Object));
+      expect(sessionService.rotate).toHaveBeenCalledWith(
+        'rt-1',
+        'new-raw-token',
+        'acc-1',
+        expiresAt,
+        expect.any(Object),
+      );
       expect(result.accessToken).toBe('access-jwt');
       expect(result.refreshToken).toBe('new-raw-token');
     });
@@ -194,16 +198,12 @@ describe('EmailAuthService', () => {
   describe('switchOrg', () => {
     it('throws ForbiddenException when not a member', async () => {
       prisma.organizationMember.findUnique.mockResolvedValue(null);
-      await expect(service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1')).rejects.toThrow(ForbiddenException);
     });
 
     it('throws ForbiddenException when member is inactive', async () => {
       prisma.organizationMember.findUnique.mockResolvedValue({ role: 'STAFF', isActive: false });
-      await expect(service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1')).rejects.toThrow(ForbiddenException);
     });
 
     it('returns access token with organizationId and role when valid', async () => {

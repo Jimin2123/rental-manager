@@ -22,7 +22,7 @@ export class TokenService {
   generateAccessToken(payload: JwtPayload): string {
     const options: JwtSignOptions = {
       secret: this.config.getOrThrow<string>('JWT_SECRET'),
-      expiresIn: this.config.get('JWT_EXPIRES_IN', '1h') as JwtSignOptions['expiresIn'],
+      expiresIn: this.config.get('JWT_EXPIRES_IN', '1h'),
     };
     return this.jwt.sign(payload, options);
   }

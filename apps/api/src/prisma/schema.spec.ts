@@ -397,10 +397,7 @@ describe('Prisma customer schema', () => {
 
   it('tracks rental invoice items down to rental contract items', () => {
     const invoiceItemSchema = readFileSync(join(prismaModelsPath, 'finance/invoice-item.prisma'), 'utf8');
-    const rentalContractItemSchema = readFileSync(
-      join(prismaModelsPath, 'orders/rental-contract-item.prisma'),
-      'utf8',
-    );
+    const rentalContractItemSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract-item.prisma'), 'utf8');
     const migration = readFileSync(
       join(prismaMigrationsPath, '20260616111000_invoice_item_contract_item_trace/migration.sql'),
       'utf8',
@@ -610,7 +607,7 @@ describe('Prisma customer schema', () => {
     // Order → RentalContract cancellation cascade
     expect(migration).toContain('sync_rental_contract_on_order_cancel');
     expect(migration).toContain('"Order_cancel_sync_rental_contract"');
-    expect(migration).toContain("rc.\"status\"");
+    expect(migration).toContain('rc."status"');
   });
 
   it('models document sequences for organization-scoped daily numbering', () => {
@@ -646,10 +643,7 @@ describe('Prisma customer schema', () => {
       join(prismaModelsPath, 'business/organization-member.prisma'),
       'utf8',
     );
-    const migrationPath = join(
-      prismaMigrationsPath,
-      '20260616117000_maintenance_schedule/migration.sql',
-    );
+    const migrationPath = join(prismaMigrationsPath, '20260616117000_maintenance_schedule/migration.sql');
 
     expect(enumSchema).toContain('enum MaintenanceIntervalUnit');
     expect(enumSchema).toContain('MONTH');
@@ -802,15 +796,10 @@ describe('Prisma customer schema', () => {
     });
 
     it('OrganizationMember에 userId FK와 role이 추가되고 동일 조직 중복 소속을 막는 제약이 있다', () => {
-      const memberSchema = readFileSync(
-        join(prismaModelsPath, 'business/organization-member.prisma'),
-        'utf8',
-      );
+      const memberSchema = readFileSync(join(prismaModelsPath, 'business/organization-member.prisma'), 'utf8');
 
       expect(memberSchema).toContain('userId String');
-      expect(memberSchema).toContain(
-        'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
-      );
+      expect(memberSchema).toContain('user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)');
       expect(memberSchema).toContain('role OrganizationMemberRole @default(STAFF)');
       expect(memberSchema).toContain('@@unique([userId, organizationId])');
       expect(memberSchema).toContain('@@index([organizationId, role])');
@@ -869,10 +858,7 @@ describe('Prisma customer schema', () => {
     });
 
     it('stores token as SHA-256 hash and has required fields', () => {
-      const schema = readFileSync(
-        join(prismaModelsPath, 'business/organization-invitation.prisma'),
-        'utf8',
-      );
+      const schema = readFileSync(join(prismaModelsPath, 'business/organization-invitation.prisma'), 'utf8');
       expect(schema).toContain('token String @unique');
       expect(schema).toContain('email');
       expect(schema).toContain('role           OrganizationMemberRole');
@@ -885,10 +871,7 @@ describe('Prisma customer schema', () => {
     });
 
     it('links invitedBy using composite FK scoped to the same organization', () => {
-      const schema = readFileSync(
-        join(prismaModelsPath, 'business/organization-invitation.prisma'),
-        'utf8',
-      );
+      const schema = readFileSync(join(prismaModelsPath, 'business/organization-invitation.prisma'), 'utf8');
       expect(schema).toContain(
         'invitedBy   OrganizationMember @relation(fields: [invitedById, organizationId], references: [id, organizationId], onDelete: Restrict)',
       );

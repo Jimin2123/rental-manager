@@ -35,7 +35,13 @@ export class EmailAuthController {
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const account = await this.emailAuth.validateCredentials(dto.email, dto.password);
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
-    const tokens = await this.emailAuth.issueTokens(account.id, account.userId, account.email, dto.rememberMe ?? false, meta);
+    const tokens = await this.emailAuth.issueTokens(
+      account.id,
+      account.userId,
+      account.email,
+      dto.rememberMe ?? false,
+      meta,
+    );
     setAuthCookies(res, tokens, dto.rememberMe ?? false);
     return { accountId: account.id, email: account.email, emailVerifiedAt: account.emailVerifiedAt };
   }
@@ -74,12 +80,7 @@ export class EmailAuthController {
     @CurrentUser() user: AuthUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string }> {
-    const { accessToken } = await this.emailAuth.switchOrg(
-      user.accountId,
-      user.userId,
-      user.email,
-      dto.organizationId,
-    );
+    const { accessToken } = await this.emailAuth.switchOrg(user.accountId, user.userId, user.email, dto.organizationId);
     setAccessTokenCookie(res, accessToken);
     return { message: 'Organization switched.' };
   }

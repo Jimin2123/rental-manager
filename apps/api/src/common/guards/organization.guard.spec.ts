@@ -50,7 +50,9 @@ describe('OrganizationGuard', () => {
 
   it('returns true and attaches orgContext when valid active member', async () => {
     prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', role: 'STAFF', isActive: true });
-    const req: Record<string, unknown> = { user: { accountId: 'a', userId: 'u', email: 'e@b.com', organizationId: 'org-1' } };
+    const req: Record<string, unknown> = {
+      user: { accountId: 'a', userId: 'u', email: 'e@b.com', organizationId: 'org-1' },
+    };
     const ctx = {
       switchToHttp: () => ({ getRequest: () => req }),
       getHandler: () => ({}),
@@ -72,7 +74,9 @@ describe('OrganizationGuard', () => {
   it('passes when @Roles requires OWNER and member is OWNER', async () => {
     prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', role: 'OWNER', isActive: true });
     reflector.getAllAndOverride.mockReturnValue(['OWNER', 'ADMIN']);
-    const req: Record<string, unknown> = { user: { accountId: 'a', userId: 'u', email: 'e@b.com', organizationId: 'org-1' } };
+    const req: Record<string, unknown> = {
+      user: { accountId: 'a', userId: 'u', email: 'e@b.com', organizationId: 'org-1' },
+    };
     const ctx = {
       switchToHttp: () => ({ getRequest: () => req }),
       getHandler: () => ({}),

@@ -857,7 +857,8 @@ describe('Prisma customer schema', () => {
       expect(migration).toContain('assert_payment_allocation_limits');
       expect(migration).toContain('"PaymentAllocation_limits_guard"');
       expect(migration).toContain('Payment.amount');
-      expect(migration).toContain('Invoice.finalAmount');
+      // Invoice 초과 배분(OVERPAID)은 정상 케이스이므로 트리거에서 검증하지 않음
+      expect(migration).not.toContain('Invoice.finalAmount');
     });
   });
 });

@@ -21,20 +21,19 @@ CREATE INDEX "MeterReading_organizationId_billingMonth_idx"
 
 -- ============================================================
 -- 4. PaymentAllocation 합계 검증 트리거
---    (a) 한 Payment의 총 배분액 <= Payment.amount
---    (b) 한 Invoice의 총 배분액 <= Invoice.finalAmount
+--    한 Payment의 총 배분액 <= Payment.amount
+--    (Invoice 초과 배분은 OVERPAID 정상 케이스이므로 검증하지 않음)
 -- ============================================================
 CREATE OR REPLACE FUNCTION assert_payment_allocation_limits()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_payment_amount      INT;
-  v_total_allocated     INT;
-  v_invoice_final       INT;
-  v_invoice_allocated   INT;
+  v_payment_amount  INT;
+  v_total_allocated INT;
 BEGIN
-  -- (a) Payment 총 배분액 검증
+  -- Payment 총 배분액 검증: 받은 금액보다 많이 배분할 수 없음
+  -- Invoice 초과 배분(OVERPAID)은 정상 비즈니스 케이스이므로 검증하지 않음
   SELECT amount INTO v_payment_amount
     FROM "Payment"
    WHERE id = NEW."paymentId";
@@ -48,22 +47,6 @@ BEGIN
     RAISE EXCEPTION
       'PaymentAllocation 합계(%)가 Payment.amount(%)를 초과합니다.',
       v_total_allocated + NEW.amount, v_payment_amount;
-  END IF;
-
-  -- (b) Invoice 총 배분액 검증
-  SELECT "finalAmount" INTO v_invoice_final
-    FROM "Invoice"
-   WHERE id = NEW."invoiceId";
-
-  SELECT COALESCE(SUM(amount), 0) INTO v_invoice_allocated
-    FROM "PaymentAllocation"
-   WHERE "invoiceId" = NEW."invoiceId"
-     AND id IS DISTINCT FROM NEW.id;
-
-  IF v_invoice_allocated + NEW.amount > v_invoice_final THEN
-    RAISE EXCEPTION
-      'PaymentAllocation 합계(%)가 Invoice.finalAmount(%)를 초과합니다.',
-      v_invoice_allocated + NEW.amount, v_invoice_final;
   END IF;
 
   RETURN NEW;

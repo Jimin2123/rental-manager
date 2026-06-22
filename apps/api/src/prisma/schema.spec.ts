@@ -861,4 +861,44 @@ describe('Prisma customer schema', () => {
       expect(migration).not.toContain('Invoice.finalAmount');
     });
   });
+
+  describe('VerificationToken schema (issue #9)', () => {
+    const vtMigrationPath = join(prismaMigrationsPath, '20260622120000_verification_token', 'migration.sql');
+
+    it('migration file exists', () => {
+      expect(existsSync(vtMigrationPath)).toBe(true);
+    });
+
+    it('VerificationTokenType enum is defined in enums.prisma', () => {
+      const enums = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+      expect(enums).toContain('enum VerificationTokenType {');
+      expect(enums).toContain('EMAIL_VERIFY');
+      expect(enums).toContain('PASSWORD_RESET');
+    });
+
+    it('VerificationToken model has required fields and unique token index', () => {
+      const schema = readFileSync(join(prismaModelsPath, 'user/verification-token.prisma'), 'utf8');
+      expect(schema).toContain('model VerificationToken {');
+      expect(schema).toContain('token     String                @unique');
+      expect(schema).toContain('type      VerificationTokenType');
+      expect(schema).toContain('accountId String');
+      expect(schema).toContain('expiresAt DateTime');
+      expect(schema).toContain('usedAt    DateTime?');
+      expect(schema).toContain('@@index([accountId])');
+    });
+
+    it('Account model has verificationTokens backrelation', () => {
+      const schema = readFileSync(join(prismaModelsPath, 'user/account.prisma'), 'utf8');
+      expect(schema).toContain('verificationTokens VerificationToken[]');
+    });
+
+    it('migration creates enum, table, unique index, and FK', () => {
+      const sql = readFileSync(vtMigrationPath, 'utf8');
+      expect(sql).toContain('CREATE TYPE "VerificationTokenType"');
+      expect(sql).toContain('CREATE TABLE "VerificationToken"');
+      expect(sql).toContain('"VerificationToken_accountId_fkey"');
+      expect(sql).toContain('CREATE UNIQUE INDEX "VerificationToken_token_key"');
+      expect(sql).toContain('CREATE INDEX "VerificationToken_accountId_idx"');
+    });
+  });
 });

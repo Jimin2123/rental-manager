@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { VerificationTokenType } from '@prisma/client';
+import { Prisma, VerificationTokenType } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { IVerificationTokenStore } from './verification-token-store.interface';
 
@@ -21,6 +21,11 @@ export class DbVerificationTokenStore implements IVerificationTokenStore {
   }
 
   async markUsed(id: string): Promise<void> {
-    await this.prisma.verificationToken.update({ where: { id }, data: { usedAt: new Date() } });
+    try {
+      await this.prisma.verificationToken.update({ where: { id }, data: { usedAt: new Date() } });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') return;
+      throw e;
+    }
   }
 }

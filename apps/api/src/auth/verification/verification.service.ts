@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { IMailService } from '../../mail/mail.interface';
 import { MAIL_SERVICE } from '../../mail/mail.interface';
@@ -21,7 +21,7 @@ export class VerificationService {
 
   async sendVerificationEmail(email: string): Promise<void> {
     const account = await this.prisma.account.findUnique({ where: { email } });
-    if (!account) throw new NotFoundException('계정을 찾을 수 없습니다.');
+    if (!account) return; // 이메일 존재 여부 노출 방지
 
     const rawToken = this.tokenService.generateRawRefreshToken();
     const hashed = this.tokenService.hashToken(rawToken);

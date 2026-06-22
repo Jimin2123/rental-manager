@@ -18,6 +18,7 @@ describe('PasswordService', () => {
     account: { findUnique: jest.Mock; update: jest.Mock };
     passwordHistory: { findMany: jest.Mock; create: jest.Mock };
     refreshToken: { updateMany: jest.Mock };
+    $transaction: jest.Mock;
   };
   let tokenStore: { save: jest.Mock; findValid: jest.Mock; markUsed: jest.Mock };
   let mailService: { sendPasswordReset: jest.Mock };
@@ -27,6 +28,7 @@ describe('PasswordService', () => {
       account: { findUnique: jest.fn(), update: jest.fn() },
       passwordHistory: { findMany: jest.fn(), create: jest.fn() },
       refreshToken: { updateMany: jest.fn() },
+      $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     tokenStore = { save: jest.fn(), findValid: jest.fn(), markUsed: jest.fn() };
     mailService = { sendPasswordReset: jest.fn() };

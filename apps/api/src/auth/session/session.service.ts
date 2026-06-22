@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TokenService } from './token.service';
 
@@ -46,10 +47,15 @@ export class SessionService {
   }
 
   async revokeById(id: string, accountId: string): Promise<void> {
-    await this.prisma.refreshToken.update({
-      where: { id, accountId },
-      data: { revokedAt: new Date() },
-    });
+    try {
+      await this.prisma.refreshToken.update({
+        where: { id, accountId },
+        data: { revokedAt: new Date() },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') return;
+      throw e;
+    }
   }
 
   async listActive(accountId: string) {

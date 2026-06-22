@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { setAuthCookies } from '../core/cookie.util';
 import { CurrentUser } from '../core/current-user.decorator';
@@ -15,6 +16,7 @@ export class SocialAuthController {
 
   @Post(':provider')
   @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async login(
     @Param('provider') provider: string,
     @Body() dto: SocialLoginDto,

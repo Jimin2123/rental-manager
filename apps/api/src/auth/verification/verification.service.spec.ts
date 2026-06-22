@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -34,9 +34,11 @@ describe('VerificationService', () => {
   });
 
   describe('sendVerificationEmail', () => {
-    it('throws NotFoundException when account does not exist', async () => {
+    it('silently returns when account does not exist (prevents email enumeration)', async () => {
       prismaAccount.findUnique.mockResolvedValue(null);
-      await expect(service.sendVerificationEmail('x@b.com')).rejects.toThrow(NotFoundException);
+      await expect(service.sendVerificationEmail('x@b.com')).resolves.toBeUndefined();
+      expect(tokenStore.save).not.toHaveBeenCalled();
+      expect(mailService.sendEmailVerification).not.toHaveBeenCalled();
     });
 
     it('saves hashed token and sends email', async () => {

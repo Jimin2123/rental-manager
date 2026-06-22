@@ -45,11 +45,13 @@ export class PasswordService {
     await this.assertNotInHistory(record.accountId, newPassword);
 
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    await this.prisma.account.update({ where: { id: record.accountId }, data: { passwordHash } });
-    await this.prisma.passwordHistory.create({ data: { accountId: record.accountId, passwordHash } });
-    await this.prisma.refreshToken.updateMany({
-      where: { accountId: record.accountId, revokedAt: null },
-      data: { revokedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.account.update({ where: { id: record.accountId }, data: { passwordHash } });
+      await tx.passwordHistory.create({ data: { accountId: record.accountId, passwordHash } });
+      await tx.refreshToken.updateMany({
+        where: { accountId: record.accountId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
     });
     await this.tokenStore.markUsed(record.id);
   }
@@ -64,11 +66,13 @@ export class PasswordService {
     await this.assertNotInHistory(accountId, newPassword);
 
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    await this.prisma.account.update({ where: { id: accountId }, data: { passwordHash } });
-    await this.prisma.passwordHistory.create({ data: { accountId, passwordHash } });
-    await this.prisma.refreshToken.updateMany({
-      where: { accountId, revokedAt: null },
-      data: { revokedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.account.update({ where: { id: accountId }, data: { passwordHash } });
+      await tx.passwordHistory.create({ data: { accountId, passwordHash } });
+      await tx.refreshToken.updateMany({
+        where: { accountId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
     });
   }
 

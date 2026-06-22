@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { IsEmail, IsString } from 'class-validator';
 import { VerificationService } from './verification.service';
 
@@ -20,6 +21,7 @@ export class VerificationController {
 
   @Post('verify/send')
   @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async sendVerification(@Body() dto: SendVerifyDto) {
     await this.verificationService.sendVerificationEmail(dto.email);
     return { message: '인증 이메일을 발송했습니다.' };
@@ -27,6 +29,7 @@ export class VerificationController {
 
   @Post('verify')
   @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     await this.verificationService.verifyEmail(dto.token);
     return { message: '이메일 인증이 완료되었습니다.' };

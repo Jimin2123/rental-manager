@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { clearAuthCookies, setAuthCookies } from '../core/cookie.util';
 import { CurrentUser } from '../core/current-user.decorator';
@@ -21,6 +22,7 @@ export class EmailAuthController {
   ) {}
 
   @Post('register')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async register(@Body() dto: RegisterDto) {
     await this.emailAuth.register(dto.email, dto.password);
     return { message: '가입 완료. 인증 이메일을 발송했습니다.' };
@@ -28,6 +30,7 @@ export class EmailAuthController {
 
   @Post('login')
   @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const account = await this.emailAuth.validateCredentials(dto.email, dto.password);
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };

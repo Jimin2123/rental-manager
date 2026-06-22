@@ -17,12 +17,12 @@ export function setAuthCookies(
   res.cookie(ACCESS_TOKEN, tokens.accessToken, { ...base, path: '/', maxAge: ACCESS_TTL_MS });
   res.cookie(REFRESH_TOKEN, tokens.refreshToken, {
     ...base,
-    path: '/auth/refresh',
+    path: '/auth',
     maxAge: rememberMe ? REMEMBER_TTL_MS : REFRESH_TTL_MS,
   });
 }
 
 export function clearAuthCookies(res: Response): void {
   res.clearCookie(ACCESS_TOKEN, { path: '/' });
-  res.clearCookie(REFRESH_TOKEN, { path: '/auth/refresh' });
+  res.clearCookie(REFRESH_TOKEN, { path: '/auth' });
 }

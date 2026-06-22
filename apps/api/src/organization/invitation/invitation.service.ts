@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { IMailService } from '../../mail/mail.interface';
 import { MAIL_SERVICE } from '../../mail/mail.interface';
@@ -23,6 +23,10 @@ export class InvitationService {
       include: { businessProfile: true },
     });
 
+    if (!org || !org.businessProfile) {
+      throw new NotFoundException('조직을 찾을 수 없습니다.');
+    }
+
     const account = await this.prisma.account.findUnique({ where: { email: dto.email }, select: { userId: true } });
     if (account) {
       const member = await this.prisma.organizationMember.findUnique({
@@ -45,7 +49,7 @@ export class InvitationService {
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const inviteUrl = `${appUrl}/invitations/accept?token=${rawToken}`;
-    await this.mailService.sendOrganizationInvite(dto.email, inviteUrl, org!.businessProfile!.name);
+    await this.mailService.sendOrganizationInvite(dto.email, inviteUrl, org.businessProfile.name);
   }
 
   async getByToken(rawToken: string) {

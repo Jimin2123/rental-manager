@@ -4,10 +4,12 @@ import { BusinessPartnerController } from './business-partner/business-partner.c
 import { BusinessPartnerService } from './business-partner/business-partner.service';
 import { CustomerController } from './customer/customer.controller';
 import { CustomerService } from './customer/customer.service';
+import { AssignmentController } from './assignment/assignment.controller';
+import { AssignmentService } from './assignment/assignment.service';
 
 @Module({
   imports: [OrganizationModule],
-  providers: [BusinessPartnerService, CustomerService],
-  controllers: [BusinessPartnerController, CustomerController],
+  providers: [BusinessPartnerService, CustomerService, AssignmentService],
+  controllers: [BusinessPartnerController, CustomerController, AssignmentController],
 })
 export class CustomerModule {}

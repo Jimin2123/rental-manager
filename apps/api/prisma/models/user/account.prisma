@@ -1,0 +1,24 @@
+model Account {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  email        String  @unique
+  passwordHash String? // 소셜 전용 가입자는 null
+
+  // true = 정상, false = 관리자 정지 (이메일 인증 여부는 emailVerifiedAt으로 구분)
+  isActive        Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  identities        AccountIdentity[]
+  passwordHistories PasswordHistory[]
+  refreshTokens     RefreshToken[]
+  verificationTokens VerificationToken[]
+
+  @@index([email])
+}

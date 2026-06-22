@@ -27,6 +27,9 @@ model MeterReading {
   invoiceItemId String?
   invoiceItem   InvoiceItem? @relation(fields: [invoiceItemId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
+  // 이 검침이 속하는 청구 월 (YYYY-MM). 청구 전에도 어느 달 분인지 명시
+  billingMonth String?
+
   note String?
 
   createdAt DateTime @default(now())
@@ -37,5 +40,6 @@ model MeterReading {
   @@index([organizationId, assetId])
   @@index([organizationId, assetId, readingDate])
   @@index([organizationId, rentalContractItemId])
+  @@index([organizationId, billingMonth])
   @@index([invoiceItemId])
 }

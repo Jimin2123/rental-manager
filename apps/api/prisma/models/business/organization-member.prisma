@@ -1,6 +1,11 @@
 model OrganizationMember {
   id String @id @default(uuid())
 
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  role OrganizationMemberRole @default(STAFF)
+
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
@@ -26,12 +31,16 @@ model OrganizationMember {
   createdInvoices     Invoice[]
   createdPayments     Payment[]
   createdContracts    RentalContract[]
+  maintenanceSchedules MaintenanceSchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([id, organizationId])
+  @@unique([userId, organizationId])
   @@index([organizationId])
+  @@index([organizationId, role])
   @@index([organizationId, name])
   @@index([organizationId, isActive])
+  @@index([userId])
 }

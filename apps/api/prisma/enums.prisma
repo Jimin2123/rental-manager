@@ -176,6 +176,12 @@ enum MeterReadingMethod {
   REMOTE // 원격 수집
 }
 
+// 정기점검
+enum MaintenanceIntervalUnit {
+  MONTH // N개월마다
+  DAY   // N일마다
+}
+
 // AS
 enum ServiceRequestStatus {
   RECEIVED // 접수
@@ -246,4 +252,31 @@ enum RefundReason {
   OVERPAYMENT // 초과 입금
   BILLING_ERROR // 청구 오류
   ETC // 기타
+}
+
+// 사용자 유형
+enum UserType {
+  PERSONAL // 개인 사용자 (초대받아 합류)
+  BUSINESS // 사업자 (Organization 생성 주체)
+}
+
+// 소셜 로그인 제공자
+enum OAuthProvider {
+  GOOGLE
+  KAKAO
+  NAVER
+}
+
+// 조직 내 역할
+enum OrganizationMemberRole {
+  OWNER   // 사업자 — 조직 생성자, 조직당 1명
+  ADMIN   // 관리자 — 멤버 초대/설정 가능
+  MANAGER // 담당자 — 계약/청구 처리 가능
+  STAFF   // 직원 — 조회 및 기본 업무
+}
+
+// 인증 토큰 유형
+enum VerificationTokenType {
+  EMAIL_VERIFY   // 이메일 인증
+  PASSWORD_RESET // 비밀번호 재설정
 }

@@ -1,0 +1,12 @@
+model VerificationToken {
+  id        String                @id @default(uuid())
+  token     String                @unique // SHA-256 해시 저장
+  type      VerificationTokenType
+  accountId String
+  account   Account               @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime              @default(now())
+
+  @@index([accountId])
+}

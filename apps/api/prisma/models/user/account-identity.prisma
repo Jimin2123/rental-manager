@@ -1,0 +1,18 @@
+model AccountIdentity {
+  id        String  @id @default(uuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  provider   OAuthProvider
+  providerId String        // 소셜 제공자가 발급한 고유 ID
+
+  providerEmail String? // 소셜 계정 이메일 (Account.email과 달라도 됨)
+  providerData  Json?   // 제공자별 추가 데이터 (프로필 사진 URL 등)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, provider])  // 계정당 제공자 1개
+  @@unique([provider, providerId]) // 제공자 ID는 전역 유일
+  @@index([accountId])
+}

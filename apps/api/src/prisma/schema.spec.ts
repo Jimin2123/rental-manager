@@ -586,6 +586,33 @@ describe('Prisma customer schema', () => {
     expect(migration).toContain('CREATE OR REPLACE FUNCTION "assert_status_transition"');
   });
 
+  it('enforces Asset status machine and Order-to-RentalContract cancellation cascade at DB level', () => {
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260616116000_asset_status_machine_and_order_contract_sync/migration.sql',
+    );
+
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    // Asset status machine
+    expect(migration).toContain('assert_asset_status_transition');
+    expect(migration).toContain('"Asset_status_transition_guard"');
+    expect(migration).toContain("current_setting('rental_manager.status_transition_override', true)");
+    expect(migration).toContain("'INCOMING'");
+    expect(migration).toContain("'AVAILABLE'");
+    expect(migration).toContain("'RENTED'");
+    expect(migration).toContain("'SOLD'");
+    expect(migration).toContain("'DISPOSED'");
+    expect(migration).toContain("'LOST'");
+
+    // Order → RentalContract cancellation cascade
+    expect(migration).toContain('sync_rental_contract_on_order_cancel');
+    expect(migration).toContain('"Order_cancel_sync_rental_contract"');
+    expect(migration).toContain("rc.\"status\"");
+  });
+
   it('models document sequences for organization-scoped daily numbering', () => {
     const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
     const organizationSchema = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
@@ -608,5 +635,270 @@ describe('Prisma customer schema', () => {
     expect(sequenceSchema).toContain('@@unique([organizationId, type, dateKey])');
     expect(migration).toContain('CREATE TYPE "DocumentSequenceType"');
     expect(migration).toContain('CREATE TABLE "DocumentSequence"');
+  });
+
+  it('models maintenance schedule for rental contracts with interval-based inspection tracking', () => {
+    const enumSchema = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+    const maintenanceSchedulePath = join(prismaModelsPath, 'service/maintenance-schedule.prisma');
+    const serviceRequestSchema = readFileSync(join(prismaModelsPath, 'service/service-request.prisma'), 'utf8');
+    const rentalContractSchema = readFileSync(join(prismaModelsPath, 'orders/rental-contract.prisma'), 'utf8');
+    const organizationMemberSchema = readFileSync(
+      join(prismaModelsPath, 'business/organization-member.prisma'),
+      'utf8',
+    );
+    const migrationPath = join(
+      prismaMigrationsPath,
+      '20260616117000_maintenance_schedule/migration.sql',
+    );
+
+    expect(enumSchema).toContain('enum MaintenanceIntervalUnit');
+    expect(enumSchema).toContain('MONTH');
+    expect(enumSchema).toContain('DAY');
+
+    expect(existsSync(maintenanceSchedulePath)).toBe(true);
+    const maintenanceScheduleSchema = readFileSync(maintenanceSchedulePath, 'utf8');
+
+    expect(maintenanceScheduleSchema).toContain('model MaintenanceSchedule');
+    expect(maintenanceScheduleSchema).toContain(
+      'rentalContract   RentalContract @relation(fields: [rentalContractId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(maintenanceScheduleSchema).toContain('intervalUnit  MaintenanceIntervalUnit');
+    expect(maintenanceScheduleSchema).toContain('intervalValue Int');
+    expect(maintenanceScheduleSchema).toContain('nextScheduledAt DateTime');
+    expect(maintenanceScheduleSchema).toContain('lastInspectedAt DateTime?');
+    expect(maintenanceScheduleSchema).toContain(
+      'assignedStaff   OrganizationMember? @relation(fields: [assignedStaffId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(maintenanceScheduleSchema).toContain('isActive Boolean @default(true)');
+    expect(maintenanceScheduleSchema).toContain('@@unique([id, organizationId])');
+    expect(maintenanceScheduleSchema).toContain('@@index([organizationId, nextScheduledAt])');
+
+    expect(serviceRequestSchema).toContain('maintenanceScheduleId String?');
+    expect(serviceRequestSchema).toContain(
+      'maintenanceSchedule   MaintenanceSchedule? @relation(fields: [maintenanceScheduleId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+    );
+    expect(serviceRequestSchema).toContain('@@index([organizationId, maintenanceScheduleId])');
+
+    expect(rentalContractSchema).toContain('maintenanceSchedules MaintenanceSchedule[]');
+    expect(organizationMemberSchema).toContain('maintenanceSchedules MaintenanceSchedule[]');
+
+    expect(existsSync(migrationPath)).toBe(true);
+    const migration = readFileSync(migrationPath, 'utf8');
+
+    expect(migration).toContain('CREATE TYPE "MaintenanceIntervalUnit"');
+    expect(migration).toContain('CREATE TABLE "MaintenanceSchedule"');
+    expect(migration).toContain('"MaintenanceSchedule_rentalContractId_organizationId_fkey"');
+    expect(migration).toContain('"MaintenanceSchedule_assignedStaffId_organizationId_fkey"');
+    expect(migration).toContain('"MaintenanceSchedule_interval_value_positive_check"');
+    expect(migration).toContain('"ServiceRequest_maintenanceScheduleId_organizationId_fkey"');
+  });
+
+  describe('User 인증 도메인 schema', () => {
+    const userModelsPath = join(prismaModelsPath, 'user');
+    // migration 테스트는 Task 7에서 추가 — 경로 선언만 미리 위치
+    const migrationPath = join(prismaMigrationsPath, '20260618118000_user_auth_domain', 'migration.sql');
+
+    it('마이그레이션이 User, Account, AccountIdentity, PasswordHistory, RefreshToken 테이블을 생성하고 OrganizationMember를 변경한다', () => {
+      expect(existsSync(migrationPath)).toBe(true);
+      const migration = readFileSync(migrationPath, 'utf8');
+
+      expect(migration).toContain('CREATE TYPE "UserType"');
+      expect(migration).toContain('CREATE TYPE "OAuthProvider"');
+      expect(migration).toContain('CREATE TYPE "OrganizationMemberRole"');
+      expect(migration).toContain('CREATE TABLE "User"');
+      expect(migration).toContain('CREATE TABLE "Account"');
+      expect(migration).toContain('CREATE TABLE "AccountIdentity"');
+      expect(migration).toContain('CREATE TABLE "PasswordHistory"');
+      expect(migration).toContain('CREATE TABLE "RefreshToken"');
+      expect(migration).toContain('ALTER TABLE "OrganizationMember" ADD COLUMN');
+      expect(migration).toContain('"userId"');
+      expect(migration).toContain('"role"');
+      expect(migration).toContain('"Account_userId_fkey"');
+      expect(migration).toContain('"AccountIdentity_accountId_fkey"');
+      expect(migration).toContain('"OrganizationMember_userId_fkey"');
+    });
+
+    it('enums.prisma에 UserType, OAuthProvider, OrganizationMemberRole이 정의되어 있다', () => {
+      const enumsPath = join(__dirname, '../../prisma/enums.prisma');
+      const enums = readFileSync(enumsPath, 'utf8');
+
+      expect(enums).toContain('enum UserType {');
+      expect(enums).toContain('PERSONAL');
+      expect(enums).toContain('BUSINESS');
+      expect(enums).toContain('enum OAuthProvider {');
+      expect(enums).toContain('GOOGLE');
+      expect(enums).toContain('KAKAO');
+      expect(enums).toContain('NAVER');
+      expect(enums).toContain('enum OrganizationMemberRole {');
+      expect(enums).toContain('OWNER');
+      expect(enums).toContain('ADMIN');
+      expect(enums).toContain('MANAGER');
+      expect(enums).toContain('STAFF');
+    });
+
+    it('User 모델이 type, account, organizationMembers 관계를 가진다', () => {
+      const userSchema = readFileSync(join(userModelsPath, 'user.prisma'), 'utf8');
+
+      expect(userSchema).toContain('model User {');
+      expect(userSchema).toContain('type UserType @default(PERSONAL)');
+      expect(userSchema).toContain('deletedAt DateTime?');
+      expect(userSchema).toContain('account             Account?');
+      expect(userSchema).toContain('organizationMembers OrganizationMember[]');
+    });
+
+    it('Account 모델이 userId unique FK와 nullable passwordHash를 가진다', () => {
+      const accountSchema = readFileSync(join(userModelsPath, 'account.prisma'), 'utf8');
+
+      expect(accountSchema).toContain('model Account {');
+      expect(accountSchema).toContain('userId String @unique');
+      expect(accountSchema).toContain(
+        'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
+      );
+      expect(accountSchema).toContain('email        String  @unique');
+      expect(accountSchema).toContain('passwordHash String?');
+      expect(accountSchema).toContain('isActive');
+      expect(accountSchema).toContain('Boolean   @default(true)');
+      expect(accountSchema).toContain('lastLoginAt');
+      expect(accountSchema).toContain('identities        AccountIdentity[]');
+      expect(accountSchema).toContain('passwordHistories PasswordHistory[]');
+      expect(accountSchema).toContain('refreshTokens     RefreshToken[]');
+      expect(accountSchema).toContain('@@index([email])');
+    });
+
+    it('AccountIdentity 모델이 소셜 제공자별 유일성 제약을 가진다', () => {
+      const identitySchema = readFileSync(join(userModelsPath, 'account-identity.prisma'), 'utf8');
+
+      expect(identitySchema).toContain('model AccountIdentity {');
+      expect(identitySchema).toContain('provider   OAuthProvider');
+      expect(identitySchema).toContain('providerId String');
+      expect(identitySchema).toContain('providerEmail String?');
+      expect(identitySchema).toContain('providerData  Json?');
+      expect(identitySchema).toContain('@@unique([accountId, provider])');
+      expect(identitySchema).toContain('@@unique([provider, providerId])');
+      expect(identitySchema).toContain('@@index([accountId])');
+    });
+
+    it('PasswordHistory 모델이 accountId와 createdAt 복합 인덱스를 가진다', () => {
+      const passwordHistorySchema = readFileSync(join(userModelsPath, 'password-history.prisma'), 'utf8');
+
+      expect(passwordHistorySchema).toContain('model PasswordHistory {');
+      expect(passwordHistorySchema).toContain('passwordHash String');
+      expect(passwordHistorySchema).toContain('@@index([accountId])');
+      expect(passwordHistorySchema).toContain('@@index([accountId, createdAt])');
+    });
+
+    it('RefreshToken 모델이 tokenHash만 저장하고 revokedAt으로 무효화를 추적한다', () => {
+      const refreshTokenSchema = readFileSync(join(userModelsPath, 'refresh-token.prisma'), 'utf8');
+
+      expect(refreshTokenSchema).toContain('model RefreshToken {');
+      expect(refreshTokenSchema).toContain('tokenHash String    @unique');
+      expect(refreshTokenSchema).toContain('expiresAt DateTime');
+      expect(refreshTokenSchema).toContain('revokedAt DateTime?');
+      expect(refreshTokenSchema).toContain('userAgent String?');
+      expect(refreshTokenSchema).toContain('ipAddress String?');
+      expect(refreshTokenSchema).toContain('@@index([accountId])');
+      expect(refreshTokenSchema).toContain('@@index([tokenHash])');
+      expect(refreshTokenSchema).toContain('@@index([accountId, revokedAt])');
+    });
+
+    it('OrganizationMember에 userId FK와 role이 추가되고 동일 조직 중복 소속을 막는 제약이 있다', () => {
+      const memberSchema = readFileSync(
+        join(prismaModelsPath, 'business/organization-member.prisma'),
+        'utf8',
+      );
+
+      expect(memberSchema).toContain('userId String');
+      expect(memberSchema).toContain(
+        'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
+      );
+      expect(memberSchema).toContain('role OrganizationMemberRole @default(STAFF)');
+      expect(memberSchema).toContain('@@unique([userId, organizationId])');
+      expect(memberSchema).toContain('@@index([organizationId, role])');
+      expect(memberSchema).toContain('@@index([userId])');
+    });
+  });
+
+  describe('schema improvements (issue #7)', () => {
+    const migrationPath = join(prismaMigrationsPath, '20260622119000_schema_improvements', 'migration.sql');
+
+    it('마이그레이션이 존재한다', () => {
+      expect(existsSync(migrationPath)).toBe(true);
+    });
+
+    it('Account에 emailVerifiedAt 필드가 추가된다', () => {
+      const accountSchema = readFileSync(join(prismaModelsPath, 'user/account.prisma'), 'utf8');
+      expect(accountSchema).toContain('emailVerifiedAt DateTime?');
+
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('"emailVerifiedAt"');
+    });
+
+    it('Refund.invoiceId가 nullable이다', () => {
+      const refundSchema = readFileSync(join(prismaModelsPath, 'finance/refund.prisma'), 'utf8');
+      expect(refundSchema).toContain('invoiceId String?');
+      expect(refundSchema).toContain('invoice   Invoice?');
+
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('ALTER COLUMN "invoiceId" DROP NOT NULL');
+    });
+
+    it('MeterReading에 billingMonth 필드와 인덱스가 추가된다', () => {
+      const meterSchema = readFileSync(join(prismaModelsPath, 'product/meter-reading.prisma'), 'utf8');
+      expect(meterSchema).toContain('billingMonth String?');
+      expect(meterSchema).toContain('@@index([organizationId, billingMonth])');
+
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('"billingMonth"');
+      expect(migration).toContain('"MeterReading_organizationId_billingMonth_idx"');
+    });
+
+    it('PaymentAllocation 합계 검증 트리거가 추가된다', () => {
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('assert_payment_allocation_limits');
+      expect(migration).toContain('"PaymentAllocation_limits_guard"');
+      expect(migration).toContain('Payment.amount');
+      // Invoice 초과 배분(OVERPAID)은 정상 케이스이므로 트리거에서 검증하지 않음
+      expect(migration).not.toContain('Invoice.finalAmount');
+    });
+  });
+
+  describe('VerificationToken schema (issue #9)', () => {
+    const vtMigrationPath = join(prismaMigrationsPath, '20260622120000_verification_token', 'migration.sql');
+
+    it('migration file exists', () => {
+      expect(existsSync(vtMigrationPath)).toBe(true);
+    });
+
+    it('VerificationTokenType enum is defined in enums.prisma', () => {
+      const enums = readFileSync(join(__dirname, '../../prisma/enums.prisma'), 'utf8');
+      expect(enums).toContain('enum VerificationTokenType {');
+      expect(enums).toContain('EMAIL_VERIFY');
+      expect(enums).toContain('PASSWORD_RESET');
+    });
+
+    it('VerificationToken model has required fields and unique token index', () => {
+      const schema = readFileSync(join(prismaModelsPath, 'user/verification-token.prisma'), 'utf8');
+      expect(schema).toContain('model VerificationToken {');
+      expect(schema).toContain('token     String                @unique');
+      expect(schema).toContain('type      VerificationTokenType');
+      expect(schema).toContain('accountId String');
+      expect(schema).toContain('expiresAt DateTime');
+      expect(schema).toContain('usedAt    DateTime?');
+      expect(schema).toContain('@@index([accountId])');
+    });
+
+    it('Account model has verificationTokens backrelation', () => {
+      const schema = readFileSync(join(prismaModelsPath, 'user/account.prisma'), 'utf8');
+      expect(schema).toContain('verificationTokens VerificationToken[]');
+    });
+
+    it('migration creates enum, table, unique index, and FK', () => {
+      const sql = readFileSync(vtMigrationPath, 'utf8');
+      expect(sql).toContain('CREATE TYPE "VerificationTokenType"');
+      expect(sql).toContain('CREATE TABLE "VerificationToken"');
+      expect(sql).toContain('"VerificationToken_accountId_fkey"');
+      expect(sql).toContain('CREATE UNIQUE INDEX "VerificationToken_token_key"');
+      expect(sql).toContain('CREATE INDEX "VerificationToken_accountId_idx"');
+    });
   });
 });

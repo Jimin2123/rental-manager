@@ -110,10 +110,9 @@ export class SocialAuthService {
     const existing = await this.prisma.accountIdentity.findUnique({
       where: { provider_providerId: { provider, providerId: info.providerId } },
     });
-    if (existing && existing.accountId !== accountId) {
-      throw new ConflictException('이미 다른 계정에 연동된 소셜 계정입니다.');
+    if (existing) {
+      throw new ConflictException('이미 연동된 소셜 계정입니다.');
     }
-    if (existing) return; // 이미 같은 계정에 연동됨
 
     await this.prisma.accountIdentity.create({
       data: {

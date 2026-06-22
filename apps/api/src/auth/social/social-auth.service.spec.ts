@@ -101,10 +101,9 @@ describe('SocialAuthService', () => {
       await expect(service.linkAccount('my-acc', 'google', 'token')).rejects.toThrow(ConflictException);
     });
 
-    it('returns without error when identity already linked to same account', async () => {
+    it('throws ConflictException when identity already linked to same account', async () => {
       prisma.accountIdentity.findUnique.mockResolvedValue({ accountId: 'my-acc', providerId: 'google-uid-1' });
-      await expect(service.linkAccount('my-acc', 'google', 'token')).resolves.toBeUndefined();
-      expect(prisma.accountIdentity.create).not.toHaveBeenCalled();
+      await expect(service.linkAccount('my-acc', 'google', 'token')).rejects.toThrow(ConflictException);
     });
 
     it('creates new identity when not yet linked', async () => {

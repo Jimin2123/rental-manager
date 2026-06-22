@@ -21,7 +21,6 @@ import { VerificationService } from './verification/verification.service';
     SessionService,
     EmailAuthService,
     VerificationService,
-    DbVerificationTokenStore,
     { provide: VERIFICATION_TOKEN_STORE, useClass: DbVerificationTokenStore },
   ],
   exports: [JwtModule, TokenService, SessionService],

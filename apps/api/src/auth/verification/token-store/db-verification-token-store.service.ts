@@ -7,7 +7,12 @@ import { IVerificationTokenStore } from './verification-token-store.interface';
 export class DbVerificationTokenStore implements IVerificationTokenStore {
   constructor(private readonly prisma: PrismaService) {}
 
-  async save(params: { token: string; type: VerificationTokenType; accountId: string; expiresAt: Date }): Promise<void> {
+  async save(params: {
+    token: string;
+    type: VerificationTokenType;
+    accountId: string;
+    expiresAt: Date;
+  }): Promise<void> {
     await this.prisma.verificationToken.create({ data: params });
   }
 

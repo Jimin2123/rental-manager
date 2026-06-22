@@ -128,8 +128,13 @@ describe('PasswordService', () => {
 
       await service.changePassword('acc-1', 'current-pass', 'new-pass-123');
 
-      expect(prisma.account.update).toHaveBeenCalledWith({ where: { id: 'acc-1' }, data: { passwordHash: '$new-hash' } });
-      expect(prisma.passwordHistory.create).toHaveBeenCalledWith({ data: { accountId: 'acc-1', passwordHash: '$new-hash' } });
+      expect(prisma.account.update).toHaveBeenCalledWith({
+        where: { id: 'acc-1' },
+        data: { passwordHash: '$new-hash' },
+      });
+      expect(prisma.passwordHistory.create).toHaveBeenCalledWith({
+        data: { accountId: 'acc-1', passwordHash: '$new-hash' },
+      });
       expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
         where: { accountId: 'acc-1', revokedAt: null },
         data: { revokedAt: expect.any(Date) },

@@ -13,6 +13,7 @@ model Organization {
   businessPartnerRoles    BusinessPartnerRole[]
   businessPartnerContacts BusinessPartnerContact[]
   members                 OrganizationMember[]
+  invitations             OrganizationInvitation[]
   customers               Customer[]
   customerAssignments     CustomerAssignment[]
   orders                  Order[]

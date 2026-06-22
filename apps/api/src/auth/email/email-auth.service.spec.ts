@@ -1,4 +1,4 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -28,6 +28,7 @@ describe('EmailAuthService', () => {
     user: { create: jest.Mock };
     passwordHistory: { create: jest.Mock };
     refreshToken: { findUnique: jest.Mock };
+    organizationMember: { findUnique: jest.Mock };
     $transaction: jest.Mock;
   };
   let tokenService: { generateAccessToken: jest.Mock; generateRawRefreshToken: jest.Mock; hashToken: jest.Mock };
@@ -39,9 +40,8 @@ describe('EmailAuthService', () => {
       user: { create: jest.fn() },
       passwordHistory: { create: jest.fn() },
       refreshToken: { findUnique: jest.fn() },
-      $transaction: jest.fn().mockImplementation(
-        (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma),
-      ),
+      organizationMember: { findUnique: jest.fn() },
+      $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     tokenService = {
       generateAccessToken: jest.fn().mockReturnValue('access-jwt'),
@@ -183,9 +183,36 @@ describe('EmailAuthService', () => {
 
       const result = await service.refreshSession('raw-token', { userAgent: 'Chrome' });
 
-      expect(sessionService.rotate).toHaveBeenCalledWith('rt-1', 'new-raw-token', 'acc-1', expiresAt, expect.any(Object));
+      expect(sessionService.rotate).toHaveBeenCalledWith(
+        'rt-1',
+        'new-raw-token',
+        'acc-1',
+        expiresAt,
+        expect.any(Object),
+      );
       expect(result.accessToken).toBe('access-jwt');
       expect(result.refreshToken).toBe('new-raw-token');
+    });
+  });
+
+  describe('switchOrg', () => {
+    it('throws ForbiddenException when not a member', async () => {
+      prisma.organizationMember.findUnique.mockResolvedValue(null);
+      await expect(service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when member is inactive', async () => {
+      prisma.organizationMember.findUnique.mockResolvedValue({ role: 'STAFF', isActive: false });
+      await expect(service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('returns access token with organizationId and role when valid', async () => {
+      prisma.organizationMember.findUnique.mockResolvedValue({ role: 'OWNER', isActive: true });
+      const result = await service.switchOrg('acc-1', 'user-1', 'a@b.com', 'org-1');
+      expect(result).toHaveProperty('accessToken');
+      expect(tokenService.generateAccessToken).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org-1', role: 'OWNER' }),
+      );
     });
   });
 });

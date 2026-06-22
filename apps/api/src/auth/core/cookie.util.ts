@@ -26,3 +26,14 @@ export function clearAuthCookies(res: Response): void {
   res.clearCookie(ACCESS_TOKEN, { path: '/' });
   res.clearCookie(REFRESH_TOKEN, { path: '/auth' });
 }
+
+export function setAccessTokenCookie(res: Response, accessToken: string): void {
+  const isProd = process.env['NODE_ENV'] === 'production';
+  res.cookie(ACCESS_TOKEN, accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'strict' as const,
+    path: '/',
+    maxAge: ACCESS_TTL_MS,
+  });
+}

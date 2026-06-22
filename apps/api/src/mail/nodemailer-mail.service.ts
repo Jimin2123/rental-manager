@@ -42,4 +42,16 @@ export class NodemailerMailService implements IMailService {
     });
     this.logger.log(`Password reset email sent to ${to}`);
   }
+
+  async sendOrganizationInvite(to: string, inviteUrl: string, organizationName: string): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject: `[렌탈매니저] ${organizationName} 조직 초대`,
+      html: `<p><strong>${organizationName}</strong> 조직에 초대되었습니다.</p>
+             <p>아래 링크를 클릭하여 초대를 수락하세요. 링크는 7일 동안 유효합니다.</p>
+             <p><a href="${inviteUrl}">${inviteUrl}</a></p>`,
+    });
+    this.logger.log(`Organization invite email sent to ${to}`);
+  }
 }

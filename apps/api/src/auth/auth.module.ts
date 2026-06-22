@@ -22,7 +22,13 @@ import { VerificationService } from './verification/verification.service';
 
 @Module({
   imports: [PassportModule, JwtModule.register({}), MailModule],
-  controllers: [EmailAuthController, VerificationController, PasswordController, SocialAuthController, SessionController],
+  controllers: [
+    EmailAuthController,
+    VerificationController,
+    PasswordController,
+    SocialAuthController,
+    SessionController,
+  ],
   providers: [
     JwtStrategy,
     TokenService,

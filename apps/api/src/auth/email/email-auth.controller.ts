@@ -2,7 +2,7 @@ import { Body, Controller, HttpCode, Post, Req, Res, UnauthorizedException, UseG
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import { clearAuthCookies, setAuthCookies } from '../core/cookie.util';
+import { clearAuthCookies, setAccessTokenCookie, setAuthCookies } from '../core/cookie.util';
 import { CurrentUser } from '../core/current-user.decorator';
 import { JwtAuthGuard } from '../core/jwt-auth.guard';
 import type { AuthUser } from '../core/jwt.strategy';
@@ -10,6 +10,7 @@ import { SessionService } from '../session/session.service';
 import { TokenService } from '../session/token.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SwitchOrgDto } from './dto/switch-org.dto';
 import { EmailAuthService } from './email-auth.service';
 
 @ApiTags('auth')
@@ -34,7 +35,13 @@ export class EmailAuthController {
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const account = await this.emailAuth.validateCredentials(dto.email, dto.password);
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
-    const tokens = await this.emailAuth.issueTokens(account.id, account.userId, account.email, dto.rememberMe ?? false, meta);
+    const tokens = await this.emailAuth.issueTokens(
+      account.id,
+      account.userId,
+      account.email,
+      dto.rememberMe ?? false,
+      meta,
+    );
     setAuthCookies(res, tokens, dto.rememberMe ?? false);
     return { accountId: account.id, email: account.email, emailVerifiedAt: account.emailVerifiedAt };
   }
@@ -63,5 +70,18 @@ export class EmailAuthController {
     const result = await this.emailAuth.refreshSession(raw, meta);
     setAuthCookies(res, result, result.rememberMe);
     return { message: 'Token refreshed.' };
+  }
+
+  @Post('switch-org')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async switchOrg(
+    @Body() dto: SwitchOrgDto,
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ message: string }> {
+    const { accessToken } = await this.emailAuth.switchOrg(user.accountId, user.userId, user.email, dto.organizationId);
+    setAccessTokenCookie(res, accessToken);
+    return { message: 'Organization switched.' };
   }
 }

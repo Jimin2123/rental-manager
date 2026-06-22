@@ -862,6 +862,47 @@ describe('Prisma customer schema', () => {
     });
   });
 
+  describe('OrganizationInvitation schema (organization module)', () => {
+    it('has the OrganizationInvitation model file', () => {
+      const path = join(prismaModelsPath, 'business/organization-invitation.prisma');
+      expect(existsSync(path)).toBe(true);
+    });
+
+    it('stores token as SHA-256 hash and has required fields', () => {
+      const schema = readFileSync(
+        join(prismaModelsPath, 'business/organization-invitation.prisma'),
+        'utf8',
+      );
+      expect(schema).toContain('token String @unique');
+      expect(schema).toContain('email');
+      expect(schema).toContain('role           OrganizationMemberRole');
+      expect(schema).toContain('organizationId String');
+      expect(schema).toContain('invitedById String');
+      expect(schema).toContain('expiresAt  DateTime');
+      expect(schema).toContain('acceptedAt DateTime?');
+      expect(schema).toContain('@@index([organizationId])');
+      expect(schema).toContain('@@index([email])');
+    });
+
+    it('links invitedBy using composite FK scoped to the same organization', () => {
+      const schema = readFileSync(
+        join(prismaModelsPath, 'business/organization-invitation.prisma'),
+        'utf8',
+      );
+      expect(schema).toContain(
+        'invitedBy   OrganizationMember @relation(fields: [invitedById, organizationId], references: [id, organizationId], onDelete: Restrict)',
+      );
+    });
+
+    it('has migration file for OrganizationInvitation', () => {
+      const migrationPath = join(prismaMigrationsPath, '20260622130000_organization_invitation/migration.sql');
+      expect(existsSync(migrationPath)).toBe(true);
+      const sql = readFileSync(migrationPath, 'utf8');
+      expect(sql).toContain('"OrganizationInvitation"');
+      expect(sql).toContain('OrganizationInvitation_token_key');
+    });
+  });
+
   describe('VerificationToken schema (issue #9)', () => {
     const vtMigrationPath = join(prismaMigrationsPath, '20260622120000_verification_token', 'migration.sql');
 

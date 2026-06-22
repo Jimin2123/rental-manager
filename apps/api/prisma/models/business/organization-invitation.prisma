@@ -1,0 +1,22 @@
+// 조직 초대
+model OrganizationInvitation {
+  id    String @id @default(uuid())
+  token String @unique // SHA-256 해시 저장
+
+  email          String
+  role           OrganizationMemberRole @default(STAFF)
+
+  organizationId String
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  invitedById String
+  invitedBy   OrganizationMember @relation(fields: [invitedById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  expiresAt  DateTime  // 초대 유효기간 (7일)
+  acceptedAt DateTime? // 수락 시 설정
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([email])
+}

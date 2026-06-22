@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtPayload } from '../core/jwt.strategy';
@@ -91,5 +91,21 @@ export class EmailAuthService {
     });
     const rememberMe = session.expiresAt.getTime() - Date.now() > TTL_30D_MS;
     return { accessToken, refreshToken: newRaw, rememberMe };
+  }
+
+  async switchOrg(
+    accountId: string,
+    userId: string,
+    email: string,
+    organizationId: string,
+  ): Promise<{ accessToken: string }> {
+    const member = await this.prisma.organizationMember.findUnique({
+      where: { userId_organizationId: { userId, organizationId } },
+      select: { role: true, isActive: true },
+    });
+    if (!member || !member.isActive) throw new ForbiddenException('해당 조직의 활성 멤버가 아닙니다.');
+
+    const accessToken = this.tokenService.generateAccessToken({ sub: accountId, userId, email, organizationId, role: member.role });
+    return { accessToken };
   }
 }

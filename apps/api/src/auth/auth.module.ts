@@ -1,16 +1,29 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { MailModule } from '../mail/mail.module';
 import { JwtStrategy } from './core/jwt.strategy';
 import { EmailAuthController } from './email/email-auth.controller';
 import { EmailAuthService } from './email/email-auth.service';
 import { SessionService } from './session/session.service';
 import { TokenService } from './session/token.service';
+import { DbVerificationTokenStore } from './verification/token-store/db-verification-token-store.service';
+import { VERIFICATION_TOKEN_STORE } from './verification/token-store/verification-token-store.interface';
+import { VerificationController } from './verification/verification.controller';
+import { VerificationService } from './verification/verification.service';
 
 @Module({
-  imports: [PassportModule, JwtModule.register({})],
-  controllers: [EmailAuthController],
-  providers: [JwtStrategy, TokenService, SessionService, EmailAuthService],
+  imports: [PassportModule, JwtModule.register({}), MailModule],
+  controllers: [EmailAuthController, VerificationController],
+  providers: [
+    JwtStrategy,
+    TokenService,
+    SessionService,
+    EmailAuthService,
+    VerificationService,
+    DbVerificationTokenStore,
+    { provide: VERIFICATION_TOKEN_STORE, useClass: DbVerificationTokenStore },
+  ],
   exports: [JwtModule, TokenService, SessionService],
 })
 export class AuthModule {}

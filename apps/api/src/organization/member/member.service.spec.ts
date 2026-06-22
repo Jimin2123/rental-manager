@@ -62,6 +62,17 @@ describe('MemberService', () => {
         expect.objectContaining({ data: expect.objectContaining({ organizationId: 'org-1', role: 'STAFF' }) }),
       );
     });
+
+    it('reactivates a deactivated member instead of throwing', async () => {
+      prisma.account.findUnique.mockResolvedValue({ userId: 'user-1' });
+      prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', isActive: false });
+      prisma.organizationMember.update.mockResolvedValue({});
+      await service.addDirect('org-1', { email: 'a@b.com', role: 'STAFF', name: '홍길동' });
+      expect(prisma.organizationMember.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isActive: true }) }),
+      );
+      expect(prisma.organizationMember.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('update', () => {

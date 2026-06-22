@@ -13,6 +13,7 @@ describe('InvitationService', () => {
     organizationMember: { findUnique: jest.Mock; create: jest.Mock };
     organizationInvitation: { deleteMany: jest.Mock; create: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     organization: { findUnique: jest.Mock };
+    $transaction: jest.Mock;
   };
   let tokenService: { hashToken: jest.Mock; generateRawRefreshToken: jest.Mock };
   let mailService: { sendOrganizationInvite: jest.Mock };
@@ -23,6 +24,7 @@ describe('InvitationService', () => {
       organizationMember: { findUnique: jest.fn(), create: jest.fn() },
       organizationInvitation: { deleteMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
       organization: { findUnique: jest.fn() },
+      $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     tokenService = {
       hashToken: jest.fn().mockReturnValue('hashed-token'),
@@ -131,6 +133,7 @@ describe('InvitationService', () => {
 
       await service.accept('raw-token', 'user-1');
 
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(prisma.organizationMember.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ userId: 'user-1', organizationId: 'org-1' }) }),
       );

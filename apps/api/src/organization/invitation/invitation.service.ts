@@ -47,8 +47,8 @@ export class InvitationService {
       data: { token, email: dto.email, role: dto.role, organizationId, invitedById, expiresAt },
     });
 
-    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
-    const inviteUrl = `${appUrl}/invitations/accept?token=${rawToken}`;
+    const clientUrl = this.config.get<string>('CLIENT_URL', this.config.get<string>('APP_URL', 'http://localhost:5173'));
+    const inviteUrl = `${clientUrl}/invitations/accept?token=${rawToken}`;
     await this.mailService.sendOrganizationInvite(dto.email, inviteUrl, org.businessProfile.name);
   }
 
@@ -71,18 +71,20 @@ export class InvitationService {
     });
     if (existing) throw new ConflictException('이미 조직의 멤버입니다.');
 
-    await this.prisma.organizationMember.create({
-      data: {
-        userId,
-        organizationId: inv.organizationId,
-        role: inv.role,
-        name: inv.email.split('@')[0],
-        isActive: true,
-      },
-    });
-    await this.prisma.organizationInvitation.update({
-      where: { id: inv.id },
-      data: { acceptedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.organizationMember.create({
+        data: {
+          userId,
+          organizationId: inv.organizationId,
+          role: inv.role,
+          name: inv.email.split('@')[0],
+          isActive: true,
+        },
+      });
+      await tx.organizationInvitation.update({
+        where: { id: inv.id },
+        data: { acceptedAt: new Date() },
+      });
     });
   }
 }

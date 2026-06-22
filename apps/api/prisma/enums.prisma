@@ -274,3 +274,9 @@ enum OrganizationMemberRole {
   MANAGER // 담당자 — 계약/청구 처리 가능
   STAFF   // 직원 — 조회 및 기본 업무
 }
+
+// 인증 토큰 유형
+enum VerificationTokenType {
+  EMAIL_VERIFY   // 이메일 인증
+  PASSWORD_RESET // 비밀번호 재설정
+}

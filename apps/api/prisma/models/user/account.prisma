@@ -18,6 +18,7 @@ model Account {
   identities        AccountIdentity[]
   passwordHistories PasswordHistory[]
   refreshTokens     RefreshToken[]
+  verificationTokens VerificationToken[]
 
   @@index([email])
 }

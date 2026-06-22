@@ -7,6 +7,7 @@ import { EmailAuthController } from './email/email-auth.controller';
 import { EmailAuthService } from './email/email-auth.service';
 import { PasswordController } from './password/password.controller';
 import { PasswordService } from './password/password.service';
+import { SessionController } from './session/session.controller';
 import { SessionService } from './session/session.service';
 import { TokenService } from './session/token.service';
 import { GoogleProvider } from './social/providers/google.provider';
@@ -21,7 +22,7 @@ import { VerificationService } from './verification/verification.service';
 
 @Module({
   imports: [PassportModule, JwtModule.register({}), MailModule],
-  controllers: [EmailAuthController, VerificationController, PasswordController, SocialAuthController],
+  controllers: [EmailAuthController, VerificationController, PasswordController, SocialAuthController, SessionController],
   providers: [
     JwtStrategy,
     TokenService,

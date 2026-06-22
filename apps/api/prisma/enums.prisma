@@ -253,3 +253,24 @@ enum RefundReason {
   BILLING_ERROR // 청구 오류
   ETC // 기타
 }
+
+// 사용자 유형
+enum UserType {
+  PERSONAL // 개인 사용자 (초대받아 합류)
+  BUSINESS // 사업자 (Organization 생성 주체)
+}
+
+// 소셜 로그인 제공자
+enum OAuthProvider {
+  GOOGLE
+  KAKAO
+  NAVER
+}
+
+// 조직 내 역할
+enum OrganizationMemberRole {
+  OWNER   // 사업자 — 조직 생성자, 조직당 1명
+  ADMIN   // 관리자 — 멤버 초대/설정 가능
+  MANAGER // 담당자 — 계약/청구 처리 가능
+  STAFF   // 직원 — 조회 및 기본 업무
+}

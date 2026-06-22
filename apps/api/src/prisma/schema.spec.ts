@@ -756,8 +756,9 @@ describe('Prisma customer schema', () => {
       );
       expect(accountSchema).toContain('email        String  @unique');
       expect(accountSchema).toContain('passwordHash String?');
-      expect(accountSchema).toContain('isActive    Boolean   @default(true)');
-      expect(accountSchema).toContain('lastLoginAt DateTime?');
+      expect(accountSchema).toContain('isActive');
+      expect(accountSchema).toContain('Boolean   @default(true)');
+      expect(accountSchema).toContain('lastLoginAt');
       expect(accountSchema).toContain('identities        AccountIdentity[]');
       expect(accountSchema).toContain('passwordHistories PasswordHistory[]');
       expect(accountSchema).toContain('refreshTokens     RefreshToken[]');
@@ -814,6 +815,49 @@ describe('Prisma customer schema', () => {
       expect(memberSchema).toContain('@@unique([userId, organizationId])');
       expect(memberSchema).toContain('@@index([organizationId, role])');
       expect(memberSchema).toContain('@@index([userId])');
+    });
+  });
+
+  describe('schema improvements (issue #7)', () => {
+    const migrationPath = join(prismaMigrationsPath, '20260622119000_schema_improvements', 'migration.sql');
+
+    it('마이그레이션이 존재한다', () => {
+      expect(existsSync(migrationPath)).toBe(true);
+    });
+
+    it('Account에 emailVerifiedAt 필드가 추가된다', () => {
+      const accountSchema = readFileSync(join(prismaModelsPath, 'user/account.prisma'), 'utf8');
+      expect(accountSchema).toContain('emailVerifiedAt DateTime?');
+
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('"emailVerifiedAt"');
+    });
+
+    it('Refund.invoiceId가 nullable이다', () => {
+      const refundSchema = readFileSync(join(prismaModelsPath, 'finance/refund.prisma'), 'utf8');
+      expect(refundSchema).toContain('invoiceId String?');
+      expect(refundSchema).toContain('invoice   Invoice?');
+
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('ALTER COLUMN "invoiceId" DROP NOT NULL');
+    });
+
+    it('MeterReading에 billingMonth 필드와 인덱스가 추가된다', () => {
+      const meterSchema = readFileSync(join(prismaModelsPath, 'product/meter-reading.prisma'), 'utf8');
+      expect(meterSchema).toContain('billingMonth String?');
+      expect(meterSchema).toContain('@@index([organizationId, billingMonth])');
+
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('"billingMonth"');
+      expect(migration).toContain('"MeterReading_organizationId_billingMonth_idx"');
+    });
+
+    it('PaymentAllocation 합계 검증 트리거가 추가된다', () => {
+      const migration = readFileSync(migrationPath, 'utf8');
+      expect(migration).toContain('assert_payment_allocation_limits');
+      expect(migration).toContain('"PaymentAllocation_limits_guard"');
+      expect(migration).toContain('Payment.amount');
+      expect(migration).toContain('Invoice.finalAmount');
     });
   });
 });

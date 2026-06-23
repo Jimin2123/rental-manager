@@ -83,32 +83,38 @@ describe('ServiceRequestService', () => {
   describe('changeStatus', () => {
     it('throws NotFoundException when request not found', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue(null);
-      await expect(
-        service.changeStatus('org-1', 'sr-x', { status: ServiceRequestStatus.COMPLETED }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.changeStatus('org-1', 'sr-x', { status: ServiceRequestStatus.COMPLETED })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws BadRequestException CANCELED → COMPLETED', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.CANCELED,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.CANCELED,
       });
-      await expect(
-        service.changeStatus('org-1', 'sr-1', { status: ServiceRequestStatus.COMPLETED }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.changeStatus('org-1', 'sr-1', { status: ServiceRequestStatus.COMPLETED })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws BadRequestException COMPLETED → CANCELED', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.COMPLETED,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.COMPLETED,
       });
-      await expect(
-        service.changeStatus('org-1', 'sr-1', { status: ServiceRequestStatus.CANCELED }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.changeStatus('org-1', 'sr-1', { status: ServiceRequestStatus.CANCELED })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('updates status successfully', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.RECEIVED,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.RECEIVED,
       });
       prisma.serviceRequest.update.mockResolvedValue({});
 
@@ -121,7 +127,9 @@ describe('ServiceRequestService', () => {
 
     it('sets completedAt when status is COMPLETED', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.IN_PROGRESS,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.IN_PROGRESS,
       });
       prisma.serviceRequest.update.mockResolvedValue({});
 
@@ -146,21 +154,27 @@ describe('ServiceRequestService', () => {
 
     it('throws ConflictException when status is IN_PROGRESS', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.IN_PROGRESS,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.IN_PROGRESS,
       });
       await expect(service.softDelete('org-1', 'sr-1')).rejects.toThrow(ConflictException);
     });
 
     it('throws ConflictException when status is WAITING_FOR_PARTS', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.WAITING_FOR_PARTS,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.WAITING_FOR_PARTS,
       });
       await expect(service.softDelete('org-1', 'sr-1')).rejects.toThrow(ConflictException);
     });
 
     it('sets deletedAt on soft delete', async () => {
       prisma.serviceRequest.findUnique.mockResolvedValue({
-        id: 'sr-1', deletedAt: null, status: ServiceRequestStatus.RECEIVED,
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.RECEIVED,
       });
       prisma.serviceRequest.update.mockResolvedValue({});
 

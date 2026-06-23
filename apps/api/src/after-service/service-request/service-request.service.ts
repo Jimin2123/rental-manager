@@ -85,28 +85,31 @@ export class ServiceRequestService {
     return request;
   }
 
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access */
   async update(organizationId: string, id: string, dto: UpdateServiceRequestDto): Promise<void> {
     const request = await this.prisma.serviceRequest.findUnique({
       where: { id_organizationId: { id, organizationId } },
       select: { id: true, deletedAt: true },
     });
     if (!request || request.deletedAt) throw new NotFoundException('AS 접수를 찾을 수 없습니다.');
+
+    const updateData: any = {};
+    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.requestedVisitDate !== undefined) updateData.requestedVisitDate = new Date(dto.requestedVisitDate);
+    if (dto.isWarranty !== undefined) updateData.isWarranty = dto.isWarranty;
+    if (dto.visitLocationZonecode !== undefined) updateData.visitLocationZonecode = dto.visitLocationZonecode;
+    if (dto.visitLocationAddress !== undefined) updateData.visitLocationAddress = dto.visitLocationAddress;
+    if (dto.visitLocationAddressDetail !== undefined)
+      updateData.visitLocationAddressDetail = dto.visitLocationAddressDetail;
+    if (dto.memo !== undefined) updateData.memo = dto.memo;
+
     await this.prisma.serviceRequest.update({
       where: { id_organizationId: { id, organizationId } },
-      data: {
-        ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.requestedVisitDate !== undefined && { requestedVisitDate: new Date(dto.requestedVisitDate) }),
-        ...(dto.isWarranty !== undefined && { isWarranty: dto.isWarranty }),
-        ...(dto.visitLocationZonecode !== undefined && { visitLocationZonecode: dto.visitLocationZonecode }),
-        ...(dto.visitLocationAddress !== undefined && { visitLocationAddress: dto.visitLocationAddress }),
-        ...(dto.visitLocationAddressDetail !== undefined && {
-          visitLocationAddressDetail: dto.visitLocationAddressDetail,
-        }),
-        ...(dto.memo !== undefined && { memo: dto.memo }),
-      },
+      data: updateData,
     });
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access */
 
   async changeStatus(organizationId: string, id: string, dto: ChangeServiceRequestStatusDto): Promise<void> {
     const request = await this.prisma.serviceRequest.findUnique({
@@ -115,16 +118,10 @@ export class ServiceRequestService {
     });
     if (!request || request.deletedAt) throw new NotFoundException('AS 접수를 찾을 수 없습니다.');
 
-    if (
-      request.status === ServiceRequestStatus.CANCELED &&
-      dto.status === ServiceRequestStatus.COMPLETED
-    ) {
+    if (request.status === ServiceRequestStatus.CANCELED && dto.status === ServiceRequestStatus.COMPLETED) {
       throw new BadRequestException('취소된 접수는 완료로 전환할 수 없습니다.');
     }
-    if (
-      request.status === ServiceRequestStatus.COMPLETED &&
-      dto.status === ServiceRequestStatus.CANCELED
-    ) {
+    if (request.status === ServiceRequestStatus.COMPLETED && dto.status === ServiceRequestStatus.CANCELED) {
       throw new BadRequestException('완료된 접수는 취소로 전환할 수 없습니다.');
     }
 

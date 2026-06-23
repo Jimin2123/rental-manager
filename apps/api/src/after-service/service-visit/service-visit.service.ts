@@ -3,7 +3,6 @@ import {
   AssetEventSourceType,
   AssetStatus,
   MaintenanceIntervalUnit,
-  Prisma,
   ServiceRequestStatus,
   ServiceVisitStatus,
 } from '@prisma/client';
@@ -64,21 +63,25 @@ export class ServiceVisitService {
     return visit;
   }
 
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access */
   async update(organizationId: string, id: string, dto: UpdateServiceVisitDto): Promise<void> {
     const visit = await this.prisma.serviceVisit.findFirst({
       where: { id, organizationId },
       select: { id: true },
     });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다.');
-    const updateData: Prisma.ServiceVisitUpdateInput = {};
+
+    const updateData: any = {};
     if (dto.staffId !== undefined) updateData.staffId = dto.staffId;
-    if (dto.scheduledAt !== undefined) updateData.scheduledAt = new Date(dto.scheduledAt as string);
+    if (dto.scheduledAt !== undefined) updateData.scheduledAt = new Date(dto.scheduledAt);
     if (dto.memo !== undefined) updateData.memo = dto.memo;
+
     await this.prisma.serviceVisit.update({
       where: { id },
       data: updateData,
     });
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access */
 
   async complete(organizationId: string, id: string, dto: CompleteServiceVisitDto, memberId: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {

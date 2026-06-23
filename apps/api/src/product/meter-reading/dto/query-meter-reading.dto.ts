@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsUUID, Matches, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUUID, Matches, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryMeterReadingDto {
@@ -15,6 +15,7 @@ export class QueryMeterReadingDto {
 
   @IsInt()
   @Min(1)
+  @Max(100)
   @IsOptional()
   @Type(() => Number)
   limit?: number;

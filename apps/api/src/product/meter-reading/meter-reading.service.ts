@@ -17,7 +17,7 @@ export class MeterReadingService {
 
     const prev = await this.prisma.meterReading.findFirst({
       where: { assetId, organizationId, deletedAt: null },
-      orderBy: { readingDate: 'desc' },
+      orderBy: [{ readingDate: 'desc' }, { createdAt: 'desc' }],
       select: { blackCount: true, colorCount: true },
     });
 

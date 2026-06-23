@@ -11,13 +11,12 @@ export class NodemailerMailService implements IMailService {
 
   constructor(config: ConfigService) {
     this.from = config.get<string>('MAIL_FROM', 'noreply@rental-manager.local');
+    const user = config.get<string>('MAIL_USER', '');
+    const pass = config.get<string>('MAIL_PASS', '');
     this.transporter = nodemailer.createTransport({
       host: config.get<string>('MAIL_HOST', 'localhost'),
       port: config.get<number>('MAIL_PORT', 587),
-      auth: {
-        user: config.get<string>('MAIL_USER', ''),
-        pass: config.get<string>('MAIL_PASS', ''),
-      },
+      ...(user && pass ? { auth: { user, pass } } : {}),
     });
   }
 
@@ -41,5 +40,17 @@ export class NodemailerMailService implements IMailService {
              <p><a href="${resetUrl}">${resetUrl}</a></p>`,
     });
     this.logger.log(`Password reset email sent to ${to}`);
+  }
+
+  async sendOrganizationInvite(to: string, inviteUrl: string, organizationName: string): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject: `[렌탈매니저] ${organizationName} 조직 초대`,
+      html: `<p><strong>${organizationName}</strong> 조직에 초대되었습니다.</p>
+             <p>아래 링크를 클릭하여 초대를 수락하세요. 링크는 7일 동안 유효합니다.</p>
+             <p><a href="${inviteUrl}">${inviteUrl}</a></p>`,
+    });
+    this.logger.log(`Organization invite email sent to ${to}`);
   }
 }

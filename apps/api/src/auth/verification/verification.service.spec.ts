@@ -16,15 +16,18 @@ describe('VerificationService', () => {
 
   beforeEach(async () => {
     prismaAccount = { findUnique: jest.fn(), update: jest.fn() };
-    tokenStore    = { save: jest.fn(), findValid: jest.fn(), markUsed: jest.fn() };
-    mailService   = { sendEmailVerification: jest.fn() };
-    hashToken     = jest.fn((raw: string) => `hash:${raw}`);
+    tokenStore = { save: jest.fn(), findValid: jest.fn(), markUsed: jest.fn() };
+    mailService = { sendEmailVerification: jest.fn() };
+    hashToken = jest.fn((raw: string) => `hash:${raw}`);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VerificationService,
         { provide: PrismaService, useValue: { account: prismaAccount } },
-        { provide: TokenService, useValue: { hashToken, generateRawRefreshToken: jest.fn().mockReturnValue('raw-vt') } },
+        {
+          provide: TokenService,
+          useValue: { hashToken, generateRawRefreshToken: jest.fn().mockReturnValue('raw-vt') },
+        },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('http://localhost:3000') } },
         { provide: MAIL_SERVICE, useValue: mailService },
         { provide: VERIFICATION_TOKEN_STORE, useValue: tokenStore },

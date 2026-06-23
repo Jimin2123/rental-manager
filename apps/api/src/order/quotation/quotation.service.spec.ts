@@ -101,7 +101,7 @@ describe('QuotationService', () => {
 
       expect(prisma.quotationItem.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ totalAmount: 11000, supplyAmount: 10000, vatAmount: 1000 }),
+          data: expect.objectContaining({ supplyAmount: 11000, vatAmount: 1100, totalAmount: 12100 }),
         }),
       );
     });
@@ -264,7 +264,7 @@ describe('QuotationService', () => {
       expect(prisma.saleOrder.create).toHaveBeenCalled();
       expect(prisma.saleOrderItem.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ totalAmount: 11000, supplyAmount: 10000, vatAmount: 1000 }),
+          data: expect.objectContaining({ supplyAmount: 11000, vatAmount: 1100, totalAmount: 12100 }),
         }),
       );
       expect(prisma.quotation.update).toHaveBeenCalledWith(

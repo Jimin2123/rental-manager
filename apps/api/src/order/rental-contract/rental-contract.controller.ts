@@ -46,6 +46,7 @@ export class RentalContractController {
   }
 
   @Patch(':id/extend')
+  @HttpCode(204)
   extend(@Param('id') id: string, @Body() dto: ExtendRentalContractDto, @OrgCtx() ctx: OrgContext) {
     return this.service.extend(ctx.organizationId, id, dto);
   }

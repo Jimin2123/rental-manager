@@ -202,7 +202,7 @@ describe('RentalContractService', () => {
       );
     });
 
-    it('ACTIVE 계약의 endDate와 contractMonths를 연장한다', async () => {
+    it('ACTIVE 계약의 endDate와 contractMonths를 연장하고 autoExpire를 재활성화한다', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(
         mockContract({ status: RentalContractStatus.ACTIVE, endDate: new Date('2027-06-30') }),
       );
@@ -215,6 +215,31 @@ describe('RentalContractService', () => {
           data: expect.objectContaining({
             endDate: new Date('2028-06-30'),
             contractMonths: 24,
+            autoExpire: true,
+          }),
+        }),
+      );
+    });
+
+    it('contractMonths 미입력 시 startDate~endDate 개월 차로 자동 계산한다', async () => {
+      // startDate: 2026-07-01, newEndDate: 2028-06-30 → (2028-2026)*12 + (5-6) = 23개월
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({
+          status: RentalContractStatus.ACTIVE,
+          startDate: new Date('2026-07-01'),
+          endDate: new Date('2027-06-30'),
+        }),
+      );
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.extend('org-1', 'rc-1', { endDate: '2028-06-30' });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            endDate: new Date('2028-06-30'),
+            contractMonths: 23,
+            autoExpire: true,
           }),
         }),
       );

@@ -115,21 +115,29 @@ export class RentalContractService {
     });
   }
 
-  async extend(organizationId: string, id: string, dto: ExtendRentalContractDto) {
-    const contract = await this.prisma.rentalContract.findUnique({
-      where: { id_organizationId: { id, organizationId } },
-      select: { status: true, endDate: true },
-    });
-    if (!contract) throw new NotFoundException('계약을 찾을 수 없습니다.');
-    if (contract.status !== RentalContractStatus.ACTIVE)
-      throw new BadRequestException('ACTIVE 상태의 계약만 기간 연장할 수 있습니다.');
+  async extend(organizationId: string, id: string, dto: ExtendRentalContractDto): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const contract = await tx.rentalContract.findUnique({
+        where: { id_organizationId: { id, organizationId } },
+        select: { status: true, endDate: true, startDate: true },
+      });
+      if (!contract) throw new NotFoundException('계약을 찾을 수 없습니다.');
+      if (contract.status !== RentalContractStatus.ACTIVE)
+        throw new BadRequestException('ACTIVE 상태의 계약만 기간 연장할 수 있습니다.');
 
-    const newEndDate = new Date(dto.endDate);
-    if (newEndDate <= contract.endDate) throw new BadRequestException('연장 종료일은 현재 종료일보다 이후여야 합니다.');
+      const newEndDate = new Date(dto.endDate);
+      if (newEndDate <= contract.endDate)
+        throw new BadRequestException('연장 종료일은 현재 종료일보다 이후여야 합니다.');
 
-    await this.prisma.rentalContract.update({
-      where: { id_organizationId: { id, organizationId } },
-      data: { endDate: newEndDate, contractMonths: dto.contractMonths },
+      const contractMonths =
+        dto.contractMonths ??
+        (newEndDate.getUTCFullYear() - contract.startDate.getUTCFullYear()) * 12 +
+          (newEndDate.getUTCMonth() - contract.startDate.getUTCMonth());
+
+      await tx.rentalContract.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: { endDate: newEndDate, contractMonths, autoExpire: true },
+      });
     });
   }
 

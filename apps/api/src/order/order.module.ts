@@ -12,7 +12,7 @@ import { RentalOrderService } from './rental-order/rental-order.service';
 import { RentalOrderController } from './rental-order/rental-order.controller';
 import { RentalContractService } from './rental-contract/rental-contract.service';
 import { RentalContractController } from './rental-contract/rental-contract.controller';
-import { RentalContractExpiryCron } from './cron/rental-contract-expiry.cron';
+import { QuotationExpiryCron } from './cron/quotation-expiry.cron';
 
 @Module({
   imports: [OrganizationModule, ProductModule],
@@ -23,7 +23,7 @@ import { RentalContractExpiryCron } from './cron/rental-contract-expiry.cron';
     SaleOrderService,
     RentalOrderService,
     RentalContractService,
-    RentalContractExpiryCron,
+    QuotationExpiryCron,
   ],
   controllers: [
     QuotationController,

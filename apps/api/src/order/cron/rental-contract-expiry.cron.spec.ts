@@ -24,7 +24,8 @@ describe('RentalContractExpiryCron', () => {
     cron = module.get(RentalContractExpiryCron);
   });
 
-  it('endDate가 현재 시각보다 이전인 ACTIVE 계약을 조회한다', async () => {
+  it('KST 기준 오늘 시작 이전에 만료된 ACTIVE 계약을 조회한다', async () => {
+    // UTC 자정 = KST 09:00; kstTodayStartUTC = KST 당일 00:00 = UTC 전날 15:00
     jest.useFakeTimers().setSystemTime(new Date('2026-06-25T00:00:00Z'));
 
     await cron.expireRentalContracts();
@@ -32,7 +33,7 @@ describe('RentalContractExpiryCron', () => {
     expect(prisma.rentalContract.findMany).toHaveBeenCalledWith({
       where: {
         status: RentalContractStatus.ACTIVE,
-        endDate: { lt: new Date('2026-06-25T00:00:00Z') },
+        endDate: { lt: new Date('2026-06-24T15:00:00Z') },
       },
       select: { id: true, organizationId: true },
     });

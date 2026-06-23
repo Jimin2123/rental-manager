@@ -13,15 +13,19 @@ export class RentalContractExpiryCron {
     private readonly rentalContractService: RentalContractService,
   ) {}
 
-  // 매일 자정(KST) 실행 — endDate가 현재 시각보다 이전인 ACTIVE 계약을 ENDED로 전환
+  // 매일 UTC 자정(KST 09:00) 실행 — KST 기준 오늘 시작 이전에 만료된 ACTIVE 계약을 ENDED로 전환
   @Cron('0 0 * * *')
   async expireRentalContracts() {
     const now = new Date();
+    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const kstTodayStartUTC = new Date(
+      Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) - 9 * 60 * 60 * 1000,
+    );
 
     const contracts = await this.prisma.rentalContract.findMany({
       where: {
         status: RentalContractStatus.ACTIVE,
-        endDate: { lt: now },
+        endDate: { lt: kstTodayStartUTC },
       },
       select: { id: true, organizationId: true },
     });

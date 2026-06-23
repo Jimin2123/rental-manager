@@ -13,6 +13,7 @@ import { OrganizationModule } from './organization/organization.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductModule } from './product/product.module';
 import { OrderModule } from './order/order.module';
+import { AfterServiceModule } from './after-service/after-service.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OrderModule } from './order/order.module';
     ProductModule,
     OrderModule,
     FinanceModule,
+    AfterServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -45,6 +45,15 @@ export class ServiceVisitService {
       },
       select: { id: true },
     });
+
+    // 자동 상태 전이: RECEIVED → SCHEDULED
+    if (serviceRequest.status === ServiceRequestStatus.RECEIVED) {
+      await this.prisma.serviceRequest.update({
+        where: { id_organizationId: { id: requestId, organizationId } },
+        data: { status: ServiceRequestStatus.SCHEDULED },
+      });
+    }
+
     return { id: visit.id };
   }
 
@@ -157,6 +166,22 @@ export class ServiceVisitService {
           await tx.maintenanceSchedule.update({
             where: { id: serviceRequest.maintenanceScheduleId },
             data: { lastInspectedAt: visitedAt, nextScheduledAt },
+          });
+        }
+      }
+
+      // 자동 상태 전이: 후속 방문 불필요 + 잔여 방문 없음 → ServiceRequest COMPLETED
+      if (!dto.requiresFollowUp) {
+        const openVisitsCount = await tx.serviceVisit.count({
+          where: {
+            serviceRequestId: visit.serviceRequestId,
+            status: { notIn: [ServiceVisitStatus.COMPLETED, ServiceVisitStatus.CANCELED] },
+          },
+        });
+        if (openVisitsCount === 0) {
+          await tx.serviceRequest.update({
+            where: { id: visit.serviceRequestId },
+            data: { status: ServiceRequestStatus.COMPLETED, completedAt: visitedAt },
           });
         }
       }

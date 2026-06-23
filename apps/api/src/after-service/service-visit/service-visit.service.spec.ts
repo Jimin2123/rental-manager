@@ -16,8 +16,8 @@ describe('ServiceVisitService', () => {
   let service: ServiceVisitService;
   let prisma: {
     $transaction: jest.Mock;
-    serviceRequest: { findFirst: jest.Mock };
-    serviceVisit: { create: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; update: jest.Mock };
+    serviceRequest: { findFirst: jest.Mock; update: jest.Mock };
+    serviceVisit: { create: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; update: jest.Mock; count: jest.Mock };
     maintenanceSchedule: { update: jest.Mock };
   };
   let assetService: { changeStatus: jest.Mock };
@@ -26,8 +26,14 @@ describe('ServiceVisitService', () => {
   beforeEach(async () => {
     prisma = {
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
-      serviceRequest: { findFirst: jest.fn() },
-      serviceVisit: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+      serviceRequest: { findFirst: jest.fn(), update: jest.fn().mockResolvedValue({}) },
+      serviceVisit: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
+      },
       maintenanceSchedule: { update: jest.fn() },
     };
     assetService = { changeStatus: jest.fn().mockResolvedValue(undefined) };
@@ -88,6 +94,35 @@ describe('ServiceVisitService', () => {
         }),
       );
       expect(result).toEqual({ id: 'sv-1' });
+    });
+
+    it('RECEIVED 접수는 방문 생성 시 SCHEDULED로 전이된다', async () => {
+      prisma.serviceRequest.findFirst.mockResolvedValue({
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.RECEIVED,
+      });
+      prisma.serviceVisit.create.mockResolvedValue({ id: 'sv-1' });
+
+      await service.create('org-1', 'sr-1', {});
+
+      expect(prisma.serviceRequest.update).toHaveBeenCalledWith({
+        where: { id_organizationId: { id: 'sr-1', organizationId: 'org-1' } },
+        data: { status: ServiceRequestStatus.SCHEDULED },
+      });
+    });
+
+    it('RECEIVED 외 상태 접수는 방문 생성 시 상태를 변경하지 않는다', async () => {
+      prisma.serviceRequest.findFirst.mockResolvedValue({
+        id: 'sr-1',
+        deletedAt: null,
+        status: ServiceRequestStatus.IN_PROGRESS,
+      });
+      prisma.serviceVisit.create.mockResolvedValue({ id: 'sv-1' });
+
+      await service.create('org-1', 'sr-1', {});
+
+      expect(prisma.serviceRequest.update).not.toHaveBeenCalled();
     });
   });
 
@@ -184,6 +219,49 @@ describe('ServiceVisitService', () => {
         'member-1',
         prisma,
       );
+    });
+
+    it('방문 완료 후 잔여 방문 없고 후속 불필요 시 ServiceRequest를 COMPLETED로 전이한다', async () => {
+      prisma.serviceVisit.findFirst.mockResolvedValue(mockVisit());
+      prisma.serviceVisit.update.mockResolvedValue({});
+      prisma.serviceRequest.findFirst.mockResolvedValue(mockRequest());
+      prisma.serviceVisit.count.mockResolvedValue(0);
+
+      await service.complete('org-1', 'sv-1', { result: ServiceVisitResult.REPAIRED }, 'member-1');
+
+      expect(prisma.serviceRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sr-1' },
+          data: expect.objectContaining({ status: ServiceRequestStatus.COMPLETED }),
+        }),
+      );
+    });
+
+    it('requiresFollowUp=true이면 ServiceRequest를 자동 완료하지 않는다', async () => {
+      prisma.serviceVisit.findFirst.mockResolvedValue(mockVisit());
+      prisma.serviceVisit.update.mockResolvedValue({});
+      prisma.serviceRequest.findFirst.mockResolvedValue(mockRequest());
+      prisma.serviceVisit.count.mockResolvedValue(0);
+
+      await service.complete(
+        'org-1',
+        'sv-1',
+        { result: ServiceVisitResult.REPAIRED, requiresFollowUp: true },
+        'member-1',
+      );
+
+      expect(prisma.serviceRequest.update).not.toHaveBeenCalled();
+    });
+
+    it('잔여 방문이 남아 있으면 ServiceRequest를 자동 완료하지 않는다', async () => {
+      prisma.serviceVisit.findFirst.mockResolvedValue(mockVisit());
+      prisma.serviceVisit.update.mockResolvedValue({});
+      prisma.serviceRequest.findFirst.mockResolvedValue(mockRequest());
+      prisma.serviceVisit.count.mockResolvedValue(1);
+
+      await service.complete('org-1', 'sv-1', { result: ServiceVisitResult.REPAIRED }, 'member-1');
+
+      expect(prisma.serviceRequest.update).not.toHaveBeenCalled();
     });
 
     it('updates MaintenanceSchedule nextScheduledAt when linked (MONTH interval)', async () => {

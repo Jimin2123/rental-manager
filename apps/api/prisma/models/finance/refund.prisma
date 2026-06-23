@@ -27,6 +27,9 @@ model Refund {
 
   refundedAt DateTime?
 
+  createdById String?
+  createdBy   OrganizationMember? @relation("RefundCreatedBy", fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   memo String?
 
   createdAt DateTime @default(now())

@@ -32,6 +32,8 @@ model MeterReading {
 
   note String?
 
+  deletedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -41,5 +43,6 @@ model MeterReading {
   @@index([organizationId, assetId, readingDate])
   @@index([organizationId, rentalContractItemId])
   @@index([organizationId, billingMonth])
+  @@index([organizationId, deletedAt])
   @@index([invoiceItemId])
 }

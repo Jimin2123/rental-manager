@@ -29,12 +29,16 @@ describe('AssetService', () => {
   describe('create', () => {
     it('throws NotFoundException when product not found', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
-      await expect(service.create('org-1', { productId: 'p-x', initialStatus: 'AVAILABLE' })).rejects.toThrow(NotFoundException);
+      await expect(service.create('org-1', { productId: 'p-x', initialStatus: 'AVAILABLE' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws BadRequestException when product is deleted', async () => {
       prisma.product.findUnique.mockResolvedValue({ id: 'p-1', deletedAt: new Date() });
-      await expect(service.create('org-1', { productId: 'p-1', initialStatus: 'AVAILABLE' })).rejects.toThrow(BadRequestException);
+      await expect(service.create('org-1', { productId: 'p-1', initialStatus: 'AVAILABLE' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('creates asset and AssetEvent in transaction', async () => {
@@ -96,7 +100,12 @@ describe('AssetService', () => {
       await service.findAll('org-1', { productId: 'p-1', status: 'AVAILABLE' });
       expect(prisma.asset.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ organizationId: 'org-1', productId: 'p-1', status: 'AVAILABLE', deletedAt: null }),
+          where: expect.objectContaining({
+            organizationId: 'org-1',
+            productId: 'p-1',
+            status: 'AVAILABLE',
+            deletedAt: null,
+          }),
         }),
       );
     });
@@ -125,7 +134,9 @@ describe('AssetService', () => {
 
     it('returns asset with product info', async () => {
       prisma.asset.findUnique.mockResolvedValue({
-        id: 'a-1', deletedAt: null, product: { id: 'p-1', name: '복합기 A' },
+        id: 'a-1',
+        deletedAt: null,
+        product: { id: 'p-1', name: '복합기 A' },
       });
       const result = await service.findOne('org-1', 'a-1');
       expect(result).toMatchObject({ id: 'a-1' });

@@ -25,7 +25,14 @@ export class MemberService {
       if (existing.isActive) throw new ConflictException('이미 조직의 활성 멤버입니다.');
       await this.prisma.organizationMember.update({
         where: { userId_organizationId: { userId: account.userId, organizationId } },
-        data: { role: dto.role, name: dto.name, department: dto.department, position: dto.position, phone: dto.memberPhone, isActive: true },
+        data: {
+          role: dto.role,
+          name: dto.name,
+          department: dto.department,
+          position: dto.position,
+          phone: dto.memberPhone,
+          isActive: true,
+        },
       });
       return;
     }

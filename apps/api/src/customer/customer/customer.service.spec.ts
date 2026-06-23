@@ -49,7 +49,11 @@ describe('CustomerService', () => {
       );
       expect(prisma.customer.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ organizationId: 'org-1', type: 'INDIVIDUAL', individualProfileId: 'profile-1' }),
+          data: expect.objectContaining({
+            organizationId: 'org-1',
+            type: 'INDIVIDUAL',
+            individualProfileId: 'profile-1',
+          }),
         }),
       );
       expect(result).toEqual({ id: 'cust-1' });
@@ -97,7 +101,9 @@ describe('CustomerService', () => {
       });
 
       expect(prisma.businessPartner.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ organizationId: 'org-1', businessProfileId: 'bp-1' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ organizationId: 'org-1', businessProfileId: 'bp-1' }),
+        }),
       );
       expect(prisma.customer.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -120,7 +126,11 @@ describe('CustomerService', () => {
     });
 
     it('returns customer', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null, individualProfile: { name: '홍길동' } });
+      prisma.customer.findUnique.mockResolvedValue({
+        id: 'c-1',
+        deletedAt: null,
+        individualProfile: { name: '홍길동' },
+      });
       const result = await service.findOne('org-1', 'c-1');
       expect(result).toMatchObject({ id: 'c-1' });
     });
@@ -133,7 +143,12 @@ describe('CustomerService', () => {
     });
 
     it('updates customer memo', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', type: 'INDIVIDUAL', individualProfileId: 'p-1', deletedAt: null });
+      prisma.customer.findUnique.mockResolvedValue({
+        id: 'c-1',
+        type: 'INDIVIDUAL',
+        individualProfileId: 'p-1',
+        deletedAt: null,
+      });
       prisma.customer.update.mockResolvedValue({});
 
       await service.update('org-1', 'c-1', { memo: '새메모' });
@@ -145,7 +160,10 @@ describe('CustomerService', () => {
 
     it('updates individualProfile name for INDIVIDUAL customer', async () => {
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'c-1', type: 'INDIVIDUAL', individualProfileId: 'p-1', deletedAt: null,
+        id: 'c-1',
+        type: 'INDIVIDUAL',
+        individualProfileId: 'p-1',
+        deletedAt: null,
       });
       prisma.individualProfile.update.mockResolvedValue({});
 

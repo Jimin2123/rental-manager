@@ -145,7 +145,12 @@ export class BusinessPartnerService {
     return { id: contact.id };
   }
 
-  async updateContact(organizationId: string, partnerId: string, contactId: string, dto: UpdateContactDto): Promise<void> {
+  async updateContact(
+    organizationId: string,
+    partnerId: string,
+    contactId: string,
+    dto: UpdateContactDto,
+  ): Promise<void> {
     const contact = await this.prisma.businessPartnerContact.findUnique({
       where: { id_organizationId: { id: contactId, organizationId } },
     });

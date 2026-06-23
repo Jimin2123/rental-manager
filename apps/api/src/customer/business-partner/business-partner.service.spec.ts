@@ -12,7 +12,13 @@ describe('BusinessPartnerService', () => {
     businessProfile: { create: jest.Mock; update: jest.Mock; findUnique: jest.Mock };
     businessPartner: { create: jest.Mock; findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
     businessPartnerRole: { createMany: jest.Mock; deleteMany: jest.Mock };
-    businessPartnerContact: { createMany: jest.Mock; create: jest.Mock; findUnique: jest.Mock; update: jest.Mock; delete: jest.Mock };
+    businessPartnerContact: {
+      createMany: jest.Mock;
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
   };
 
   beforeEach(async () => {
@@ -22,7 +28,13 @@ describe('BusinessPartnerService', () => {
       businessProfile: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
       businessPartner: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
       businessPartnerRole: { createMany: jest.fn(), deleteMany: jest.fn() },
-      businessPartnerContact: { createMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() },
+      businessPartnerContact: {
+        createMany: jest.fn(),
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
     };
     const module = await Test.createTestingModule({
       providers: [BusinessPartnerService, { provide: PrismaService, useValue: prisma }],
@@ -55,7 +67,9 @@ describe('BusinessPartnerService', () => {
         expect.objectContaining({ data: expect.objectContaining({ name: '(주)ABC', addressId: 'addr-1' }) }),
       );
       expect(prisma.businessPartner.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ organizationId: 'org-1', businessProfileId: 'bp-1' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ organizationId: 'org-1', businessProfileId: 'bp-1' }),
+        }),
       );
       expect(prisma.businessPartnerRole.createMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: [{ organizationId: 'org-1', businessPartnerId: 'partner-1', type: 'SALES' }] }),

@@ -47,7 +47,10 @@ export class InvitationService {
       data: { token, email: dto.email, role: dto.role, organizationId, invitedById, expiresAt },
     });
 
-    const clientUrl = this.config.get<string>('CLIENT_URL', this.config.get<string>('APP_URL', 'http://localhost:5173'));
+    const clientUrl = this.config.get<string>(
+      'CLIENT_URL',
+      this.config.get<string>('APP_URL', 'http://localhost:5173'),
+    );
     const inviteUrl = `${clientUrl}/invitations/accept?token=${rawToken}`;
     await this.mailService.sendOrganizationInvite(dto.email, inviteUrl, org.businessProfile.name);
   }

@@ -1,4 +1,13 @@
-import { IsArray, IsBoolean, IsEmail, IsEnum, IsOptional, IsString, ValidateNested, ArrayMinSize } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { BusinessPartnerRoleType } from '@prisma/client';
 

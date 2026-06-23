@@ -28,7 +28,9 @@ describe('MemberService', () => {
 
   describe('list', () => {
     it('returns active members', async () => {
-      prisma.organizationMember.findMany.mockResolvedValue([{ id: 'm-1', name: '홍길동', role: 'STAFF', isActive: true }]);
+      prisma.organizationMember.findMany.mockResolvedValue([
+        { id: 'm-1', name: '홍길동', role: 'STAFF', isActive: true },
+      ]);
       const result = await service.list('org-1');
       expect(prisma.organizationMember.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { organizationId: 'org-1', isActive: true } }),

@@ -6,6 +6,7 @@ import { OrganizationGuard } from '../../common/guards/organization.guard';
 import type { OrgContext } from '../../common/guards/organization.guard';
 import { CreateRentalContractDto } from './dto/create-rental-contract.dto';
 import { CreateRentalContractItemDto } from './dto/create-rental-contract-item.dto';
+import { ExtendRentalContractDto } from './dto/extend-rental-contract.dto';
 import { ReplaceRentalContractItemDto } from './dto/replace-rental-contract-item.dto';
 import { ReturnRentalContractItemDto } from './dto/return-rental-contract-item.dto';
 import { UpdateRentalContractDto } from './dto/update-rental-contract.dto';
@@ -42,6 +43,11 @@ export class RentalContractController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() dto: UpdateRentalContractStatusDto, @OrgCtx() ctx: OrgContext) {
     return this.service.updateStatus(ctx.organizationId, id, dto);
+  }
+
+  @Patch(':id/extend')
+  extend(@Param('id') id: string, @Body() dto: ExtendRentalContractDto, @OrgCtx() ctx: OrgContext) {
+    return this.service.extend(ctx.organizationId, id, dto);
   }
 
   @Post(':id/items')

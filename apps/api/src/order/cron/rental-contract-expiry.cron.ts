@@ -25,6 +25,7 @@ export class RentalContractExpiryCron {
     const contracts = await this.prisma.rentalContract.findMany({
       where: {
         status: RentalContractStatus.ACTIVE,
+        autoExpire: true,
         endDate: { lt: kstTodayStartUTC },
       },
       select: { id: true, organizationId: true },

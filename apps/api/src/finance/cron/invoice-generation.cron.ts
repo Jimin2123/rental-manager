@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { RentalContractStatus } from '@prisma/client';
+import { BillingType, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { InvoiceService } from '../invoice/invoice.service';
+import { InvoiceService, type ContractItemInput } from '../invoice/invoice.service';
 
 @Injectable()
 export class InvoiceGenerationCron {
@@ -23,7 +23,17 @@ export class InvoiceGenerationCron {
 
     const contracts = await this.prisma.rentalContract.findMany({
       where: { status: RentalContractStatus.ACTIVE },
-      include: { items: true },
+      include: {
+        items: {
+          where: { status: RentalContractItemStatus.ACTIVE },
+          include: {
+            meterReadings: {
+              where: { billingMonth, deletedAt: null, invoiceItemId: null },
+              select: { id: true, blackUsage: true, colorUsage: true },
+            },
+          },
+        },
+      },
       take: 500,
     });
 
@@ -47,11 +57,31 @@ export class InvoiceGenerationCron {
           continue;
         }
 
+        const contractItems: ContractItemInput[] = contract.items.map((item) => {
+          if (item.billingType === BillingType.METER) {
+            return {
+              id: item.id,
+              monthlyRentalPrice: item.monthlyRentalPrice,
+              billingType: BillingType.METER,
+              freeBlackCount: item.freeBlackCount,
+              blackUnitPrice: item.blackUnitPrice,
+              freeColorCount: item.freeColorCount,
+              colorUnitPrice: item.colorUnitPrice,
+              meterReadings: item.meterReadings,
+            };
+          }
+          return {
+            id: item.id,
+            monthlyRentalPrice: item.monthlyRentalPrice,
+            billingType: BillingType.FIXED,
+          };
+        });
+
         const result = await this.invoiceService.createRentalMonthlyInvoice(
           contract.organizationId,
           contract.id,
           billingMonth,
-          contract.items.map((i) => ({ id: i.id, monthlyRentalPrice: i.monthlyRentalPrice })),
+          contractItems,
         );
 
         if (result) success++;

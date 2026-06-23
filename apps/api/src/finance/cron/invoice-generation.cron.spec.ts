@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { BillingTiming, BillingType, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
+import { BillingTiming, BillingType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { InvoiceService } from '../invoice/invoice.service';
 import { InvoiceGenerationCron } from './invoice-generation.cron';
@@ -139,9 +139,7 @@ describe('InvoiceGenerationCron', () => {
     it('paymentDueDay가 billingDay보다 크면 같은 달로 설정한다', async () => {
       jest.useFakeTimers().setSystemTime(kstDate(2026, 6, 15));
 
-      prisma.rentalContract.findMany.mockResolvedValue([
-        makeContract({ billingDay: 15, paymentDueDay: 25 }),
-      ]);
+      prisma.rentalContract.findMany.mockResolvedValue([makeContract({ billingDay: 15, paymentDueDay: 25 })]);
 
       await cron.generateMonthlyInvoices();
 
@@ -157,9 +155,7 @@ describe('InvoiceGenerationCron', () => {
     it('paymentDueDay가 billingDay보다 작으면 다음 달로 설정한다', async () => {
       jest.useFakeTimers().setSystemTime(kstDate(2026, 6, 25));
 
-      prisma.rentalContract.findMany.mockResolvedValue([
-        makeContract({ billingDay: 25, paymentDueDay: 5 }),
-      ]);
+      prisma.rentalContract.findMany.mockResolvedValue([makeContract({ billingDay: 25, paymentDueDay: 5 })]);
 
       await cron.generateMonthlyInvoices();
 
@@ -175,9 +171,7 @@ describe('InvoiceGenerationCron', () => {
     it('paymentDueDay가 null이면 dueDate를 설정하지 않는다', async () => {
       jest.useFakeTimers().setSystemTime(kstDate(2026, 6, 1));
 
-      prisma.rentalContract.findMany.mockResolvedValue([
-        makeContract({ billingDay: 1, paymentDueDay: null }),
-      ]);
+      prisma.rentalContract.findMany.mockResolvedValue([makeContract({ billingDay: 1, paymentDueDay: null })]);
 
       await cron.generateMonthlyInvoices();
 

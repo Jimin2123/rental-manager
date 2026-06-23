@@ -124,6 +124,21 @@ describe('ServiceRequestService', () => {
       );
     });
 
+    it('RETURNED 상태 계약 항목에 warrantyExpiresAt이 미래이면 isWarranty를 true로 판단한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.rentalContractItem.findFirst.mockResolvedValue({
+        rentalOrderItem: { warrantyExpiresAt: new Date(Date.now() + 86400000) },
+      });
+      prisma.serviceRequest.create.mockResolvedValue({ id: 'sr-1' });
+
+      await service.create('org-1', { type: ServiceRequestType.REPAIR, customerId: 'c-1', assetId: 'a-1' });
+
+      expect(prisma.serviceRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isWarranty: true }) }),
+      );
+    });
+
     it('isWarranty를 명시적으로 전달하면 자동 판단을 무시한다', async () => {
       prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
       prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });

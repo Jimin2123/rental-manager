@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { DocumentSequenceType, RentalContractItemStatus, ServiceRequestStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../../finance/common/document-sequence.service';
+
+type PrismaTransaction = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
 import type { CreateServiceRequestDto } from './dto/create-service-request.dto';
 import type { UpdateServiceRequestDto } from './dto/update-service-request.dto';
 import type { ChangeServiceRequestStatusDto } from './dto/change-service-request-status.dto';
@@ -35,11 +37,10 @@ export class ServiceRequestService {
       if (!schedule) throw new NotFoundException('점검 일정을 찾을 수 없습니다.');
     }
 
-    // isWarranty 미전달 시 활성 렌탈 계약 항목의 warrantyExpiresAt으로 자동 판단
-    const isWarranty =
-      dto.isWarranty !== undefined ? dto.isWarranty : await this.resolveIsWarranty(organizationId, dto.assetId);
-
     return this.prisma.$transaction(async (tx) => {
+      // isWarranty 미전달 시 활성/반납 렌탈 계약 항목의 warrantyExpiresAt으로 자동 판단 (트랜잭션 내 일관성 보장)
+      const isWarranty =
+        dto.isWarranty !== undefined ? dto.isWarranty : await this.resolveIsWarranty(organizationId, dto.assetId, tx);
       const requestNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.SERVICE_REQUEST, tx);
       const request = await tx.serviceRequest.create({
         data: {
@@ -156,9 +157,13 @@ export class ServiceRequestService {
     });
   }
 
-  private async resolveIsWarranty(organizationId: string, assetId: string): Promise<boolean> {
-    const contractItem = await this.prisma.rentalContractItem.findFirst({
-      where: { assetId, organizationId, status: RentalContractItemStatus.ACTIVE },
+  private async resolveIsWarranty(organizationId: string, assetId: string, tx: PrismaTransaction): Promise<boolean> {
+    const contractItem = await tx.rentalContractItem.findFirst({
+      where: {
+        assetId,
+        organizationId,
+        status: { in: [RentalContractItemStatus.ACTIVE, RentalContractItemStatus.RETURNED] },
+      },
       select: { rentalOrderItem: { select: { warrantyExpiresAt: true } } },
     });
     const warrantyExpiresAt = contractItem?.rentalOrderItem?.warrantyExpiresAt;

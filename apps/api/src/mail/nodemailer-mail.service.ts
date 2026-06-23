@@ -11,13 +11,12 @@ export class NodemailerMailService implements IMailService {
 
   constructor(config: ConfigService) {
     this.from = config.get<string>('MAIL_FROM', 'noreply@rental-manager.local');
+    const user = config.get<string>('MAIL_USER', '');
+    const pass = config.get<string>('MAIL_PASS', '');
     this.transporter = nodemailer.createTransport({
       host: config.get<string>('MAIL_HOST', 'localhost'),
       port: config.get<number>('MAIL_PORT', 587),
-      auth: {
-        user: config.get<string>('MAIL_USER', ''),
-        pass: config.get<string>('MAIL_PASS', ''),
-      },
+      ...(user && pass ? { auth: { user, pass } } : {}),
     });
   }
 

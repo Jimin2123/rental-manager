@@ -17,7 +17,8 @@ describe('QuotationExpiryCron', () => {
     cron = module.get(QuotationExpiryCron);
   });
 
-  it('validUntil이 현재 시각보다 이전인 DRAFT/SENT 견적을 EXPIRED로 일괄 전환한다', async () => {
+  it('KST 기준 오늘 시작 이전에 만료된 DRAFT/SENT 견적을 EXPIRED로 일괄 전환한다', async () => {
+    // UTC 자정 = KST 09:00; kstTodayStartUTC = KST 당일 00:00 = UTC 전날 15:00
     jest.useFakeTimers().setSystemTime(new Date('2026-06-24T00:00:00Z'));
     prisma.quotation.updateMany.mockResolvedValue({ count: 3 });
 
@@ -26,7 +27,7 @@ describe('QuotationExpiryCron', () => {
     expect(prisma.quotation.updateMany).toHaveBeenCalledWith({
       where: {
         status: { in: [QuotationStatus.DRAFT, QuotationStatus.SENT] },
-        validUntil: { lt: new Date('2026-06-24T00:00:00Z') },
+        validUntil: { lt: new Date('2026-06-23T15:00:00Z') },
       },
       data: { status: QuotationStatus.EXPIRED },
     });

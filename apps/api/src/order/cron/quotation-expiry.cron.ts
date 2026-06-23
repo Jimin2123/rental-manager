@@ -9,15 +9,19 @@ export class QuotationExpiryCron {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // 매일 자정(KST) 실행 — validUntil이 지난 DRAFT/SENT 견적을 EXPIRED로 전환
+  // 매일 UTC 자정(KST 09:00) 실행 — KST 기준 오늘 시작 이전에 만료된 DRAFT/SENT 견적을 EXPIRED로 전환
   @Cron('0 0 * * *')
   async expireQuotations() {
     const now = new Date();
+    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const kstTodayStartUTC = new Date(
+      Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) - 9 * 60 * 60 * 1000,
+    );
 
     const { count } = await this.prisma.quotation.updateMany({
       where: {
         status: { in: [QuotationStatus.DRAFT, QuotationStatus.SENT] },
-        validUntil: { lt: now },
+        validUntil: { lt: kstTodayStartUTC },
       },
       data: { status: QuotationStatus.EXPIRED },
     });

@@ -1,11 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import {
-  DocumentSequenceType,
-  InvoiceItemType,
-  InvoiceStatus,
-  InvoiceType,
-  VatType,
-} from '@prisma/client';
+import { DocumentSequenceType, InvoiceItemType, InvoiceStatus, InvoiceType, VatType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { calculateAmounts } from '../common/amount.util';

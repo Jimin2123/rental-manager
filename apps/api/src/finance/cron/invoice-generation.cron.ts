@@ -56,14 +56,10 @@ export class InvoiceGenerationCron {
         if (result) success++;
       } catch (err) {
         fail++;
-        this.logger.error(
-          `[InvoiceGenerationCron] 계약 ${contract.id} 청구서 생성 실패: ${(err as Error).message}`,
-        );
+        this.logger.error(`[InvoiceGenerationCron] 계약 ${contract.id} 청구서 생성 실패: ${(err as Error).message}`);
       }
     }
 
-    this.logger.log(
-      `[InvoiceGenerationCron] 완료 — 생성: ${success}, 건너뜀: ${skip}, 실패: ${fail}`,
-    );
+    this.logger.log(`[InvoiceGenerationCron] 완료 — 생성: ${success}, 건너뜀: ${skip}, 실패: ${fail}`);
   }
 }

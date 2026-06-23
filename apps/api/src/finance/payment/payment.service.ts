@@ -128,8 +128,7 @@ export class PaymentService {
       select: { status: true },
     });
     if (!payment) throw new NotFoundException('수납 내역을 찾을 수 없습니다.');
-    if (payment.status === PaymentStatus.CANCELED)
-      throw new BadRequestException('이미 취소된 수납입니다.');
+    if (payment.status === PaymentStatus.CANCELED) throw new BadRequestException('이미 취소된 수납입니다.');
 
     await this.prisma.$transaction(async (tx) => {
       const allocations = await tx.paymentAllocation.findMany({

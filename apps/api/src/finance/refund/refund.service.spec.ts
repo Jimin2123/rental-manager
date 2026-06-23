@@ -1,11 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import {
-  DocumentSequenceType,
-  InvoiceSettlementStatus,
-  RefundReason,
-  RefundStatus,
-} from '@prisma/client';
+import { DocumentSequenceType, InvoiceSettlementStatus, RefundReason, RefundStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { RefundService } from './refund.service';
@@ -72,7 +67,10 @@ describe('RefundService', () => {
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice({ paidAmount: 50000 }));
       await expect(
         service.create('org-1', 'mem-1', {
-          customerId: 'cust-1', invoiceId: 'inv-1', reason: RefundReason.BILLING_ERROR, amount: 60000,
+          customerId: 'cust-1',
+          invoiceId: 'inv-1',
+          reason: RefundReason.BILLING_ERROR,
+          amount: 60000,
         } as any),
       ).rejects.toThrow(BadRequestException);
     });
@@ -82,7 +80,10 @@ describe('RefundService', () => {
       prisma.payment = { findUnique: jest.fn().mockResolvedValue({ amount: 30000 }) } as any;
       await expect(
         service.create('org-1', 'mem-1', {
-          customerId: 'cust-1', paymentId: 'pay-1', reason: RefundReason.OVERPAYMENT, amount: 50000,
+          customerId: 'cust-1',
+          paymentId: 'pay-1',
+          reason: RefundReason.OVERPAYMENT,
+          amount: 50000,
         } as any),
       ).rejects.toThrow(BadRequestException);
     });
@@ -92,8 +93,11 @@ describe('RefundService', () => {
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice());
 
       await service.create('org-1', 'mem-1', {
-        customerId: 'cust-1', invoiceId: 'inv-1', reason: RefundReason.BILLING_ERROR, amount: 50000,
-      } as any);
+        customerId: 'cust-1',
+        invoiceId: 'inv-1',
+        reason: RefundReason.BILLING_ERROR,
+        amount: 50000,
+      });
 
       expect(prisma.invoice.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -107,17 +111,26 @@ describe('RefundService', () => {
   describe('cancel', () => {
     it('PENDING이 아니면 BadRequestException', async () => {
       prisma.refund.findUnique.mockResolvedValue({
-        id: 'ref-1', status: RefundStatus.COMPLETED, invoiceId: null,
+        id: 'ref-1',
+        status: RefundStatus.COMPLETED,
+        invoiceId: null,
       });
       await expect(service.cancel('org-1', 'ref-1')).rejects.toThrow(BadRequestException);
     });
 
     it('PENDING 취소 시 Invoice 금액 원복', async () => {
       prisma.refund.findUnique.mockResolvedValue({
-        id: 'ref-1', status: RefundStatus.PENDING, invoiceId: 'inv-1', amount: 50000,
+        id: 'ref-1',
+        status: RefundStatus.PENDING,
+        invoiceId: 'inv-1',
+        amount: 50000,
       });
       prisma.invoice.findUnique.mockResolvedValue(
-        mockInvoice({ refundedAmount: 50000, outstandingAmount: 50000, settlementStatus: InvoiceSettlementStatus.PARTIALLY_PAID }),
+        mockInvoice({
+          refundedAmount: 50000,
+          outstandingAmount: 50000,
+          settlementStatus: InvoiceSettlementStatus.PARTIALLY_PAID,
+        }),
       );
 
       await service.cancel('org-1', 'ref-1');

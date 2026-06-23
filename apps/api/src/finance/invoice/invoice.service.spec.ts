@@ -1,12 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import {
-  DocumentSequenceType,
-  InvoiceSettlementStatus,
-  InvoiceStatus,
-  InvoiceType,
-  VatType,
-} from '@prisma/client';
+import { DocumentSequenceType, InvoiceSettlementStatus, InvoiceStatus, InvoiceType, VatType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { InvoiceService } from './invoice.service';
@@ -88,7 +82,7 @@ describe('InvoiceService', () => {
       const result = await service.create('org-1', 'mem-1', {
         type: InvoiceType.SALE,
         customerId: 'cust-1',
-      } as any);
+      });
       expect(result).toEqual({ id: 'inv-1' });
       expect(docSeq.generateNo).toHaveBeenCalledWith('org-1', DocumentSequenceType.INVOICE, prisma);
     });
@@ -124,9 +118,7 @@ describe('InvoiceService', () => {
     });
 
     it('paidAmount > 0이면 BadRequestException', async () => {
-      prisma.invoice.findUnique.mockResolvedValue(
-        mockInvoice({ status: InvoiceStatus.ISSUED, paidAmount: 50000 }),
-      );
+      prisma.invoice.findUnique.mockResolvedValue(mockInvoice({ status: InvoiceStatus.ISSUED, paidAmount: 50000 }));
       await expect(service.cancel('org-1', 'inv-1')).rejects.toThrow(BadRequestException);
     });
 

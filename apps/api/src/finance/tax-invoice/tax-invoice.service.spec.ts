@@ -1,12 +1,6 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import {
-  DocumentSequenceType,
-  InvoiceStatus,
-  TaxInvoiceStatus,
-  TaxInvoiceType,
-  VatType,
-} from '@prisma/client';
+import { DocumentSequenceType, InvoiceStatus, TaxInvoiceStatus, VatType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { TaxInvoiceService } from './tax-invoice.service';
@@ -28,9 +22,7 @@ describe('TaxInvoiceService', () => {
     customerId: 'cust-1',
     finalAmount: 110000,
     taxInvoice: null,
-    items: [
-      { supplyAmount: 100000, vatAmount: 10000, totalAmount: 110000, vatType: VatType.INCLUDED },
-    ],
+    items: [{ supplyAmount: 100000, vatAmount: 10000, totalAmount: 110000, vatType: VatType.INCLUDED }],
     ...overrides,
   });
 
@@ -74,16 +66,16 @@ describe('TaxInvoiceService', () => {
   describe('create', () => {
     it('Invoice가 ISSUED가 아니면 BadRequestException', async () => {
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice({ status: InvoiceStatus.DRAFT }));
-      await expect(
-        service.create('org-1', 'mem-1', { invoiceId: 'inv-1', issueDate: '2026-06-23' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create('org-1', 'mem-1', { invoiceId: 'inv-1', issueDate: '2026-06-23' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('이미 TaxInvoice가 있으면 ConflictException', async () => {
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice({ taxInvoice: { id: 'ti-existing' } }));
-      await expect(
-        service.create('org-1', 'mem-1', { invoiceId: 'inv-1', issueDate: '2026-06-23' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create('org-1', 'mem-1', { invoiceId: 'inv-1', issueDate: '2026-06-23' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('정상 발행 — InvoiceItem 합산으로 금액 계산', async () => {
@@ -110,7 +102,9 @@ describe('TaxInvoiceService', () => {
   describe('cancel', () => {
     it('ISSUED가 아니면 BadRequestException', async () => {
       prisma.taxInvoice.findUnique.mockResolvedValue({
-        id: 'ti-1', status: TaxInvoiceStatus.DRAFT, organizationId: 'org-1',
+        id: 'ti-1',
+        status: TaxInvoiceStatus.DRAFT,
+        organizationId: 'org-1',
       });
       await expect(service.cancel('org-1', 'ti-1')).rejects.toThrow(BadRequestException);
     });

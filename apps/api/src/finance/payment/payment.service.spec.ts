@@ -1,15 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import {
-  DocumentSequenceType,
-  InvoiceSettlementStatus,
-  InvoiceStatus,
-  InvoiceType,
-  PaymentMethod,
-  PaymentProvider,
-  PaymentStatus,
-  VatType,
-} from '@prisma/client';
+import { InvoiceSettlementStatus, InvoiceStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { PaymentService } from './payment.service';
@@ -77,7 +68,12 @@ describe('PaymentService', () => {
     it('고객 없으면 NotFoundException', async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       await expect(
-        service.create('org-1', 'mem-1', { customerId: 'c1', method: PaymentMethod.BANK_TRANSFER, amount: 50000, paidAt: '2026-06-23' } as any),
+        service.create('org-1', 'mem-1', {
+          customerId: 'c1',
+          method: PaymentMethod.BANK_TRANSFER,
+          amount: 50000,
+          paidAt: '2026-06-23',
+        } as any),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -85,8 +81,11 @@ describe('PaymentService', () => {
       prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
       prisma.invoice.findMany.mockResolvedValue([]);
       const result = await service.create('org-1', 'mem-1', {
-        customerId: 'cust-1', method: PaymentMethod.BANK_TRANSFER, amount: 100000, paidAt: '2026-06-23',
-      } as any);
+        customerId: 'cust-1',
+        method: PaymentMethod.BANK_TRANSFER,
+        amount: 100000,
+        paidAt: '2026-06-23',
+      });
       expect(result).toEqual({ id: 'pay-1' });
       expect(prisma.paymentAllocation.create).not.toHaveBeenCalled();
     });
@@ -96,8 +95,11 @@ describe('PaymentService', () => {
       prisma.invoice.findMany.mockResolvedValue([mockInvoice()]);
 
       await service.create('org-1', 'mem-1', {
-        customerId: 'cust-1', method: PaymentMethod.BANK_TRANSFER, amount: 110000, paidAt: '2026-06-23',
-      } as any);
+        customerId: 'cust-1',
+        method: PaymentMethod.BANK_TRANSFER,
+        amount: 110000,
+        paidAt: '2026-06-23',
+      });
 
       expect(prisma.paymentAllocation.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ amount: 110000, invoiceId: 'inv-1' }) }),
@@ -121,8 +123,11 @@ describe('PaymentService', () => {
       ]);
 
       await service.create('org-1', 'mem-1', {
-        customerId: 'cust-1', method: PaymentMethod.BANK_TRANSFER, amount: 80000, paidAt: '2026-06-23',
-      } as any);
+        customerId: 'cust-1',
+        method: PaymentMethod.BANK_TRANSFER,
+        amount: 80000,
+        paidAt: '2026-06-23',
+      });
 
       const calls = prisma.paymentAllocation.create.mock.calls;
       expect(calls).toHaveLength(2);
@@ -144,12 +149,10 @@ describe('PaymentService', () => {
 
     it('COMPLETED → CANCELED, 배분 삭제, Invoice 재계산', async () => {
       prisma.payment.findUnique.mockResolvedValue({ id: 'pay-1', status: PaymentStatus.COMPLETED });
-      prisma.paymentAllocation.findMany.mockResolvedValue([
-        { invoiceId: 'inv-1', amount: 50000 },
-      ]);
-      prisma.invoice.findUnique = jest.fn().mockResolvedValue(
-        mockInvoice({ paidAmount: 50000, outstandingAmount: 60000, finalAmount: 110000 }),
-      );
+      prisma.paymentAllocation.findMany.mockResolvedValue([{ invoiceId: 'inv-1', amount: 50000 }]);
+      prisma.invoice.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockInvoice({ paidAmount: 50000, outstandingAmount: 60000, finalAmount: 110000 }));
 
       await service.cancel('org-1', 'pay-1');
 

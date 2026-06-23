@@ -21,8 +21,7 @@ export class TaxInvoiceService {
     if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
     if (invoice.status !== InvoiceStatus.ISSUED)
       throw new BadRequestException('ISSUED 상태의 청구서에만 세금계산서를 발행할 수 있습니다.');
-    if (invoice.taxInvoice)
-      throw new ConflictException('이미 세금계산서가 발행된 청구서입니다.');
+    if (invoice.taxInvoice) throw new ConflictException('이미 세금계산서가 발행된 청구서입니다.');
 
     const customer = await this.prisma.customer.findUnique({
       where: { id_organizationId: { id: invoice.customerId, organizationId } },

@@ -84,6 +84,11 @@ export class ServiceVisitService {
   /* eslint-enable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access */
 
   async complete(organizationId: string, id: string, dto: CompleteServiceVisitDto, memberId: string): Promise<void> {
+    // assetService.changeStatus() 는 내부에서 $transaction 을 사용하므로
+    // 중첩 interactive transaction 을 피하기 위해 트랜잭션 밖에서 호출한다.
+    let assetId!: string;
+    const assetStatusAfter = dto.assetStatusAfter ?? AssetStatus.AVAILABLE;
+
     await this.prisma.$transaction(async (tx) => {
       const visit = await tx.serviceVisit.findFirst({
         where: { id, organizationId },
@@ -117,14 +122,8 @@ export class ServiceVisitService {
       });
       if (!serviceRequest) throw new NotFoundException('AS 접수를 찾을 수 없습니다.');
 
-      // Asset 상태 자동 업데이트
-      await this.assetService.changeStatus(
-        serviceRequest.assetId,
-        organizationId,
-        dto.assetStatusAfter ?? AssetStatus.AVAILABLE,
-        AssetEventSourceType.SERVICE_VISIT,
-        id,
-      );
+      // 트랜잭션 완료 후 assetService.changeStatus() 호출에 필요한 값을 캡처
+      assetId = serviceRequest.assetId;
 
       // SERVICE_FEE Invoice 자동 생성
       const laborCost = dto.laborCost ?? 0;
@@ -162,6 +161,15 @@ export class ServiceVisitService {
         }
       }
     });
+
+    // Asset 상태 자동 업데이트 — 중첩 트랜잭션 방지를 위해 $transaction 완료 후 호출
+    await this.assetService.changeStatus(
+      assetId,
+      organizationId,
+      assetStatusAfter,
+      AssetEventSourceType.SERVICE_VISIT,
+      id,
+    );
   }
 
   async cancel(organizationId: string, id: string): Promise<void> {

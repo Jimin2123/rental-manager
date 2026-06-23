@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { OrganizationModule } from '../organization/organization.module';
 import { FinanceDocumentSequenceService } from './common/document-sequence.service';
 import { InvoiceService } from './invoice/invoice.service';

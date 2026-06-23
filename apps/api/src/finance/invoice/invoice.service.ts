@@ -226,6 +226,7 @@ export class InvoiceService {
     contractId: string,
     billingMonth: string,
     contractItems: ContractItemInput[],
+    dueDate?: Date,
   ) {
     return this.prisma.$transaction(async (tx) => {
       const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
@@ -244,6 +245,7 @@ export class InvoiceService {
           customerId: contract.rentalOrder.order.customerId,
           rentalContractId: contractId,
           billingMonth,
+          ...(dueDate && { dueDate }),
         },
         select: { id: true },
       });

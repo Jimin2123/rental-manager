@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { MeterReadingMethod } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateMeterReadingDto } from './dto/create-meter-reading.dto';
 import type { QueryMeterReadingDto } from './dto/query-meter-reading.dto';
@@ -40,7 +41,7 @@ export class MeterReadingService {
         colorUsage,
         rentalContractItemId: dto.rentalContractItemId ?? null,
         billingMonth: dto.billingMonth ?? null,
-        readingMethod: dto.readingMethod ?? 'MANUAL',
+        readingMethod: dto.readingMethod ?? MeterReadingMethod.MANUAL,
         note: dto.note ?? null,
       },
     });

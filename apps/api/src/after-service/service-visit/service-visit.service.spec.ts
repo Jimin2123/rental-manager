@@ -140,6 +140,7 @@ describe('ServiceVisitService', () => {
       assetId: 'asset-1',
       isWarranty: false,
       maintenanceScheduleId: null,
+      status: ServiceRequestStatus.IN_PROGRESS,
       ...overrides,
     });
 
@@ -231,7 +232,7 @@ describe('ServiceVisitService', () => {
 
       expect(prisma.serviceRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'sr-1' },
+          where: { id_organizationId: { id: 'sr-1', organizationId: 'org-1' } },
           data: expect.objectContaining({ status: ServiceRequestStatus.COMPLETED }),
         }),
       );
@@ -258,6 +259,17 @@ describe('ServiceVisitService', () => {
       prisma.serviceVisit.update.mockResolvedValue({});
       prisma.serviceRequest.findFirst.mockResolvedValue(mockRequest());
       prisma.serviceVisit.count.mockResolvedValue(1);
+
+      await service.complete('org-1', 'sv-1', { result: ServiceVisitResult.REPAIRED }, 'member-1');
+
+      expect(prisma.serviceRequest.update).not.toHaveBeenCalled();
+    });
+
+    it('ServiceRequest가 CANCELED이면 방문 완료 후 자동 완료 전이를 하지 않는다', async () => {
+      prisma.serviceVisit.findFirst.mockResolvedValue(mockVisit());
+      prisma.serviceVisit.update.mockResolvedValue({});
+      prisma.serviceRequest.findFirst.mockResolvedValue(mockRequest({ status: ServiceRequestStatus.CANCELED }));
+      prisma.serviceVisit.count.mockResolvedValue(0);
 
       await service.complete('org-1', 'sv-1', { result: ServiceVisitResult.REPAIRED }, 'member-1');
 
@@ -312,6 +324,7 @@ describe('ServiceVisitService', () => {
       prisma.serviceVisit.findFirst.mockResolvedValue({
         id: 'sv-1',
         status: ServiceVisitStatus.SCHEDULED,
+        serviceRequestId: 'sr-1',
       });
       prisma.serviceVisit.update.mockResolvedValue({});
 
@@ -322,6 +335,36 @@ describe('ServiceVisitService', () => {
           data: expect.objectContaining({ status: ServiceVisitStatus.CANCELED }),
         }),
       );
+    });
+
+    it('잔여 활성 방문 없고 접수가 SCHEDULED이면 RECEIVED로 역전이한다', async () => {
+      prisma.serviceVisit.findFirst.mockResolvedValue({
+        id: 'sv-1',
+        status: ServiceVisitStatus.SCHEDULED,
+        serviceRequestId: 'sr-1',
+      });
+      prisma.serviceVisit.count.mockResolvedValue(0);
+      prisma.serviceRequest.findFirst.mockResolvedValue({ status: ServiceRequestStatus.SCHEDULED });
+
+      await service.cancel('org-1', 'sv-1');
+
+      expect(prisma.serviceRequest.update).toHaveBeenCalledWith({
+        where: { id_organizationId: { id: 'sr-1', organizationId: 'org-1' } },
+        data: { status: ServiceRequestStatus.RECEIVED },
+      });
+    });
+
+    it('잔여 활성 방문이 남아 있으면 접수 상태를 변경하지 않는다', async () => {
+      prisma.serviceVisit.findFirst.mockResolvedValue({
+        id: 'sv-1',
+        status: ServiceVisitStatus.SCHEDULED,
+        serviceRequestId: 'sr-1',
+      });
+      prisma.serviceVisit.count.mockResolvedValue(1);
+
+      await service.cancel('org-1', 'sv-1');
+
+      expect(prisma.serviceRequest.update).not.toHaveBeenCalled();
     });
   });
 });

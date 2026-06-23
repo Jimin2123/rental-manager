@@ -34,27 +34,29 @@ export class ServiceVisitService {
       throw new BadRequestException('완료되거나 취소된 접수에는 방문을 등록할 수 없습니다.');
     }
 
-    const visit = await this.prisma.serviceVisit.create({
-      data: {
-        organizationId,
-        serviceRequestId: requestId,
-        staffId: dto.staffId ?? null,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-        status: ServiceVisitStatus.SCHEDULED,
-        memo: dto.memo ?? null,
-      },
-      select: { id: true },
-    });
-
-    // 자동 상태 전이: RECEIVED → SCHEDULED
-    if (serviceRequest.status === ServiceRequestStatus.RECEIVED) {
-      await this.prisma.serviceRequest.update({
-        where: { id_organizationId: { id: requestId, organizationId } },
-        data: { status: ServiceRequestStatus.SCHEDULED },
+    return this.prisma.$transaction(async (tx) => {
+      const created = await tx.serviceVisit.create({
+        data: {
+          organizationId,
+          serviceRequestId: requestId,
+          staffId: dto.staffId ?? null,
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          status: ServiceVisitStatus.SCHEDULED,
+          memo: dto.memo ?? null,
+        },
+        select: { id: true },
       });
-    }
 
-    return { id: visit.id };
+      // 자동 상태 전이: RECEIVED → SCHEDULED
+      if (serviceRequest.status === ServiceRequestStatus.RECEIVED) {
+        await tx.serviceRequest.update({
+          where: { id_organizationId: { id: requestId, organizationId } },
+          data: { status: ServiceRequestStatus.SCHEDULED },
+        });
+      }
+
+      return { id: created.id };
+    });
   }
 
   findByRequest(organizationId: string, requestId: string) {
@@ -127,7 +129,7 @@ export class ServiceVisitService {
 
       const serviceRequest = await tx.serviceRequest.findFirst({
         where: { id: visit.serviceRequestId, organizationId },
-        select: { assetId: true, isWarranty: true, maintenanceScheduleId: true },
+        select: { assetId: true, isWarranty: true, maintenanceScheduleId: true, status: true },
       });
       if (!serviceRequest) throw new NotFoundException('AS 접수를 찾을 수 없습니다.');
 
@@ -170,17 +172,22 @@ export class ServiceVisitService {
         }
       }
 
-      // 자동 상태 전이: 후속 방문 불필요 + 잔여 방문 없음 → ServiceRequest COMPLETED
+      // 자동 상태 전이: 후속 방문 불필요 + 잔여 방문 없음 + CANCELED/COMPLETED 아닌 경우 → COMPLETED
       if (!dto.requiresFollowUp) {
         const openVisitsCount = await tx.serviceVisit.count({
           where: {
             serviceRequestId: visit.serviceRequestId,
+            organizationId,
             status: { notIn: [ServiceVisitStatus.COMPLETED, ServiceVisitStatus.CANCELED] },
           },
         });
-        if (openVisitsCount === 0) {
+        if (
+          openVisitsCount === 0 &&
+          serviceRequest.status !== ServiceRequestStatus.CANCELED &&
+          serviceRequest.status !== ServiceRequestStatus.COMPLETED
+        ) {
           await tx.serviceRequest.update({
-            where: { id: visit.serviceRequestId },
+            where: { id_organizationId: { id: visit.serviceRequestId, organizationId } },
             data: { status: ServiceRequestStatus.COMPLETED, completedAt: visitedAt },
           });
         }
@@ -200,15 +207,40 @@ export class ServiceVisitService {
   async cancel(organizationId: string, id: string): Promise<void> {
     const visit = await this.prisma.serviceVisit.findFirst({
       where: { id, organizationId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, serviceRequestId: true },
     });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다.');
     if (visit.status === ServiceVisitStatus.COMPLETED) {
       throw new BadRequestException('완료된 방문은 취소할 수 없습니다.');
     }
-    await this.prisma.serviceVisit.update({
-      where: { id },
-      data: { status: ServiceVisitStatus.CANCELED },
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.serviceVisit.update({
+        where: { id },
+        data: { status: ServiceVisitStatus.CANCELED },
+      });
+
+      // 자동 역전이: 잔여 활성 방문 없으면 SCHEDULED → RECEIVED 복귀
+      const openVisitsCount = await tx.serviceVisit.count({
+        where: {
+          serviceRequestId: visit.serviceRequestId,
+          organizationId,
+          status: { notIn: [ServiceVisitStatus.COMPLETED, ServiceVisitStatus.CANCELED] },
+        },
+      });
+
+      if (openVisitsCount === 0) {
+        const serviceRequest = await tx.serviceRequest.findFirst({
+          where: { id: visit.serviceRequestId, organizationId },
+          select: { status: true },
+        });
+        if (serviceRequest?.status === ServiceRequestStatus.SCHEDULED) {
+          await tx.serviceRequest.update({
+            where: { id_organizationId: { id: visit.serviceRequestId, organizationId } },
+            data: { status: ServiceRequestStatus.RECEIVED },
+          });
+        }
+      }
     });
   }
 }

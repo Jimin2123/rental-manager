@@ -1,6 +1,13 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { DocumentSequenceType, InvoiceSettlementStatus, InvoiceStatus, InvoiceType, VatType } from '@prisma/client';
+import {
+  BillingType,
+  DocumentSequenceType,
+  InvoiceSettlementStatus,
+  InvoiceStatus,
+  InvoiceType,
+  VatType,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { InvoiceService } from './invoice.service';
@@ -19,6 +26,8 @@ describe('InvoiceService', () => {
     invoiceAdjustment: { create: jest.Mock };
     customer: { findUnique: jest.Mock };
     serviceRequest: { findUnique: jest.Mock };
+    rentalContract: { findUnique: jest.Mock };
+    meterReading: { updateMany: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
 
@@ -48,6 +57,8 @@ describe('InvoiceService', () => {
       },
       invoiceItem: { create: jest.fn(), findFirst: jest.fn(), delete: jest.fn() },
       invoiceAdjustment: { create: jest.fn() },
+      rentalContract: { findUnique: jest.fn() },
+      meterReading: { updateMany: jest.fn() },
       customer: { findUnique: jest.fn() },
       serviceRequest: { findUnique: jest.fn() },
     };
@@ -219,6 +230,99 @@ describe('InvoiceService', () => {
         }),
       );
       expect(result).toEqual({ id: 'inv-sf-1' });
+    });
+  });
+
+  describe('createRentalMonthlyInvoice', () => {
+    const mockContract = {
+      id: 'contract-1',
+      organizationId: 'org-1',
+      rentalOrder: { order: { customerId: 'cust-1' } },
+    };
+
+    beforeEach(() => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract);
+      prisma.invoice.create.mockResolvedValue({ id: 'inv-monthly-1' });
+      prisma.invoiceItem.create.mockResolvedValue({ id: 'item-1' });
+    });
+
+    it('FIXED 항목은 RENTAL_FEE 항목 하나를 생성한다', async () => {
+      await service.createRentalMonthlyInvoice('org-1', 'contract-1', '2026-06', [
+        { id: 'item-1', monthlyRentalPrice: 100000, billingType: BillingType.FIXED },
+      ]);
+
+      expect(prisma.invoiceItem.create).toHaveBeenCalledTimes(1);
+      expect(prisma.invoiceItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ type: 'RENTAL_FEE', unitPrice: 100000 }) }),
+      );
+    });
+
+    it('METER 항목에서 초과분 없으면 METER_USAGE 항목을 생성하지 않는다', async () => {
+      await service.createRentalMonthlyInvoice('org-1', 'contract-1', '2026-06', [
+        {
+          id: 'item-2',
+          monthlyRentalPrice: 50000,
+          billingType: BillingType.METER,
+          freeBlackCount: 1000,
+          blackUnitPrice: 10,
+          freeColorCount: null,
+          colorUnitPrice: null,
+          meterReadings: [{ id: 'mr-1', blackUsage: 800, colorUsage: null }],
+        },
+      ]);
+
+      const calls = prisma.invoiceItem.create.mock.calls;
+      const types = calls.map((c: [{ data: { type: string } }]) => c[0].data.type);
+      expect(types).toContain('RENTAL_FEE');
+      expect(types).not.toContain('METER_USAGE');
+    });
+
+    it('METER 항목에서 초과분 있으면 METER_USAGE 항목을 생성하고 MeterReading을 연결한다', async () => {
+      await service.createRentalMonthlyInvoice('org-1', 'contract-1', '2026-06', [
+        {
+          id: 'item-3',
+          monthlyRentalPrice: 0,
+          billingType: BillingType.METER,
+          freeBlackCount: 1000,
+          blackUnitPrice: 10,
+          freeColorCount: null,
+          colorUnitPrice: null,
+          meterReadings: [{ id: 'mr-2', blackUsage: 1500, colorUsage: null }],
+        },
+      ]);
+
+      expect(prisma.invoiceItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ type: 'METER_USAGE', unitPrice: 5000 }) }),
+      );
+      expect(prisma.meterReading.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: { in: ['mr-2'] } } }),
+      );
+    });
+
+    it('METER 항목에서 당월 검침이 없으면 기본료만 생성한다', async () => {
+      await service.createRentalMonthlyInvoice('org-1', 'contract-1', '2026-06', [
+        {
+          id: 'item-4',
+          monthlyRentalPrice: 50000,
+          billingType: BillingType.METER,
+          freeBlackCount: 1000,
+          blackUnitPrice: 10,
+          freeColorCount: null,
+          colorUnitPrice: null,
+          meterReadings: [],
+        },
+      ]);
+
+      expect(prisma.invoiceItem.create).toHaveBeenCalledTimes(1);
+      expect(prisma.invoiceItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ type: 'RENTAL_FEE' }) }),
+      );
+    });
+
+    it('계약이 없으면 null을 반환한다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(null);
+      const result = await service.createRentalMonthlyInvoice('org-1', 'no-contract', '2026-06', []);
+      expect(result).toBeNull();
     });
   });
 });

@@ -3,11 +3,31 @@ import { DocumentSequenceType, InvoiceItemType, InvoiceStatus, InvoiceType, VatT
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { calculateAmounts } from '../common/amount.util';
+import { calculateMeterOverage } from '../common/meter-overage.util';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
 import type { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import type { CreateInvoiceItemDto } from './dto/create-invoice-item.dto';
 import type { CreateInvoiceAdjustmentDto } from './dto/create-invoice-adjustment.dto';
 import type { QueryInvoiceDto } from './dto/query-invoice.dto';
+
+export type FixedContractItemInput = {
+  id: string;
+  monthlyRentalPrice: number;
+  billingType: 'FIXED';
+};
+
+export type MeterContractItemInput = {
+  id: string;
+  monthlyRentalPrice: number;
+  billingType: 'METER';
+  freeBlackCount: number | null;
+  blackUnitPrice: number | null;
+  freeColorCount: number | null;
+  colorUnitPrice: number | null;
+  meterReadings: Array<{ id: string; blackUsage: number; colorUsage: number | null }>;
+};
+
+export type ContractItemInput = FixedContractItemInput | MeterContractItemInput;
 
 type PrismaTransaction = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
 
@@ -205,7 +225,7 @@ export class InvoiceService {
     organizationId: string,
     contractId: string,
     billingMonth: string,
-    contractItems: Array<{ id: string; monthlyRentalPrice: number }>,
+    contractItems: ContractItemInput[],
   ) {
     return this.prisma.$transaction(async (tx) => {
       const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
@@ -229,21 +249,97 @@ export class InvoiceService {
       });
 
       for (const item of contractItems) {
-        const { supplyAmount, vatAmount, totalAmount } = calculateAmounts(1, item.monthlyRentalPrice, VatType.INCLUDED);
-        await tx.invoiceItem.create({
-          data: {
-            organizationId,
-            invoiceId: invoice.id,
-            rentalContractItemId: item.id,
-            type: InvoiceItemType.RENTAL_FEE,
-            quantity: 1,
-            unitPrice: item.monthlyRentalPrice,
-            supplyAmount,
-            vatType: VatType.INCLUDED,
-            vatAmount,
-            totalAmount,
-          },
-        });
+        if (item.billingType === 'FIXED') {
+          const { supplyAmount, vatAmount, totalAmount } = calculateAmounts(
+            1,
+            item.monthlyRentalPrice,
+            VatType.INCLUDED,
+          );
+          await tx.invoiceItem.create({
+            data: {
+              organizationId,
+              invoiceId: invoice.id,
+              rentalContractItemId: item.id,
+              type: InvoiceItemType.RENTAL_FEE,
+              quantity: 1,
+              unitPrice: item.monthlyRentalPrice,
+              supplyAmount,
+              vatType: VatType.INCLUDED,
+              vatAmount,
+              totalAmount,
+            },
+          });
+        } else if (item.billingType === 'METER') {
+          // 기본료
+          if (item.monthlyRentalPrice > 0) {
+            const { supplyAmount, vatAmount, totalAmount } = calculateAmounts(
+              1,
+              item.monthlyRentalPrice,
+              VatType.INCLUDED,
+            );
+            await tx.invoiceItem.create({
+              data: {
+                organizationId,
+                invoiceId: invoice.id,
+                rentalContractItemId: item.id,
+                type: InvoiceItemType.RENTAL_FEE,
+                quantity: 1,
+                unitPrice: item.monthlyRentalPrice,
+                supplyAmount,
+                vatType: VatType.INCLUDED,
+                vatAmount,
+                totalAmount,
+              },
+            });
+          }
+
+          // 초과 사용료
+          const readings = item.meterReadings;
+          if (readings.length > 0) {
+            const totalBlackUsage = readings.reduce((sum, r) => sum + r.blackUsage, 0);
+            const totalColorUsage = readings.some((r) => r.colorUsage != null)
+              ? readings.reduce((sum, r) => sum + (r.colorUsage ?? 0), 0)
+              : null;
+
+            const overage = calculateMeterOverage({
+              totalBlackUsage,
+              totalColorUsage,
+              freeBlackCount: item.freeBlackCount,
+              blackUnitPrice: item.blackUnitPrice,
+              freeColorCount: item.freeColorCount,
+              colorUnitPrice: item.colorUnitPrice,
+            });
+
+            if (overage.totalCharge > 0) {
+              const { supplyAmount, vatAmount, totalAmount } = calculateAmounts(
+                1,
+                overage.totalCharge,
+                VatType.INCLUDED,
+              );
+              const invoiceItem = await tx.invoiceItem.create({
+                data: {
+                  organizationId,
+                  invoiceId: invoice.id,
+                  rentalContractItemId: item.id,
+                  type: InvoiceItemType.METER_USAGE,
+                  description: overage.description,
+                  quantity: 1,
+                  unitPrice: overage.totalCharge,
+                  supplyAmount,
+                  vatType: VatType.INCLUDED,
+                  vatAmount,
+                  totalAmount,
+                },
+                select: { id: true },
+              });
+
+              await tx.meterReading.updateMany({
+                where: { id: { in: readings.map((r) => r.id) } },
+                data: { invoiceItemId: invoiceItem.id },
+              });
+            }
+          }
+        }
       }
 
       return invoice;

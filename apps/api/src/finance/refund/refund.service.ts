@@ -26,7 +26,8 @@ export class RefundService {
           select: { paidAmount: true },
         });
         if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
-        if (dto.amount > invoice.paidAmount) throw new BadRequestException('환불액이 수납된 금액을 초과할 수 없습니다.');
+        if (dto.amount > invoice.paidAmount)
+          throw new BadRequestException('환불액이 수납된 금액을 초과할 수 없습니다.');
       }
 
       if (dto.paymentId) {

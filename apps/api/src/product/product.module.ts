@@ -13,7 +13,13 @@ import { MeterReadingController } from './meter-reading/meter-reading.controller
 @Module({
   imports: [OrganizationModule],
   providers: [ProductService, AssetService, AssetEventService, MeterReadingService],
-  controllers: [ProductController, AssetController, AssetEventController, AssetMeterReadingController, MeterReadingController],
+  controllers: [
+    ProductController,
+    AssetController,
+    AssetEventController,
+    AssetMeterReadingController,
+    MeterReadingController,
+  ],
   exports: [AssetService],
 })
 export class ProductModule {}

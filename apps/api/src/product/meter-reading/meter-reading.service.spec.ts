@@ -36,16 +36,16 @@ describe('MeterReadingService', () => {
   describe('create', () => {
     it('throws NotFoundException when asset not found', async () => {
       prisma.asset.findUnique.mockResolvedValue(null);
-      await expect(
-        service.create('org-1', 'asset-1', { readingDate: '2026-06-23', blackCount: 100 }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create('org-1', 'asset-1', { readingDate: '2026-06-23', blackCount: 100 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws NotFoundException when asset is deleted', async () => {
       prisma.asset.findUnique.mockResolvedValue({ id: 'asset-1', deletedAt: new Date() });
-      await expect(
-        service.create('org-1', 'asset-1', { readingDate: '2026-06-23', blackCount: 100 }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create('org-1', 'asset-1', { readingDate: '2026-06-23', blackCount: 100 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('sets blackUsage = blackCount when no previous reading', async () => {
@@ -76,9 +76,9 @@ describe('MeterReadingService', () => {
       prisma.asset.findUnique.mockResolvedValue({ id: 'asset-1', deletedAt: null });
       prisma.meterReading.findFirst.mockResolvedValue({ blackCount: 300, colorCount: null });
 
-      await expect(
-        service.create('org-1', 'asset-1', { readingDate: '2026-06-23', blackCount: 200 }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create('org-1', 'asset-1', { readingDate: '2026-06-23', blackCount: 200 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws BadRequestException when colorCount is lower than previous', async () => {

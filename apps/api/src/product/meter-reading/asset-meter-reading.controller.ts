@@ -15,11 +15,7 @@ export class AssetMeterReadingController {
   constructor(private readonly service: MeterReadingService) {}
 
   @Post()
-  async create(
-    @Param('assetId') assetId: string,
-    @Body() dto: CreateMeterReadingDto,
-    @OrgCtx() ctx: OrgContext,
-  ) {
+  async create(@Param('assetId') assetId: string, @Body() dto: CreateMeterReadingDto, @OrgCtx() ctx: OrgContext) {
     return this.service.create(ctx.organizationId, assetId, dto);
   }
 

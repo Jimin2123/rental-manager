@@ -7,7 +7,14 @@ export class QueryPaymentDto {
   @IsEnum(PaymentMethod) @IsOptional() method?: PaymentMethod;
   @IsEnum(PaymentStatus) @IsOptional() status?: PaymentStatus;
   @Type(() => Number)
-  @IsInt() @Min(1) @IsOptional() page?: number;
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
   @Type(() => Number)
-  @IsInt() @Min(1) @Max(100) @IsOptional() limit?: number;
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number;
 }

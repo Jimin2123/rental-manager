@@ -9,7 +9,14 @@ export class QueryInvoiceDto {
   @IsString() @IsOptional() billingMonth?: string;
   @IsString() @IsOptional() customerId?: string;
   @Type(() => Number)
-  @IsInt() @Min(1) @IsOptional() page?: number;
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
   @Type(() => Number)
-  @IsInt() @Min(1) @Max(100) @IsOptional() limit?: number;
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number;
 }

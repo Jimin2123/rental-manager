@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   DocumentSequenceType,
+  InvoiceItemType,
   InvoiceStatus,
   InvoiceType,
   VatType,
@@ -202,5 +203,54 @@ export class InvoiceService {
     });
 
     return { id: adjustment.id };
+  }
+
+  async createRentalMonthlyInvoice(
+    organizationId: string,
+    contractId: string,
+    billingMonth: string,
+    contractItems: Array<{ id: string; monthlyRentalPrice: number }>,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
+
+      const contract = await tx.rentalContract.findUnique({
+        where: { id_organizationId: { id: contractId, organizationId } },
+        include: { rentalOrder: { include: { order: true } } },
+      });
+      if (!contract) return null;
+
+      const invoice = await tx.invoice.create({
+        data: {
+          organizationId,
+          invoiceNo,
+          type: InvoiceType.RENTAL_MONTHLY,
+          customerId: contract.rentalOrder.order.customerId,
+          rentalContractId: contractId,
+          billingMonth,
+        },
+        select: { id: true },
+      });
+
+      for (const item of contractItems) {
+        const { supplyAmount, vatAmount, totalAmount } = calculateAmounts(1, item.monthlyRentalPrice, VatType.INCLUDED);
+        await tx.invoiceItem.create({
+          data: {
+            organizationId,
+            invoiceId: invoice.id,
+            rentalContractItemId: item.id,
+            type: InvoiceItemType.RENTAL_FEE,
+            quantity: 1,
+            unitPrice: item.monthlyRentalPrice,
+            supplyAmount,
+            vatType: VatType.INCLUDED,
+            vatAmount,
+            totalAmount,
+          },
+        });
+      }
+
+      return invoice;
+    });
   }
 }

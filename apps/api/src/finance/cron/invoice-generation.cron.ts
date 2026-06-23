@@ -24,6 +24,7 @@ export class InvoiceGenerationCron {
     const contracts = await this.prisma.rentalContract.findMany({
       where: { status: RentalContractStatus.ACTIVE },
       include: { items: true },
+      take: 500,
     });
 
     let success = 0;

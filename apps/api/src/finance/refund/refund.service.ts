@@ -13,31 +13,31 @@ export class RefundService {
     private readonly docSeq: FinanceDocumentSequenceService,
   ) {}
 
-  async create(organizationId: string, _memberId: string, dto: CreateRefundDto) {
+  async create(organizationId: string, memberId: string, dto: CreateRefundDto) {
     const customer = await this.prisma.customer.findUnique({
       where: { id_organizationId: { id: dto.customerId, organizationId } },
     });
     if (!customer) throw new NotFoundException('고객을 찾을 수 없습니다.');
 
-    if (dto.invoiceId) {
-      const invoice = await this.prisma.invoice.findUnique({
-        where: { id_organizationId: { id: dto.invoiceId, organizationId } },
-        select: { paidAmount: true },
-      });
-      if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
-      if (dto.amount > invoice.paidAmount) throw new BadRequestException('환불액이 수납된 금액을 초과할 수 없습니다.');
-    }
-
-    if (dto.paymentId) {
-      const payment = await this.prisma.payment.findUnique({
-        where: { id_organizationId: { id: dto.paymentId, organizationId } },
-        select: { amount: true },
-      });
-      if (!payment) throw new NotFoundException('수납 내역을 찾을 수 없습니다.');
-      if (dto.amount > payment.amount) throw new BadRequestException('환불액이 수납 금액을 초과할 수 없습니다.');
-    }
-
     return this.prisma.$transaction(async (tx) => {
+      if (dto.invoiceId) {
+        const invoice = await tx.invoice.findUnique({
+          where: { id_organizationId: { id: dto.invoiceId, organizationId } },
+          select: { paidAmount: true },
+        });
+        if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
+        if (dto.amount > invoice.paidAmount) throw new BadRequestException('환불액이 수납된 금액을 초과할 수 없습니다.');
+      }
+
+      if (dto.paymentId) {
+        const payment = await tx.payment.findUnique({
+          where: { id_organizationId: { id: dto.paymentId, organizationId } },
+          select: { amount: true },
+        });
+        if (!payment) throw new NotFoundException('수납 내역을 찾을 수 없습니다.');
+        if (dto.amount > payment.amount) throw new BadRequestException('환불액이 수납 금액을 초과할 수 없습니다.');
+      }
+
       const refundNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.REFUND, tx);
       const refund = await tx.refund.create({
         data: {
@@ -50,6 +50,7 @@ export class RefundService {
           amount: dto.amount,
           method: dto.method,
           memo: dto.memo,
+          createdById: memberId,
         },
         select: { id: true },
       });

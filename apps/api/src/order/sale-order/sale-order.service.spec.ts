@@ -81,7 +81,7 @@ describe('SaleOrderService', () => {
 
       expect(prisma.saleOrderItem.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ totalAmount: 22000, supplyAmount: 20000, vatAmount: 2000 }),
+          data: expect.objectContaining({ supplyAmount: 22000, vatAmount: 2200, totalAmount: 24200 }),
         }),
       );
       expect(result).toEqual({ id: 'soi-1' });

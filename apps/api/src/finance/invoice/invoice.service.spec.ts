@@ -18,6 +18,7 @@ describe('InvoiceService', () => {
     invoiceItem: { create: jest.Mock; findFirst: jest.Mock; delete: jest.Mock };
     invoiceAdjustment: { create: jest.Mock };
     customer: { findUnique: jest.Mock };
+    serviceRequest: { findUnique: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
 
@@ -48,6 +49,7 @@ describe('InvoiceService', () => {
       invoiceItem: { create: jest.fn(), findFirst: jest.fn(), delete: jest.fn() },
       invoiceAdjustment: { create: jest.fn() },
       customer: { findUnique: jest.fn() },
+      serviceRequest: { findUnique: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
 
@@ -166,6 +168,57 @@ describe('InvoiceService', () => {
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice({ status: InvoiceStatus.ISSUED }));
       prisma.invoiceItem.findFirst.mockResolvedValue({ id: 'item-1' });
       await expect(service.removeItem('org-1', 'inv-1', 'item-1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createServiceFeeInvoice', () => {
+    it('throws NotFoundException when service request not found', async () => {
+      prisma.serviceRequest = { findUnique: jest.fn().mockResolvedValue(null) };
+      await expect(
+        service.createServiceFeeInvoice(
+          'org-1',
+          'sr-x',
+          { laborCost: 50000, partsCost: 30000, travelCost: 20000 },
+          'member-1',
+          prisma as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('creates SERVICE_FEE invoice with item for sum of costs', async () => {
+      prisma.serviceRequest = {
+        findUnique: jest.fn().mockResolvedValue({ customerId: 'cust-1' }),
+      };
+      prisma.invoice.create.mockResolvedValue({ id: 'inv-sf-1' });
+      prisma.invoiceItem.create.mockResolvedValue({});
+
+      const result = await service.createServiceFeeInvoice(
+        'org-1',
+        'sr-1',
+        { laborCost: 50000, partsCost: 30000, travelCost: 20000 },
+        'member-1',
+        prisma as any,
+      );
+
+      expect(prisma.invoice.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: 'SERVICE_FEE',
+            customerId: 'cust-1',
+            serviceRequestId: 'sr-1',
+            createdById: 'member-1',
+          }),
+        }),
+      );
+      expect(prisma.invoiceItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: 'SERVICE_FEE',
+            unitPrice: 100000,
+          }),
+        }),
+      );
+      expect(result).toEqual({ id: 'inv-sf-1' });
     });
   });
 });

@@ -22,5 +22,6 @@ import { InvoiceGenerationCron } from './cron/invoice-generation.cron';
     InvoiceGenerationCron,
   ],
   controllers: [InvoiceController, PaymentController, RefundController, TaxInvoiceController],
+  exports: [InvoiceService, FinanceDocumentSequenceService],
 })
 export class FinanceModule {}

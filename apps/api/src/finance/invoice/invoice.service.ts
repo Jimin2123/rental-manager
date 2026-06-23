@@ -9,6 +9,8 @@ import type { CreateInvoiceItemDto } from './dto/create-invoice-item.dto';
 import type { CreateInvoiceAdjustmentDto } from './dto/create-invoice-adjustment.dto';
 import type { QueryInvoiceDto } from './dto/query-invoice.dto';
 
+type PrismaTransaction = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
+
 @Injectable()
 export class InvoiceService {
   constructor(
@@ -246,5 +248,53 @@ export class InvoiceService {
 
       return invoice;
     });
+  }
+
+  async createServiceFeeInvoice(
+    organizationId: string,
+    serviceRequestId: string,
+    costs: { laborCost: number; partsCost: number; travelCost: number },
+    memberId: string,
+    tx: PrismaTransaction,
+  ): Promise<{ id: string }> {
+    const serviceRequest = await tx.serviceRequest.findUnique({
+      where: { id_organizationId: { id: serviceRequestId, organizationId } },
+      select: { customerId: true },
+    });
+    if (!serviceRequest) throw new NotFoundException('AS 접수를 찾을 수 없습니다.');
+
+    const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
+    const totalCost = costs.laborCost + costs.partsCost + costs.travelCost;
+    const { supplyAmount, vatAmount, totalAmount } = calculateAmounts(1, totalCost, VatType.NONE);
+
+    const invoice = await tx.invoice.create({
+      data: {
+        organizationId,
+        invoiceNo,
+        type: InvoiceType.SERVICE_FEE,
+        status: InvoiceStatus.DRAFT,
+        customerId: serviceRequest.customerId,
+        serviceRequestId,
+        createdById: memberId,
+      },
+      select: { id: true },
+    });
+
+    await tx.invoiceItem.create({
+      data: {
+        organizationId,
+        invoiceId: invoice.id,
+        type: InvoiceItemType.SERVICE_FEE,
+        description: 'AS 출장비/공임비/부품비',
+        quantity: 1,
+        unitPrice: totalCost,
+        supplyAmount,
+        vatType: VatType.NONE,
+        vatAmount,
+        totalAmount,
+      },
+    });
+
+    return { id: invoice.id };
   }
 }

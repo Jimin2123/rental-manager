@@ -273,8 +273,9 @@ describe('Prisma customer schema', () => {
       'rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
     // DRAFT가 기본값 — ACTIVE 직접 활성화 전까지 장비 미점유
-    expect(rentalContractSchema).toContain('status    RentalContractStatus @default(DRAFT)');
-    expect(rentalContractSchema).toContain('isRenewal Boolean');
+    expect(rentalContractSchema).toContain('status      RentalContractStatus @default(DRAFT)');
+    expect(rentalContractSchema).toContain('isRenewal   Boolean');
+    expect(rentalContractSchema).toContain('autoExpire  Boolean              @default(true)');
     expect(rentalContractSchema).toContain('startDate DateTime');
     expect(rentalContractSchema).toContain('endDate   DateTime');
     expect(rentalContractSchema).toContain('contractMonths Int');

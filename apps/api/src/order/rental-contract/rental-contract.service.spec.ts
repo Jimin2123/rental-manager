@@ -152,12 +152,17 @@ describe('RentalContractService', () => {
   });
 
   describe('update', () => {
-    it('throws BadRequestException when not DRAFT', async () => {
+    it('날짜·기간 필드는 DRAFT가 아닌 경우 BadRequestException을 던진다', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ACTIVE }));
       await expect(service.update('org-1', 'rc-1', { contractMonths: 24 })).rejects.toThrow(BadRequestException);
     });
 
-    it('updates DRAFT contract', async () => {
+    it('ENDED 계약은 autoExpire 변경도 불가하다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ENDED }));
+      await expect(service.update('org-1', 'rc-1', { autoExpire: false })).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates DRAFT contract fields', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract());
       prisma.rentalContract.update.mockResolvedValue({});
 
@@ -165,6 +170,78 @@ describe('RentalContractService', () => {
 
       expect(prisma.rentalContract.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ contractMonths: 24 }) }),
+      );
+    });
+
+    it('ACTIVE 계약에서 autoExpire를 false로 변경할 수 있다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ACTIVE }));
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.update('org-1', 'rc-1', { autoExpire: false });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ autoExpire: false }) }),
+      );
+    });
+  });
+
+  describe('extend', () => {
+    it('ACTIVE가 아닌 계약에서 BadRequestException을 던진다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.DRAFT }));
+      await expect(service.extend('org-1', 'rc-1', { endDate: '2028-06-30', contractMonths: 24 })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('새 endDate가 현재 endDate보다 이전이면 BadRequestException을 던진다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({ status: RentalContractStatus.ACTIVE, endDate: new Date('2027-06-30') }),
+      );
+      await expect(service.extend('org-1', 'rc-1', { endDate: '2026-12-31', contractMonths: 18 })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('ACTIVE 계약의 endDate와 contractMonths를 연장하고 autoExpire를 재활성화한다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({ status: RentalContractStatus.ACTIVE, endDate: new Date('2027-06-30') }),
+      );
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.extend('org-1', 'rc-1', { endDate: '2028-06-30', contractMonths: 24 });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            endDate: new Date('2028-06-30'),
+            contractMonths: 24,
+            autoExpire: true,
+          }),
+        }),
+      );
+    });
+
+    it('contractMonths 미입력 시 startDate~endDate 개월 차로 자동 계산한다', async () => {
+      // startDate: 2026-07-01, newEndDate: 2028-06-30 → (2028-2026)*12 + (5-6) = 23개월
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({
+          status: RentalContractStatus.ACTIVE,
+          startDate: new Date('2026-07-01'),
+          endDate: new Date('2027-06-30'),
+        }),
+      );
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.extend('org-1', 'rc-1', { endDate: '2028-06-30' });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            endDate: new Date('2028-06-30'),
+            contractMonths: 23,
+            autoExpire: true,
+          }),
+        }),
       );
     });
   });

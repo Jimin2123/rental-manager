@@ -13,7 +13,7 @@ export class InvoiceGenerationCron {
     private readonly invoiceService: InvoiceService,
   ) {}
 
-  @Cron('0 9 1 * *')
+  @Cron('0 0 1 * *')
   async generateMonthlyInvoices() {
     const now = new Date();
     const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);

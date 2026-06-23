@@ -13,8 +13,11 @@ describe('RentalOrderService', () => {
   };
 
   const mockOrder = (overrides = {}) => ({
-    id: 'o-1', type: OrderType.RENTAL, status: OrderStatus.REGISTERED,
-    rentalOrder: { id: 'ro-1' }, ...overrides,
+    id: 'o-1',
+    type: OrderType.RENTAL,
+    status: OrderStatus.REGISTERED,
+    rentalOrder: { id: 'ro-1' },
+    ...overrides,
   });
 
   beforeEach(async () => {
@@ -32,17 +35,23 @@ describe('RentalOrderService', () => {
   describe('addItem', () => {
     it('throws NotFoundException when order not found', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
-      await expect(service.addItem('org-1', 'o-x', { productId: 'p-1', monthlyRentalPrice: 50000 })).rejects.toThrow(NotFoundException);
+      await expect(service.addItem('org-1', 'o-x', { productId: 'p-1', monthlyRentalPrice: 50000 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws BadRequestException when order type is SALE', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder({ type: OrderType.SALE }));
-      await expect(service.addItem('org-1', 'o-1', { productId: 'p-1', monthlyRentalPrice: 50000 })).rejects.toThrow(BadRequestException);
+      await expect(service.addItem('org-1', 'o-1', { productId: 'p-1', monthlyRentalPrice: 50000 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws BadRequestException when order is CANCELED', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder({ status: OrderStatus.CANCELED }));
-      await expect(service.addItem('org-1', 'o-1', { productId: 'p-1', monthlyRentalPrice: 50000 })).rejects.toThrow(BadRequestException);
+      await expect(service.addItem('org-1', 'o-1', { productId: 'p-1', monthlyRentalPrice: 50000 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws NotFoundException when assetId given but asset not in org', async () => {
@@ -60,7 +69,9 @@ describe('RentalOrderService', () => {
       const result = await service.addItem('org-1', 'o-1', { productId: 'p-1', monthlyRentalPrice: 50000 });
 
       expect(prisma.rentalOrderItem.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ monthlyRentalPrice: 50000, rentalOrderId: 'ro-1' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ monthlyRentalPrice: 50000, rentalOrderId: 'ro-1' }),
+        }),
       );
       expect(result).toEqual({ id: 'roi-1' });
     });

@@ -49,9 +49,9 @@ describe('InvitationService', () => {
       prisma.account.findUnique.mockResolvedValue({ userId: 'user-1' });
       prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', isActive: true });
       prisma.organization.findUnique.mockResolvedValue({ id: 'org-1', businessProfile: { name: '테스트' } });
-      await expect(
-        service.send('org-1', 'm-0', { email: 'a@b.com', role: 'STAFF' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.send('org-1', 'm-0', { email: 'a@b.com', role: 'STAFF' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('deletes existing pending invitations and creates new one', async () => {
@@ -63,7 +63,9 @@ describe('InvitationService', () => {
       await service.send('org-1', 'm-0', { email: 'a@b.com', role: 'STAFF' });
 
       expect(prisma.organizationInvitation.deleteMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ email: 'a@b.com', organizationId: 'org-1', acceptedAt: null }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ email: 'a@b.com', organizationId: 'org-1', acceptedAt: null }),
+        }),
       );
       expect(tokenService.hashToken).toHaveBeenCalledWith('raw-token');
       expect(prisma.organizationInvitation.create).toHaveBeenCalledWith(
@@ -111,8 +113,11 @@ describe('InvitationService', () => {
   describe('accept', () => {
     it('throws ConflictException when already a member', async () => {
       const inv = {
-        id: 'inv-1', organizationId: 'org-1', role: 'STAFF',
-        expiresAt: new Date(Date.now() + 100000), acceptedAt: null,
+        id: 'inv-1',
+        organizationId: 'org-1',
+        role: 'STAFF',
+        expiresAt: new Date(Date.now() + 100000),
+        acceptedAt: null,
         organization: { businessProfile: { name: '테스트' } },
       };
       prisma.organizationInvitation.findUnique.mockResolvedValue(inv);
@@ -122,8 +127,12 @@ describe('InvitationService', () => {
 
     it('creates OrganizationMember and sets acceptedAt', async () => {
       const inv = {
-        id: 'inv-1', organizationId: 'org-1', role: 'STAFF', email: 'a@b.com',
-        expiresAt: new Date(Date.now() + 100000), acceptedAt: null,
+        id: 'inv-1',
+        organizationId: 'org-1',
+        role: 'STAFF',
+        email: 'a@b.com',
+        expiresAt: new Date(Date.now() + 100000),
+        acceptedAt: null,
         organization: { businessProfile: { name: '테스트' } },
       };
       prisma.organizationInvitation.findUnique.mockResolvedValue(inv);

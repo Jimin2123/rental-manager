@@ -1,4 +1,14 @@
-import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateRentalOrderItemDto {
@@ -19,5 +29,9 @@ export class CreateRentalOrderDto {
   @IsOptional() @IsString() managementNo?: string;
   @IsOptional() @IsBoolean() isRenewal?: boolean;
   @IsOptional() @IsDateString() contractDate?: string;
-  @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => CreateRentalOrderItemDto) items: CreateRentalOrderItemDto[];
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateRentalOrderItemDto)
+  items: CreateRentalOrderItemDto[];
 }

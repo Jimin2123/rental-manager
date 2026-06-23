@@ -11,10 +11,15 @@ import type { CreateQuotationItemDto } from './dto/create-quotation-item.dto';
 import type { UpdateQuotationItemDto } from './dto/update-quotation-item.dto';
 import type { ConvertQuotationDto } from './dto/convert-quotation.dto';
 
-const LOCKED = [QuotationStatus.ACCEPTED, QuotationStatus.REJECTED, QuotationStatus.EXPIRED];
+const LOCKED: QuotationStatus[] = [QuotationStatus.ACCEPTED, QuotationStatus.REJECTED, QuotationStatus.EXPIRED];
 
 const TRANSITIONS: Record<QuotationStatus, QuotationStatus[]> = {
-  [QuotationStatus.DRAFT]: [QuotationStatus.SENT, QuotationStatus.ACCEPTED, QuotationStatus.REJECTED, QuotationStatus.EXPIRED],
+  [QuotationStatus.DRAFT]: [
+    QuotationStatus.SENT,
+    QuotationStatus.ACCEPTED,
+    QuotationStatus.REJECTED,
+    QuotationStatus.EXPIRED,
+  ],
   [QuotationStatus.SENT]: [QuotationStatus.ACCEPTED, QuotationStatus.REJECTED, QuotationStatus.EXPIRED],
   [QuotationStatus.ACCEPTED]: [],
   [QuotationStatus.REJECTED]: [],
@@ -170,7 +175,12 @@ export class QuotationService {
     return { id: item.id };
   }
 
-  async updateItem(organizationId: string, quotationId: string, itemId: string, dto: UpdateQuotationItemDto): Promise<void> {
+  async updateItem(
+    organizationId: string,
+    quotationId: string,
+    itemId: string,
+    dto: UpdateQuotationItemDto,
+  ): Promise<void> {
     const q = await this.prisma.quotation.findUnique({
       where: { id_organizationId: { id: quotationId, organizationId } },
       select: { id: true, status: true },
@@ -230,7 +240,11 @@ export class QuotationService {
     });
     if (!q) throw new NotFoundException('견적을 찾을 수 없습니다.');
 
-    if ([QuotationStatus.DRAFT, QuotationStatus.REJECTED, QuotationStatus.EXPIRED].includes(q.status)) {
+    if (
+      ([QuotationStatus.DRAFT, QuotationStatus.REJECTED, QuotationStatus.EXPIRED] as QuotationStatus[]).includes(
+        q.status,
+      )
+    ) {
       throw new BadRequestException('수락 가능한 상태의 견적만 변환할 수 있습니다.');
     }
     if (q.convertedOrderId) throw new ConflictException('이미 주문으로 변환된 견적입니다.');
@@ -253,7 +267,9 @@ export class QuotationService {
       const overrideMap = new Map(dto.items?.map((o) => [o.quotationItemId, o]) ?? []);
 
       if (q.type === OrderType.SALE) {
-        const saleOrder = await tx.saleOrder.create({ data: { organizationId, orderId: order.id, saleDate: new Date() } });
+        const saleOrder = await tx.saleOrder.create({
+          data: { organizationId, orderId: order.id, saleDate: new Date() },
+        });
         for (const qi of q.items) {
           const ov = overrideMap.get(qi.id);
           const qty = ov?.quantity ?? qi.quantity;
@@ -274,7 +290,9 @@ export class QuotationService {
           });
         }
       } else {
-        const rentalOrder = await tx.rentalOrder.create({ data: { organizationId, orderId: order.id, contractDate: new Date() } });
+        const rentalOrder = await tx.rentalOrder.create({
+          data: { organizationId, orderId: order.id, contractDate: new Date() },
+        });
         for (const qi of q.items) {
           const ov = overrideMap.get(qi.id);
           await tx.rentalOrderItem.create({
@@ -284,7 +302,6 @@ export class QuotationService {
               productId: qi.productId,
               assetId: qi.assetId,
               monthlyRentalPrice: ov?.monthlyRentalPrice ?? qi.monthlyRentalPrice ?? 0,
-              contractMonths: ov?.contractMonths ?? qi.contractMonths,
               depositAmount: ov?.depositAmount ?? qi.depositAmount,
               memo: ov?.memo ?? qi.memo,
             },

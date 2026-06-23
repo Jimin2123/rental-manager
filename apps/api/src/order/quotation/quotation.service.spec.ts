@@ -24,7 +24,13 @@ describe('QuotationService', () => {
     prisma = {
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
       customer: { findUnique: jest.fn() },
-      quotation: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn(), delete: jest.fn() },
+      quotation: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
       quotationItem: { create: jest.fn(), findFirst: jest.fn(), update: jest.fn(), delete: jest.fn() },
       order: { create: jest.fn() },
       saleOrder: { create: jest.fn() },
@@ -48,7 +54,11 @@ describe('QuotationService', () => {
     it('throws NotFoundException when customer not found', async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       await expect(
-        service.create('org-1', { type: QuotationType.SALE, customerId: 'c-x', items: [{ productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE }] }),
+        service.create('org-1', {
+          type: QuotationType.SALE,
+          customerId: 'c-x',
+          items: [{ productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE }],
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -66,7 +76,9 @@ describe('QuotationService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(docSeq.generateNo).toHaveBeenCalledWith('org-1', 'QUOTATION', prisma);
       expect(prisma.quotation.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ organizationId: 'org-1', quotationNo: '20260623-0001' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ organizationId: 'org-1', quotationNo: '20260623-0001' }),
+        }),
       );
       expect(prisma.quotationItem.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -98,7 +110,9 @@ describe('QuotationService', () => {
   describe('updateStatus', () => {
     it('throws NotFoundException when quotation not found', async () => {
       prisma.quotation.findUnique.mockResolvedValue(null);
-      await expect(service.updateStatus('org-1', 'q-x', { status: QuotationStatus.SENT })).rejects.toThrow(NotFoundException);
+      await expect(service.updateStatus('org-1', 'q-x', { status: QuotationStatus.SENT })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('allows DRAFT → SENT and sets sentAt', async () => {
@@ -116,7 +130,9 @@ describe('QuotationService', () => {
 
     it('throws BadRequestException on invalid transition (ACCEPTED → SENT)', async () => {
       prisma.quotation.findUnique.mockResolvedValue({ id: 'q-1', status: QuotationStatus.ACCEPTED });
-      await expect(service.updateStatus('org-1', 'q-1', { status: QuotationStatus.SENT })).rejects.toThrow(BadRequestException);
+      await expect(service.updateStatus('org-1', 'q-1', { status: QuotationStatus.SENT })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('allows SENT → ACCEPTED without sentAt', async () => {
@@ -161,7 +177,12 @@ describe('QuotationService', () => {
       prisma.quotation.findUnique.mockResolvedValue({ id: 'q-1', status: QuotationStatus.DRAFT });
       prisma.quotationItem.create.mockResolvedValue({ id: 'qi-1' });
 
-      const result = await service.addItem('org-1', 'q-1', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE });
+      const result = await service.addItem('org-1', 'q-1', {
+        productId: 'p-1',
+        quantity: 1,
+        unitPrice: 1000,
+        vatType: VatType.NONE,
+      });
 
       expect(result).toEqual({ id: 'qi-1' });
     });
@@ -192,13 +213,21 @@ describe('QuotationService', () => {
 
   describe('convert', () => {
     it('throws BadRequestException when status is DRAFT', async () => {
-      prisma.quotation.findUnique.mockResolvedValue({ id: 'q-1', status: QuotationStatus.DRAFT, convertedOrderId: null, items: [] });
+      prisma.quotation.findUnique.mockResolvedValue({
+        id: 'q-1',
+        status: QuotationStatus.DRAFT,
+        convertedOrderId: null,
+        items: [],
+      });
       await expect(service.convert('org-1', 'q-1', {})).rejects.toThrow(BadRequestException);
     });
 
     it('throws ConflictException when already converted', async () => {
       prisma.quotation.findUnique.mockResolvedValue({
-        id: 'q-1', status: QuotationStatus.ACCEPTED, convertedOrderId: 'o-existing', items: [],
+        id: 'q-1',
+        status: QuotationStatus.ACCEPTED,
+        convertedOrderId: 'o-existing',
+        items: [],
       });
       await expect(service.convert('org-1', 'q-1', {})).rejects.toThrow(ConflictException);
     });
@@ -210,7 +239,18 @@ describe('QuotationService', () => {
         convertedOrderId: null,
         customerId: 'c-1',
         type: OrderType.SALE,
-        items: [{ id: 'qi-1', productId: 'p-1', assetId: null, quantity: 1, unitPrice: 11000, vatType: VatType.INCLUDED, memo: null, monthlyRentalPrice: null }],
+        items: [
+          {
+            id: 'qi-1',
+            productId: 'p-1',
+            assetId: null,
+            quantity: 1,
+            unitPrice: 11000,
+            vatType: VatType.INCLUDED,
+            memo: null,
+            monthlyRentalPrice: null,
+          },
+        ],
       });
       prisma.order.create.mockResolvedValue({ id: 'o-1' });
       prisma.saleOrder.create.mockResolvedValue({ id: 'so-1' });

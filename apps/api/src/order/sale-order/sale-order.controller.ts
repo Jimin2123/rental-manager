@@ -22,7 +22,12 @@ export class SaleOrderController {
 
   @Patch(':id/sale-items/:itemId')
   @HttpCode(200)
-  updateItem(@Param('id') id: string, @Param('itemId') itemId: string, @Body() dto: UpdateSaleOrderItemDto, @OrgCtx() ctx: OrgContext) {
+  updateItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body() dto: UpdateSaleOrderItemDto,
+    @OrgCtx() ctx: OrgContext,
+  ) {
     return this.service.updateItem(ctx.organizationId, id, itemId, dto);
   }
 

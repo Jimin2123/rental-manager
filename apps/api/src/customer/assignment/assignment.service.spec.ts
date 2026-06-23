@@ -118,7 +118,11 @@ describe('AssignmentService', () => {
     });
 
     it('throws NotFoundException when assignment belongs to different customer', async () => {
-      prisma.customerAssignment.findUnique.mockResolvedValue({ id: 'a-1', customerId: 'other-c', organizationId: 'org-1' });
+      prisma.customerAssignment.findUnique.mockResolvedValue({
+        id: 'a-1',
+        customerId: 'other-c',
+        organizationId: 'org-1',
+      });
       await expect(service.update('org-1', 'c-1', 'a-1', {})).rejects.toThrow(NotFoundException);
     });
 
@@ -150,9 +154,7 @@ describe('AssignmentService', () => {
 
       await service.remove('org-1', 'c-1', 'a-1');
 
-      expect(prisma.customerAssignment.delete).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'a-1' } }),
-      );
+      expect(prisma.customerAssignment.delete).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'a-1' } }));
     });
   });
 });

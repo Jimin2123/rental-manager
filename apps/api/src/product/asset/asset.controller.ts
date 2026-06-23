@@ -42,7 +42,14 @@ export class AssetController {
   @Patch(':id/status')
   @HttpCode(200)
   async changeStatus(@Param('id') id: string, @Body() dto: ChangeAssetStatusDto, @OrgCtx() ctx: OrgContext) {
-    return this.service.changeStatus(id, ctx.organizationId, dto.status, AssetEventSourceType.MANUAL, undefined, dto.note);
+    return this.service.changeStatus(
+      id,
+      ctx.organizationId,
+      dto.status,
+      AssetEventSourceType.MANUAL,
+      undefined,
+      dto.note,
+    );
   }
 
   @Delete(':id')

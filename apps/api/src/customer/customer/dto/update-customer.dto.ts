@@ -12,5 +12,8 @@ export class UpdateIndividualProfileDto {
 export class UpdateCustomerDto {
   @IsString() @IsOptional() memo?: string;
   @IsBoolean() @IsOptional() isActive?: boolean;
-  @ValidateNested() @Type(() => UpdateIndividualProfileDto) @IsOptional() individualProfile?: UpdateIndividualProfileDto;
+  @ValidateNested()
+  @Type(() => UpdateIndividualProfileDto)
+  @IsOptional()
+  individualProfile?: UpdateIndividualProfileDto;
 }

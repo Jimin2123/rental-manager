@@ -61,7 +61,10 @@ describe('OrganizationService', () => {
       prisma.organizationMember.findMany.mockResolvedValue([
         {
           role: 'OWNER',
-          organization: { id: 'org-1', businessProfile: { name: '테스트 주식회사', businessRegistrationNo: '1234567890' } },
+          organization: {
+            id: 'org-1',
+            businessProfile: { name: '테스트 주식회사', businessRegistrationNo: '1234567890' },
+          },
         },
       ]);
 
@@ -92,9 +95,7 @@ describe('OrganizationService', () => {
 
       await service.update('org-1', { name: '새 이름' });
 
-      expect(prisma.businessProfile.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'bp-1' } }),
-      );
+      expect(prisma.businessProfile.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'bp-1' } }));
     });
   });
 });

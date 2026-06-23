@@ -43,9 +43,9 @@ describe('OrderService', () => {
   describe('create', () => {
     it('throws NotFoundException when customer not found', async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
-      await expect(
-        service.create('org-1', { type: OrderType.SALE, customerId: 'c-x' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create('org-1', { type: OrderType.SALE, customerId: 'c-x' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('creates SALE order with items in transaction', async () => {
@@ -63,7 +63,9 @@ describe('OrderService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(docSeq.generateNo).toHaveBeenCalledWith('org-1', 'ORDER', prisma);
       expect(prisma.order.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ type: OrderType.SALE, status: OrderStatus.REGISTERED }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ type: OrderType.SALE, status: OrderStatus.REGISTERED }),
+        }),
       );
       expect(prisma.saleOrder.create).toHaveBeenCalled();
       expect(prisma.saleOrderItem.create).toHaveBeenCalledWith(
@@ -97,7 +99,9 @@ describe('OrderService', () => {
   describe('updateStatus', () => {
     it('throws NotFoundException when order not found', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
-      await expect(service.updateStatus('org-1', 'o-x', { status: OrderStatus.CONFIRMED })).rejects.toThrow(NotFoundException);
+      await expect(service.updateStatus('org-1', 'o-x', { status: OrderStatus.CONFIRMED })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('allows REGISTERED → CONFIRMED', async () => {
@@ -113,23 +117,31 @@ describe('OrderService', () => {
 
     it('throws BadRequestException on invalid transition (DELIVERED → CONFIRMED)', async () => {
       prisma.order.findUnique.mockResolvedValue({ id: 'o-1', status: OrderStatus.DELIVERED });
-      await expect(service.updateStatus('org-1', 'o-1', { status: OrderStatus.CONFIRMED })).rejects.toThrow(BadRequestException);
+      await expect(service.updateStatus('org-1', 'o-1', { status: OrderStatus.CONFIRMED })).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
   describe('remove', () => {
     it('throws BadRequestException when not REGISTERED', async () => {
       prisma.order.findUnique.mockResolvedValue({
-        id: 'o-1', status: OrderStatus.CONFIRMED, type: OrderType.SALE,
-        saleOrder: { id: 'so-1' }, rentalOrder: null,
+        id: 'o-1',
+        status: OrderStatus.CONFIRMED,
+        type: OrderType.SALE,
+        saleOrder: { id: 'so-1' },
+        rentalOrder: null,
       });
       await expect(service.remove('org-1', 'o-1')).rejects.toThrow(BadRequestException);
     });
 
     it('hard deletes SALE order and related records', async () => {
       prisma.order.findUnique.mockResolvedValue({
-        id: 'o-1', status: OrderStatus.REGISTERED, type: OrderType.SALE,
-        saleOrder: { id: 'so-1' }, rentalOrder: null,
+        id: 'o-1',
+        status: OrderStatus.REGISTERED,
+        type: OrderType.SALE,
+        saleOrder: { id: 'so-1' },
+        rentalOrder: null,
       });
       prisma.saleOrderItem.deleteMany.mockResolvedValue({});
       prisma.saleOrder.delete.mockResolvedValue({});

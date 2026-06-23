@@ -66,7 +66,12 @@ export class AssignmentService {
     return { id: assignment.id };
   }
 
-  async update(organizationId: string, customerId: string, assignmentId: string, dto: UpdateAssignmentDto): Promise<void> {
+  async update(
+    organizationId: string,
+    customerId: string,
+    assignmentId: string,
+    dto: UpdateAssignmentDto,
+  ): Promise<void> {
     const assignment = await this.prisma.customerAssignment.findUnique({
       where: { id: assignmentId },
       select: { id: true, customerId: true, organizationId: true },

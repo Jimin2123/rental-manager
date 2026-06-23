@@ -5,7 +5,7 @@ import { calculateAmounts } from '../common/amount.util';
 import type { CreateSaleOrderItemDto } from './dto/create-sale-order-item.dto';
 import type { UpdateSaleOrderItemDto } from './dto/update-sale-order-item.dto';
 
-const BLOCKED_STATUSES = [OrderStatus.DELIVERED, OrderStatus.CANCELED];
+const BLOCKED_STATUSES: OrderStatus[] = [OrderStatus.DELIVERED, OrderStatus.CANCELED];
 
 @Injectable()
 export class SaleOrderService {
@@ -18,7 +18,8 @@ export class SaleOrderService {
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
     if (order.type !== OrderType.SALE) throw new BadRequestException('판매 주문에서만 판매 항목을 관리할 수 있습니다.');
-    if (BLOCKED_STATUSES.includes(order.status)) throw new BadRequestException('납품 완료 또는 취소된 주문은 항목을 변경할 수 없습니다.');
+    if (BLOCKED_STATUSES.includes(order.status))
+      throw new BadRequestException('납품 완료 또는 취소된 주문은 항목을 변경할 수 없습니다.');
     return order;
   }
 
@@ -54,7 +55,12 @@ export class SaleOrderService {
     return { id: item.id };
   }
 
-  async updateItem(organizationId: string, orderId: string, itemId: string, dto: UpdateSaleOrderItemDto): Promise<void> {
+  async updateItem(
+    organizationId: string,
+    orderId: string,
+    itemId: string,
+    dto: UpdateSaleOrderItemDto,
+  ): Promise<void> {
     const order = await this.getOrder(organizationId, orderId);
 
     const item = await this.prisma.saleOrderItem.findFirst({

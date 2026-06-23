@@ -180,19 +180,26 @@ export class OrderService {
   async remove(organizationId: string, id: string): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { id: true, status: true, type: true, saleOrder: { select: { id: true } }, rentalOrder: { select: { id: true } } },
+      select: {
+        id: true,
+        status: true,
+        type: true,
+        saleOrder: { select: { id: true } },
+        rentalOrder: { select: { id: true } },
+      },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    if (order.status !== OrderStatus.REGISTERED) throw new BadRequestException('등록 상태의 주문만 삭제할 수 있습니다.');
+    if (order.status !== OrderStatus.REGISTERED)
+      throw new BadRequestException('등록 상태의 주문만 삭제할 수 있습니다.');
 
     await this.prisma.$transaction(async (tx) => {
       if (order.saleOrder) {
-        await tx.saleOrderItem.deleteMany({ where: { saleOrderId: order.saleOrder!.id } });
-        await tx.saleOrder.delete({ where: { id: order.saleOrder!.id } });
+        await tx.saleOrderItem.deleteMany({ where: { saleOrderId: order.saleOrder.id } });
+        await tx.saleOrder.delete({ where: { id: order.saleOrder.id } });
       }
       if (order.rentalOrder) {
-        await tx.rentalOrderItem.deleteMany({ where: { rentalOrderId: order.rentalOrder!.id } });
-        await tx.rentalOrder.delete({ where: { id: order.rentalOrder!.id } });
+        await tx.rentalOrderItem.deleteMany({ where: { rentalOrderId: order.rentalOrder.id } });
+        await tx.rentalOrder.delete({ where: { id: order.rentalOrder.id } });
       }
       await tx.order.delete({ where: { id_organizationId: { id, organizationId } } });
     });

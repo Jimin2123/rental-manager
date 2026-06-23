@@ -6,5 +6,9 @@ export class ConvertQuotationDto {
   @IsOptional() @IsString() managerId?: string;
   @IsOptional() @IsDateString() orderDate?: string;
   @IsOptional() @IsString() memo?: string;
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ConvertQuotationItemOverrideDto) items?: ConvertQuotationItemOverrideDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ConvertQuotationItemOverrideDto)
+  items?: ConvertQuotationItemOverrideDto[];
 }

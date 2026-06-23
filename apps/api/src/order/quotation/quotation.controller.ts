@@ -66,7 +66,12 @@ export class QuotationController {
 
   @Patch(':id/items/:itemId')
   @HttpCode(200)
-  updateItem(@Param('id') id: string, @Param('itemId') itemId: string, @Body() dto: UpdateQuotationItemDto, @OrgCtx() ctx: OrgContext) {
+  updateItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body() dto: UpdateQuotationItemDto,
+    @OrgCtx() ctx: OrgContext,
+  ) {
     return this.service.updateItem(ctx.organizationId, id, itemId, dto);
   }
 

@@ -35,24 +35,36 @@ describe('SaleOrderService', () => {
   describe('addItem', () => {
     it('throws NotFoundException when order not found', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
-      await expect(service.addItem('org-1', 'o-x', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.addItem('org-1', 'o-x', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws BadRequestException when order type is RENTAL', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder({ type: OrderType.RENTAL }));
-      await expect(service.addItem('org-1', 'o-1', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.addItem('org-1', 'o-1', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when order is DELIVERED', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder({ status: OrderStatus.DELIVERED }));
-      await expect(service.addItem('org-1', 'o-1', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.addItem('org-1', 'o-1', { productId: 'p-1', quantity: 1, unitPrice: 1000, vatType: VatType.NONE }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws NotFoundException when assetId given but asset not in org', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
       prisma.asset.findUnique.mockResolvedValue(null);
       await expect(
-        service.addItem('org-1', 'o-1', { productId: 'p-1', assetId: 'a-x', quantity: 1, unitPrice: 1000, vatType: VatType.NONE }),
+        service.addItem('org-1', 'o-1', {
+          productId: 'p-1',
+          assetId: 'a-x',
+          quantity: 1,
+          unitPrice: 1000,
+          vatType: VatType.NONE,
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -60,7 +72,12 @@ describe('SaleOrderService', () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
       prisma.saleOrderItem.create.mockResolvedValue({ id: 'soi-1' });
 
-      const result = await service.addItem('org-1', 'o-1', { productId: 'p-1', quantity: 2, unitPrice: 11000, vatType: VatType.INCLUDED });
+      const result = await service.addItem('org-1', 'o-1', {
+        productId: 'p-1',
+        quantity: 2,
+        unitPrice: 11000,
+        vatType: VatType.INCLUDED,
+      });
 
       expect(prisma.saleOrderItem.create).toHaveBeenCalledWith(
         expect.objectContaining({

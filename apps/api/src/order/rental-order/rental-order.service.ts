@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateRentalOrderItemDto } from './dto/create-rental-order-item.dto';
 import type { UpdateRentalOrderItemDto } from './dto/update-rental-order-item.dto';
 
-const BLOCKED_STATUSES = [OrderStatus.DELIVERED, OrderStatus.CANCELED];
+const BLOCKED_STATUSES: OrderStatus[] = [OrderStatus.DELIVERED, OrderStatus.CANCELED];
 
 @Injectable()
 export class RentalOrderService {
@@ -16,8 +16,10 @@ export class RentalOrderService {
       select: { id: true, type: true, status: true, rentalOrder: { select: { id: true } } },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
-    if (order.type !== OrderType.RENTAL) throw new BadRequestException('렌탈 주문에서만 렌탈 항목을 관리할 수 있습니다.');
-    if (BLOCKED_STATUSES.includes(order.status)) throw new BadRequestException('납품 완료 또는 취소된 주문은 항목을 변경할 수 없습니다.');
+    if (order.type !== OrderType.RENTAL)
+      throw new BadRequestException('렌탈 주문에서만 렌탈 항목을 관리할 수 있습니다.');
+    if (BLOCKED_STATUSES.includes(order.status))
+      throw new BadRequestException('납품 완료 또는 취소된 주문은 항목을 변경할 수 없습니다.');
     return order;
   }
 
@@ -52,7 +54,12 @@ export class RentalOrderService {
     return { id: item.id };
   }
 
-  async updateItem(organizationId: string, orderId: string, itemId: string, dto: UpdateRentalOrderItemDto): Promise<void> {
+  async updateItem(
+    organizationId: string,
+    orderId: string,
+    itemId: string,
+    dto: UpdateRentalOrderItemDto,
+  ): Promise<void> {
     const order = await this.getOrder(organizationId, orderId);
 
     const item = await this.prisma.rentalOrderItem.findFirst({

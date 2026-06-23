@@ -8,5 +8,9 @@ export class CreateQuotationDto {
   @IsString() customerId: string;
   @IsOptional() @IsDateString() validUntil?: string;
   @IsOptional() @IsString() memo?: string;
-  @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => CreateQuotationItemDto) items: CreateQuotationItemDto[];
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuotationItemDto)
+  items: CreateQuotationItemDto[];
 }

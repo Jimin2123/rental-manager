@@ -77,6 +77,16 @@ describe('RefundService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('paymentId 지정 시 amount 초과 환불 불가', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
+      prisma.payment = { findUnique: jest.fn().mockResolvedValue({ amount: 30000 }) } as any;
+      await expect(
+        service.create('org-1', 'mem-1', {
+          customerId: 'cust-1', paymentId: 'pay-1', reason: RefundReason.OVERPAYMENT, amount: 50000,
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('invoiceId 지정 → Invoice refundedAmount 업데이트', async () => {
       prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice());

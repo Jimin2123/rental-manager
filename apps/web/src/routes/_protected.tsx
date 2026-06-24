@@ -1,4 +1,5 @@
-import { createFileRoute, redirect, Outlet } from '@tanstack/react-router';
+import { createFileRoute, redirect, Outlet, useNavigate } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
@@ -12,6 +13,17 @@ export const Route = createFileRoute('/_protected')({
 });
 
 function ProtectedLayout() {
+  const navigate = useNavigate();
+  const currentOrganization = useAuthStore((s) => s.currentOrganization);
+  const isInitialized = useAuthStore((s) => s.isInitialized);
+
+  // 세션 만료(인터셉터가 clearAuth 호출)시 로그인 페이지로 이동
+  useEffect(() => {
+    if (isInitialized && !currentOrganization) {
+      void navigate({ to: '/login' });
+    }
+  }, [isInitialized, currentOrganization, navigate]);
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />

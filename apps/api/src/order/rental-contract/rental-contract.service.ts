@@ -143,7 +143,7 @@ export class RentalContractService {
     });
   }
 
-  async updateStatus(organizationId: string, id: string, dto: UpdateRentalContractStatusDto, memberId: string) {
+  async updateStatus(organizationId: string, id: string, dto: UpdateRentalContractStatusDto, memberId: string | null) {
     const contract = await this.prisma.rentalContract.findUnique({
       where: { id_organizationId: { id, organizationId } },
       include: { items: true },

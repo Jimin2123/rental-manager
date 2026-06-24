@@ -2,7 +2,13 @@ import axios from 'axios';
 import { useAuthStore } from '@/store/auth.store';
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL as string,
+  baseURL: import.meta.env.VITE_API_URL ?? '',
+  withCredentials: true,
+});
+
+// interceptor를 타지 않는 별도 인스턴스 — refresh 전용
+const refreshApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ?? '',
   withCredentials: true,
 });
 
@@ -27,13 +33,12 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      await api.post('/auth/refresh');
+      await refreshApi.post('/auth/refresh');
       queue.forEach((cb) => cb(true));
       return api(original);
     } catch {
       queue.forEach((cb) => cb(false));
       useAuthStore.getState().clearAuth();
-      window.location.replace('/login');
       return Promise.reject(error);
     } finally {
       isRefreshing = false;

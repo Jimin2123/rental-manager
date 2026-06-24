@@ -1,4 +1,5 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { Toaster } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import type { Organization } from '@/store/auth.store';
@@ -12,5 +13,10 @@ export const Route = createRootRoute({
       useAuthStore.getState().clearAuth();
     }
   },
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <Outlet />
+      <Toaster richColors position="top-right" />
+    </>
+  ),
 });

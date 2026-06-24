@@ -16,5 +16,9 @@ export class UpdateAssetDto {
 
   @IsOptional()
   @IsString()
+  supplierId?: string;
+
+  @IsOptional()
+  @IsString()
   memo?: string;
 }

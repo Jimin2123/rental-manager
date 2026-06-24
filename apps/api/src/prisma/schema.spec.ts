@@ -41,7 +41,7 @@ describe('Prisma customer schema', () => {
     expect(individualProfileSchema).toContain('model IndividualProfile');
     expect(individualProfileSchema).toContain('addressId String?  @unique');
     expect(individualProfileSchema).toContain('customers           Customer[]');
-    expect(businessPartnerSchema).toContain('customers Customer[]');
+    expect(businessPartnerSchema).toContain('customers       Customer[]');
     expect(businessPartnerSchema).toContain('@@unique([id, organizationId])');
     expect(businessPartnerContactSchema).toContain(
       'businessPartner   BusinessPartner @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)',
@@ -67,7 +67,8 @@ describe('Prisma customer schema', () => {
     expect(enumSchema).toContain('PURCHASE');
 
     expect(organizationSchema).toContain('businessPartnerRoles');
-    expect(businessPartnerSchema).toContain('roles     BusinessPartnerRole[]');
+    expect(businessPartnerSchema).toContain('roles           BusinessPartnerRole[]');
+    expect(businessPartnerSchema).toContain('purchasedAssets Asset[]                 @relation("SupplierAssets")');
 
     expect(businessPartnerRoleSchema).toContain('model BusinessPartnerRole');
     expect(businessPartnerRoleSchema).toContain('type BusinessPartnerRoleType');

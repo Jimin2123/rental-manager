@@ -13,6 +13,10 @@ model Asset {
   // 현재 상태
   status AssetStatus @default(AVAILABLE)
 
+  // 매입처
+  supplierId String?
+  supplier   BusinessPartner? @relation("SupplierAssets", fields: [supplierId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   // 매입일
   purchaseDate DateTime?
 
@@ -45,4 +49,5 @@ model Asset {
   @@index([organizationId, status])
   @@index([organizationId, productId])
   @@index([productId])
+  @@index([supplierId])
 }

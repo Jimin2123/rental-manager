@@ -22,5 +22,9 @@ export class CreateAssetDto {
 
   @IsOptional()
   @IsString()
+  supplierId?: string;
+
+  @IsOptional()
+  @IsString()
   memo?: string;
 }

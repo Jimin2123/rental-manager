@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { type AxiosError } from 'axios';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,8 +57,14 @@ const registerSchema = z
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
+type BrnStatus = 'idle' | 'valid' | 'invalid';
+
 function RegisterPage() {
   const navigate = useNavigate();
+  const [brnStatus, setBrnStatus] = useState<BrnStatus>('idle');
+  const [brnMessage, setBrnMessage] = useState('');
+  const [brnVerifying, setBrnVerifying] = useState(false);
+
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -81,6 +88,30 @@ function RegisterPage() {
     },
   });
 
+  const handleVerifyBrn = async () => {
+    const brn = form.getValues('businessRegistrationNo');
+    if (brn.length !== 10) return;
+    setBrnVerifying(true);
+    try {
+      const { data } = await api.post<{ valid: boolean; status: string }>('/organizations/brn/verify', {
+        businessRegistrationNo: brn,
+      });
+      setBrnStatus(data.valid ? 'valid' : 'invalid');
+      setBrnMessage(data.status);
+      if (!data.valid) {
+        form.setError('businessRegistrationNo', { message: `사용할 수 없는 사업자입니다. (${data.status})` });
+      } else {
+        form.clearErrors('businessRegistrationNo');
+      }
+    } catch {
+      setBrnStatus('invalid');
+      setBrnMessage('조회 실패');
+      toast.error('사업자등록번호 조회 중 오류가 발생했습니다.');
+    } finally {
+      setBrnVerifying(false);
+    }
+  };
+
   const handleAddressSearch = () => {
     openKakaoAddressSearch((result) => {
       form.setValue('zonecode', result.zonecode, { shouldValidate: true });
@@ -92,6 +123,10 @@ function RegisterPage() {
   };
 
   const onSubmit = async (values: RegisterForm) => {
+    if (brnStatus !== 'valid') {
+      form.setError('businessRegistrationNo', { message: '사업자등록번호 조회를 먼저 완료해주세요.' });
+      return;
+    }
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordConfirm, ...payload } = values;
@@ -220,15 +255,33 @@ function RegisterPage() {
                     <FormLabel>
                       사업자등록번호 <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1234567890"
-                        maxLength={10}
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
-                      />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input
+                          placeholder="1234567890"
+                          maxLength={10}
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e.target.value.replace(/\D/g, ''));
+                            setBrnStatus('idle');
+                          }}
+                        />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={field.value.length !== 10 || brnVerifying}
+                        onClick={handleVerifyBrn}
+                      >
+                        {brnVerifying ? '조회 중...' : '조회'}
+                      </Button>
+                    </div>
                     <FormMessage />
+                    {brnStatus !== 'idle' && (
+                      <p className={`text-xs ${brnStatus === 'valid' ? 'text-green-600' : 'text-destructive'}`}>
+                        {brnStatus === 'valid' ? `✓ ${brnMessage}` : `✗ ${brnMessage}`}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />

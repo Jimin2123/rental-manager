@@ -21,22 +21,21 @@ async function mockKakaoPostcode(page: import('@playwright/test').Page) {
   }, MOCK_ADDRESS);
 }
 
-// 미인증 상태로 시작 후 로그인 성공 시 org 데이터를 반환하는 route 설정
+const MOCK_ORGS = [{ id: 'org1', name: '테스트', businessRegistrationNo: '1234567890', role: 'OWNER' }];
+
+// 미인증 상태로 시작, 로그인 후 /organizations/me도 org 데이터 반환 (페이지 재로드 대응)
 async function mockLoginFlow(page: import('@playwright/test').Page) {
   let loggedIn = false;
   await page.route('**/organizations/me', async (route) => {
     if (loggedIn) {
-      await route.fulfill({
-        status: 200,
-        body: JSON.stringify([{ id: 'org1', businessProfile: { name: '테스트' } }]),
-      });
+      await route.fulfill({ status: 200, body: JSON.stringify(MOCK_ORGS) });
     } else {
       await route.fulfill({ status: 401 });
     }
   });
   await page.route('**/auth/login', async (route) => {
     loggedIn = true;
-    await route.fulfill({ status: 200, body: JSON.stringify({ message: 'ok' }) });
+    await route.fulfill({ status: 200, body: JSON.stringify(MOCK_ORGS) });
   });
 }
 
@@ -207,22 +206,9 @@ test('전체 회원가입 플로우가 완료되면 대시보드로 이동한다
   await page.route('**/organizations/brn/verify', (route) =>
     route.fulfill({ status: 200, body: JSON.stringify({ valid: true, status: '계속사업자' }) }),
   );
-  // signup 전엔 401, 가입 완료 후엔 org 데이터 반환
-  let signedUp = false;
-  await page.route('**/organizations/me', async (route) => {
-    if (signedUp) {
-      await route.fulfill({
-        status: 200,
-        body: JSON.stringify([{ id: 'org1', businessProfile: { name: '테스트회사' } }]),
-      });
-    } else {
-      await route.fulfill({ status: 401 });
-    }
-  });
-  await page.route('**/auth/signup', async (route) => {
-    signedUp = true;
-    await route.fulfill({ status: 200, body: JSON.stringify({ message: '가입이 완료되었습니다.' }) });
-  });
+  // signup 응답에 org 데이터 포함 (새 API 형식), 초기 /organizations/me는 401
+  await page.route('**/organizations/me', (route) => route.fulfill({ status: 401 }));
+  await page.route('**/auth/signup', (route) => route.fulfill({ status: 200, body: JSON.stringify(MOCK_ORGS) }));
 
   await agreeTerms(page);
   await fillRegisterForm(page);

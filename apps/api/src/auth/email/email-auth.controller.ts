@@ -35,9 +35,9 @@ export class EmailAuthController {
   @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async signup(@Body() dto: SignupDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
-    const tokens = await this.emailAuth.signup(dto, meta);
+    const { tokens, organizations } = await this.emailAuth.signup(dto, meta);
     setAuthCookies(res, tokens, false);
-    return { message: '가입이 완료되었습니다.' };
+    return organizations;
   }
 
   @Post('login')
@@ -54,7 +54,7 @@ export class EmailAuthController {
       meta,
     );
     setAuthCookies(res, tokens, dto.rememberMe ?? false);
-    return { accountId: account.id, email: account.email, emailVerifiedAt: account.emailVerifiedAt };
+    return this.emailAuth.getOrganizations(account.userId);
   }
 
   @Post('logout')

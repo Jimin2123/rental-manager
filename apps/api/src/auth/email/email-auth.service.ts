@@ -35,7 +35,26 @@ export class EmailAuthService {
     });
   }
 
-  async signup(dto: SignupDto, meta: SessionMeta): Promise<{ accessToken: string; refreshToken: string }> {
+  async getOrganizations(userId: string) {
+    const memberships = await this.prisma.organizationMember.findMany({
+      where: { userId, isActive: true },
+      include: { organization: { include: { businessProfile: true } } },
+    });
+    return memberships.map((m) => ({
+      id: m.organization.id,
+      name: m.organization.businessProfile.name,
+      businessRegistrationNo: m.organization.businessProfile.businessRegistrationNo,
+      role: m.role,
+    }));
+  }
+
+  async signup(
+    dto: SignupDto,
+    meta: SessionMeta,
+  ): Promise<{
+    tokens: { accessToken: string; refreshToken: string };
+    organizations: Awaited<ReturnType<EmailAuthService['getOrganizations']>>;
+  }> {
     const existing = await this.prisma.account.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('이미 사용 중인 이메일입니다.');
 
@@ -76,7 +95,9 @@ export class EmailAuthService {
       return { accountId: account.id, userId: user.id };
     });
 
-    return this.issueTokens(accountId, userId, dto.email, false, meta);
+    const tokens = await this.issueTokens(accountId, userId, dto.email, false, meta);
+    const organizations = await this.getOrganizations(userId);
+    return { tokens, organizations };
   }
 
   async validateCredentials(email: string, password: string) {

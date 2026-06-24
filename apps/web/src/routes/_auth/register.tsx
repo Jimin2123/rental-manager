@@ -139,12 +139,11 @@ function RegisterPage() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordConfirm, ...payload } = values;
-      await api.post('/auth/signup', {
+      const { data } = await api.post<Organization[]>('/auth/signup', {
         ...payload,
         businessRegistrationNo: payload.businessRegistrationNo.replace(/-/g, ''),
         orgEmail: payload.orgEmail || undefined,
       });
-      const { data } = await api.get<Organization[]>('/organizations/me');
       useAuthStore.getState().setAuth(data);
       sessionStorage.removeItem('terms_agreed');
       await navigate({ to: '/' });

@@ -35,8 +35,7 @@ function LoginPage() {
 
   const onSubmit = async (values: LoginForm) => {
     try {
-      await api.post('/auth/login', values);
-      const { data } = await api.get<Organization[]>('/organizations/me');
+      const { data } = await api.post<Organization[]>('/auth/login', values);
       useAuthStore.getState().setAuth(data);
       await navigate({ to: '/' });
     } catch (err) {

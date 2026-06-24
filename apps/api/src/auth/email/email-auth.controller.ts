@@ -10,6 +10,7 @@ import { SessionService } from '../session/session.service';
 import { TokenService } from '../session/token.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SignupDto } from './dto/signup.dto';
 import { SwitchOrgDto } from './dto/switch-org.dto';
 import { EmailAuthService } from './email-auth.service';
 
@@ -27,6 +28,16 @@ export class EmailAuthController {
   async register(@Body() dto: RegisterDto) {
     await this.emailAuth.register(dto.email, dto.password);
     return { message: '가입 완료. 인증 이메일을 발송했습니다.' };
+  }
+
+  @Post('signup')
+  @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
+  async signup(@Body() dto: SignupDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
+    const tokens = await this.emailAuth.signup(dto, meta);
+    setAuthCookies(res, tokens, false);
+    return { message: '가입이 완료되었습니다.' };
   }
 
   @Post('login')

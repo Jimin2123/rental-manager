@@ -307,9 +307,9 @@ function RegisterPage() {
 
             {/* 주소 */}
             <div className="space-y-2">
-              <FormLabel>
+              <label className="text-sm font-medium leading-none">
                 주소 <span className="text-destructive">*</span>
-              </FormLabel>
+              </label>
               <div className="flex gap-2">
                 <FormField
                   control={form.control}

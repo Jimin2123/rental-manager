@@ -6,6 +6,12 @@ import { ISocialProvider, SocialUserInfo } from './social-provider.interface';
 export class GoogleProvider implements ISocialProvider {
   constructor(private readonly config: ConfigService) {}
 
+  private getRequiredConfig(key: string): string {
+    const value = this.config.get<string>(key);
+    if (!value) throw new Error(`${key} is not configured`);
+    return value;
+  }
+
   async verify(accessToken: string): Promise<SocialUserInfo> {
     const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${accessToken}`);
     if (!res.ok) throw new UnauthorizedException('유효하지 않은 Google 토큰입니다.');
@@ -32,7 +38,7 @@ export class GoogleProvider implements ISocialProvider {
   }
 
   getAuthorizationUrl(redirectUri: string, state: string): string {
-    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID') ?? '';
+    const clientId = this.getRequiredConfig('GOOGLE_CLIENT_ID');
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -46,8 +52,8 @@ export class GoogleProvider implements ISocialProvider {
   async exchangeCode(code: string, redirectUri: string): Promise<SocialUserInfo> {
     const body = new URLSearchParams({
       code,
-      client_id: this.config.get<string>('GOOGLE_CLIENT_ID') ?? '',
-      client_secret: this.config.get<string>('GOOGLE_CLIENT_SECRET') ?? '',
+      client_id: this.getRequiredConfig('GOOGLE_CLIENT_ID'),
+      client_secret: this.getRequiredConfig('GOOGLE_CLIENT_SECRET'),
       redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     });

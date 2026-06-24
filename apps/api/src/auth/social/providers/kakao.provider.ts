@@ -6,6 +6,12 @@ import { ISocialProvider, SocialUserInfo } from './social-provider.interface';
 export class KakaoProvider implements ISocialProvider {
   constructor(private readonly config: ConfigService) {}
 
+  private getRequiredConfig(key: string): string {
+    const value = this.config.get<string>(key);
+    if (!value) throw new Error(`${key} is not configured`);
+    return value;
+  }
+
   async verify(accessToken: string): Promise<SocialUserInfo> {
     // 토큰 유효성 및 앱 소유권 검증
     const infoRes = await fetch('https://kapi.kakao.com/v1/user/access_token_info', {
@@ -34,7 +40,7 @@ export class KakaoProvider implements ISocialProvider {
   }
 
   getAuthorizationUrl(redirectUri: string, state: string): string {
-    const clientId = this.config.get<string>('KAKAO_CLIENT_ID') ?? '';
+    const clientId = this.getRequiredConfig('KAKAO_CLIENT_ID');
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -47,7 +53,7 @@ export class KakaoProvider implements ISocialProvider {
   async exchangeCode(code: string, redirectUri: string): Promise<SocialUserInfo> {
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
-      client_id: this.config.get<string>('KAKAO_CLIENT_ID') ?? '',
+      client_id: this.getRequiredConfig('KAKAO_CLIENT_ID'),
       redirect_uri: redirectUri,
       code,
     });

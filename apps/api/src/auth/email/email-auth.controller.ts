@@ -23,7 +23,7 @@ export class EmailAuthController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async register(@Body() dto: RegisterDto) {
     await this.emailAuth.register(dto.email, dto.password);
     return { message: '가입 완료. 인증 이메일을 발송했습니다.' };
@@ -31,7 +31,7 @@ export class EmailAuthController {
 
   @Post('login')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const account = await this.emailAuth.validateCredentials(dto.email, dto.password);
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };

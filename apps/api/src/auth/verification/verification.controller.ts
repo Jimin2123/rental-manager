@@ -21,7 +21,7 @@ export class VerificationController {
 
   @Post('verify/send')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async sendVerification(@Body() dto: SendVerifyDto) {
     await this.verificationService.sendVerificationEmail(dto.email);
     return { message: '인증 이메일을 발송했습니다.' };
@@ -29,7 +29,7 @@ export class VerificationController {
 
   @Post('verify')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     await this.verificationService.verifyEmail(dto.token);
     return { message: '이메일 인증이 완료되었습니다.' };

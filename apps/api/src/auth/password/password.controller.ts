@@ -15,7 +15,7 @@ export class PasswordController {
 
   @Post('reset/send')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async sendReset(@Body() dto: SendResetDto) {
     await this.passwordService.sendResetEmail(dto.email);
     return { message: '비밀번호 재설정 이메일을 발송했습니다.' };
@@ -23,7 +23,7 @@ export class PasswordController {
 
   @Post('reset')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async reset(@Body() dto: ResetPasswordDto) {
     await this.passwordService.resetPassword(dto.token, dto.newPassword);
     return { message: '비밀번호가 변경되었습니다.' };

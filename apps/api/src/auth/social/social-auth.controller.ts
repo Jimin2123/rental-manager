@@ -1,4 +1,6 @@
-import { Body, Controller, HttpCode, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -12,7 +14,10 @@ import { SocialAuthService } from './social-auth.service';
 @ApiTags('auth')
 @Controller('auth/social')
 export class SocialAuthController {
-  constructor(private readonly socialAuth: SocialAuthService) {}
+  constructor(
+    private readonly socialAuth: SocialAuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post(':provider')
   @HttpCode(200)
@@ -24,9 +29,63 @@ export class SocialAuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
-    const tokens = await this.socialAuth.loginOrRegister(provider, dto.accessToken, meta);
+    const { userId, ...tokens } = await this.socialAuth.loginOrRegister(provider, dto.accessToken, meta);
     setAuthCookies(res, tokens, false);
-    return { message: '소셜 로그인 성공' };
+    return this.socialAuth.getOrganizations(userId);
+  }
+
+  @Get(':provider/redirect')
+  redirect(@Param('provider') provider: string, @Res() res: Response) {
+    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
+    try {
+      const state = randomUUID();
+      const redirectUri = `${frontendUrl}/auth/social/${provider}/callback`;
+      const url = this.socialAuth.getAuthorizationUrl(provider, redirectUri, state);
+
+      res.cookie('oauth_state', state, {
+        httpOnly: true,
+        maxAge: 5 * 60 * 1000,
+        sameSite: 'lax',
+        secure: process.env['NODE_ENV'] === 'production',
+      });
+      res.redirect(url);
+    } catch {
+      res.redirect(`${frontendUrl}/login?error=social`);
+    }
+  }
+
+  @Get(':provider/callback')
+  async callback(
+    @Param('provider') provider: string,
+    @Query('code') code: string | undefined,
+    @Query('state') state: string | undefined,
+    @Query('error') error: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
+
+    if (error || !code) {
+      return res.redirect(`${frontendUrl}/login?error=social`);
+    }
+
+    const storedState = (req.cookies as Record<string, string | undefined>)['oauth_state'];
+    if (!state || !storedState || storedState !== state) {
+      return res.redirect(`${frontendUrl}/login?error=social`);
+    }
+
+    res.clearCookie('oauth_state');
+
+    try {
+      const redirectUri = `${frontendUrl}/auth/social/${provider}/callback`;
+      const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
+      const { userId, ...tokens } = await this.socialAuth.loginOrRegisterWithCode(provider, code, redirectUri, meta);
+      const orgs = await this.socialAuth.getOrganizations(userId);
+      setAuthCookies(res, tokens, false);
+      return res.redirect(orgs.length > 0 ? `${frontendUrl}/` : `${frontendUrl}/setup`);
+    } catch {
+      return res.redirect(`${frontendUrl}/login?error=social`);
+    }
   }
 
   @Post('link/:provider')

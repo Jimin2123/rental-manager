@@ -15,7 +15,7 @@ api.interceptors.response.use(
     const axiosError = error as import('axios').AxiosError & { config: { _retry?: boolean } };
     const original = axiosError.config;
 
-    if (axiosError.response?.status !== 401 || original._retry) {
+    if (!original || axiosError.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
     }
 

@@ -1,4 +1,4 @@
-import { IsInt, IsISO8601, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsISO8601, IsOptional, IsString, MinLength, Min } from 'class-validator';
 
 export class UpdateAssetDto {
   @IsOptional()
@@ -16,6 +16,7 @@ export class UpdateAssetDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   supplierId?: string;
 
   @IsOptional()

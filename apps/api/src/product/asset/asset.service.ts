@@ -5,13 +5,20 @@ import type { CreateAssetDto } from './dto/create-asset.dto';
 import type { UpdateAssetDto } from './dto/update-asset.dto';
 import type { QueryAssetDto } from './dto/query-asset.dto';
 
+type PrismaTransaction = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
+
 @Injectable()
 export class AssetService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async validateSupplier(organizationId: string, supplierId: string): Promise<void> {
-    const role = await this.prisma.businessPartnerRole.findFirst({
-      where: { businessPartnerId: supplierId, organizationId, type: BusinessPartnerRoleType.PURCHASE },
+  private async validateSupplier(tx: PrismaTransaction, organizationId: string, supplierId: string): Promise<void> {
+    const role = await tx.businessPartnerRole.findFirst({
+      where: {
+        businessPartnerId: supplierId,
+        organizationId,
+        type: BusinessPartnerRoleType.PURCHASE,
+        businessPartner: { deletedAt: null, isActive: true },
+      },
       select: { id: true },
     });
     if (!role) throw new BadRequestException('매입 거래처로 등록되지 않은 거래처입니다.');
@@ -25,10 +32,9 @@ export class AssetService {
     if (!product) throw new NotFoundException('제품을 찾을 수 없습니다.');
     if (product.deletedAt) throw new BadRequestException('삭제된 제품에는 자산을 등록할 수 없습니다.');
 
-    if (dto.supplierId) await this.validateSupplier(organizationId, dto.supplierId);
-
     try {
       const asset = await this.prisma.$transaction(async (tx) => {
+        if (dto.supplierId !== undefined) await this.validateSupplier(tx, organizationId, dto.supplierId);
         const created = await tx.asset.create({
           data: {
             organizationId,
@@ -97,18 +103,19 @@ export class AssetService {
     });
     if (!asset || asset.deletedAt) throw new NotFoundException('자산을 찾을 수 없습니다.');
 
-    if (dto.supplierId) await this.validateSupplier(organizationId, dto.supplierId);
-
     try {
-      await this.prisma.asset.update({
-        where: { id_organizationId: { id, organizationId } },
-        data: {
-          ...(dto.serialNumber !== undefined && { serialNumber: dto.serialNumber }),
-          ...(dto.supplierId !== undefined && { supplierId: dto.supplierId }),
-          ...(dto.purchaseDate !== undefined && { purchaseDate: new Date(dto.purchaseDate) }),
-          ...(dto.purchasePrice !== undefined && { purchasePrice: dto.purchasePrice }),
-          ...(dto.memo !== undefined && { memo: dto.memo }),
-        },
+      await this.prisma.$transaction(async (tx) => {
+        if (dto.supplierId !== undefined) await this.validateSupplier(tx, organizationId, dto.supplierId);
+        await tx.asset.update({
+          where: { id_organizationId: { id, organizationId } },
+          data: {
+            ...(dto.serialNumber !== undefined && { serialNumber: dto.serialNumber }),
+            ...(dto.supplierId !== undefined && { supplierId: dto.supplierId }),
+            ...(dto.purchaseDate !== undefined && { purchaseDate: new Date(dto.purchaseDate) }),
+            ...(dto.purchasePrice !== undefined && { purchasePrice: dto.purchasePrice }),
+            ...(dto.memo !== undefined && { memo: dto.memo }),
+          },
+        });
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {

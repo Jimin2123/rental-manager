@@ -17,9 +17,10 @@ model BusinessPartner {
 
   deletedAt DateTime?
 
-  roles     BusinessPartnerRole[]
-  contacts  BusinessPartnerContact[]
-  customers Customer[]
+  roles           BusinessPartnerRole[]
+  contacts        BusinessPartnerContact[]
+  customers       Customer[]
+  purchasedAssets Asset[]                 @relation("SupplierAssets")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

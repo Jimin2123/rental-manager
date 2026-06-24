@@ -35,8 +35,10 @@ const registerSchema = z
     name: z.string().min(1, '상호명을 입력해주세요.'),
     businessRegistrationNo: z
       .string()
-      .length(10, '사업자등록번호는 10자리입니다.')
-      .regex(/^\d{10}$/, '숫자만 입력해주세요.'),
+      .refine(
+        (v) => /^\d{3}-\d{2}-\d{5}$/.test(v) || /^\d{10}$/.test(v),
+        '올바른 사업자등록번호를 입력해주세요. (예: 123-45-67890)',
+      ),
     representativeName: z.string().min(1, '대표자명을 입력해주세요.'),
     businessType: z.string().optional(),
     businessItem: z.string().optional(),
@@ -56,6 +58,13 @@ const registerSchema = z
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+
+const formatBrn = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+};
 
 type BrnStatus = 'idle' | 'valid' | 'invalid';
 
@@ -89,7 +98,7 @@ function RegisterPage() {
   });
 
   const handleVerifyBrn = async () => {
-    const brn = form.getValues('businessRegistrationNo');
+    const brn = form.getValues('businessRegistrationNo').replace(/-/g, '');
     if (brn.length !== 10) return;
     setBrnVerifying(true);
     try {
@@ -132,6 +141,7 @@ function RegisterPage() {
       const { passwordConfirm, ...payload } = values;
       await api.post('/auth/signup', {
         ...payload,
+        businessRegistrationNo: payload.businessRegistrationNo.replace(/-/g, ''),
         orgEmail: payload.orgEmail || undefined,
       });
       const { data } = await api.get<Organization[]>('/organizations/me');
@@ -258,11 +268,11 @@ function RegisterPage() {
                     <div className="flex gap-2">
                       <FormControl>
                         <Input
-                          placeholder="1234567890"
-                          maxLength={10}
+                          placeholder="123-45-67890"
+                          maxLength={12}
                           {...field}
                           onChange={(e) => {
-                            field.onChange(e.target.value.replace(/\D/g, ''));
+                            field.onChange(formatBrn(e.target.value));
                             setBrnStatus('idle');
                           }}
                         />
@@ -270,7 +280,7 @@ function RegisterPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={field.value.length !== 10 || brnVerifying}
+                        disabled={field.value.replace(/-/g, '').length !== 10 || brnVerifying}
                         onClick={handleVerifyBrn}
                       >
                         {brnVerifying ? '조회 중...' : '조회'}

@@ -6,8 +6,9 @@ import { Header } from '@/components/layout/Header';
 
 export const Route = createFileRoute('/_protected')({
   beforeLoad: () => {
-    const { currentOrganization } = useAuthStore.getState();
-    if (!currentOrganization) throw redirect({ to: '/login' });
+    const { isAuthenticated, currentOrganization } = useAuthStore.getState();
+    if (!isAuthenticated) throw redirect({ to: '/login' });
+    if (!currentOrganization) throw redirect({ to: '/setup' });
   },
   component: ProtectedLayout,
 });

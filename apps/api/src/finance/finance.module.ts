@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OrganizationModule } from '../organization/organization.module';
+import { CommonModule } from '../common/common.module';
 import { FinanceDocumentSequenceService } from './common/document-sequence.service';
 import { InvoiceService } from './invoice/invoice.service';
 import { InvoiceController } from './invoice/invoice.controller';
@@ -12,7 +13,7 @@ import { TaxInvoiceController } from './tax-invoice/tax-invoice.controller';
 import { InvoiceGenerationCron } from './cron/invoice-generation.cron';
 
 @Module({
-  imports: [OrganizationModule],
+  imports: [OrganizationModule, CommonModule],
   providers: [
     FinanceDocumentSequenceService,
     InvoiceService,

@@ -98,9 +98,7 @@ describe('AuditLogService', () => {
     it('page/limit 미입력 시 기본값(page=1, limit=20)을 사용한다', async () => {
       await service.findAll('org-1', {});
 
-      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 0, take: 20 }),
-      );
+      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }));
     });
   });
 });

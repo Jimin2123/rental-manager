@@ -1,5 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AuditAction, AssetEventSourceType, AssetStatus, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
+import {
+  AuditAction,
+  AssetEventSourceType,
+  AssetStatus,
+  RentalContractItemStatus,
+  RentalContractStatus,
+} from '@prisma/client';
 import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';

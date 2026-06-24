@@ -120,7 +120,7 @@ describe('RefundService', () => {
         invoiceId: 'inv-1',
         reason: RefundReason.BILLING_ERROR,
         amount: 50000,
-      } as any);
+      });
 
       expect(auditLog.log).toHaveBeenCalledWith(
         expect.anything(),

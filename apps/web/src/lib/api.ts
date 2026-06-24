@@ -20,9 +20,7 @@ api.interceptors.response.use(
     }
 
     if (isRefreshing) {
-      return new Promise((resolve, reject) =>
-        queue.push((ok) => (ok ? resolve(api(original)) : reject(error))),
-      );
+      return new Promise((resolve, reject) => queue.push((ok) => (ok ? resolve(api(original)) : reject(error))));
     }
 
     original._retry = true;

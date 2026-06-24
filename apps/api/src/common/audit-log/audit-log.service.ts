@@ -7,7 +7,7 @@ type PrismaTransaction = Parameters<Parameters<PrismaService['$transaction']>[0]
 
 type AuditLogInput = {
   organizationId: string;
-  actorId: string;
+  actorId: string | null;
   action: AuditAction;
   targetType: string;
   targetId: string;

@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
+import { Route as ProtectedRefundsRouteImport } from './routes/_protected/refunds'
+import { Route as ProtectedPaymentsRouteImport } from './routes/_protected/payments'
+import { Route as ProtectedInvoicesRouteImport } from './routes/_protected/invoices'
+import { Route as ProtectedCustomersRouteImport } from './routes/_protected/customers'
+import { Route as ProtectedContractsRouteImport } from './routes/_protected/contracts'
+import { Route as ProtectedAssetsRouteImport } from './routes/_protected/assets'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 
 const ProtectedRoute = ProtectedRouteImport.update({
@@ -27,6 +33,36 @@ const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedRefundsRoute = ProtectedRefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPaymentsRoute = ProtectedPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedInvoicesRoute = ProtectedInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedCustomersRoute = ProtectedCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedContractsRoute = ProtectedContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedAssetsRoute = ProtectedAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -36,24 +72,69 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
   '/login': typeof AuthLoginRoute
+  '/assets': typeof ProtectedAssetsRoute
+  '/contracts': typeof ProtectedContractsRoute
+  '/customers': typeof ProtectedCustomersRoute
+  '/invoices': typeof ProtectedInvoicesRoute
+  '/payments': typeof ProtectedPaymentsRoute
+  '/refunds': typeof ProtectedRefundsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
   '/login': typeof AuthLoginRoute
+  '/assets': typeof ProtectedAssetsRoute
+  '/contracts': typeof ProtectedContractsRoute
+  '/customers': typeof ProtectedCustomersRoute
+  '/invoices': typeof ProtectedInvoicesRoute
+  '/payments': typeof ProtectedPaymentsRoute
+  '/refunds': typeof ProtectedRefundsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
+  '/_protected/assets': typeof ProtectedAssetsRoute
+  '/_protected/contracts': typeof ProtectedContractsRoute
+  '/_protected/customers': typeof ProtectedCustomersRoute
+  '/_protected/invoices': typeof ProtectedInvoicesRoute
+  '/_protected/payments': typeof ProtectedPaymentsRoute
+  '/_protected/refunds': typeof ProtectedRefundsRoute
   '/_protected/': typeof ProtectedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/assets'
+    | '/contracts'
+    | '/customers'
+    | '/invoices'
+    | '/payments'
+    | '/refunds'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login'
-  id: '__root__' | '/_auth' | '/_protected' | '/_auth/login' | '/_protected/'
+  to:
+    | '/'
+    | '/login'
+    | '/assets'
+    | '/contracts'
+    | '/customers'
+    | '/invoices'
+    | '/payments'
+    | '/refunds'
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/_protected'
+    | '/_auth/login'
+    | '/_protected/assets'
+    | '/_protected/contracts'
+    | '/_protected/customers'
+    | '/_protected/invoices'
+    | '/_protected/payments'
+    | '/_protected/refunds'
+    | '/_protected/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -84,6 +165,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/refunds': {
+      id: '/_protected/refunds'
+      path: '/refunds'
+      fullPath: '/refunds'
+      preLoaderRoute: typeof ProtectedRefundsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/payments': {
+      id: '/_protected/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof ProtectedPaymentsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/invoices': {
+      id: '/_protected/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof ProtectedInvoicesRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/customers': {
+      id: '/_protected/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof ProtectedCustomersRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/contracts': {
+      id: '/_protected/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof ProtectedContractsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/assets': {
+      id: '/_protected/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof ProtectedAssetsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_auth/login': {
       id: '/_auth/login'
       path: '/login'
@@ -105,10 +228,22 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface ProtectedRouteChildren {
+  ProtectedAssetsRoute: typeof ProtectedAssetsRoute
+  ProtectedContractsRoute: typeof ProtectedContractsRoute
+  ProtectedCustomersRoute: typeof ProtectedCustomersRoute
+  ProtectedInvoicesRoute: typeof ProtectedInvoicesRoute
+  ProtectedPaymentsRoute: typeof ProtectedPaymentsRoute
+  ProtectedRefundsRoute: typeof ProtectedRefundsRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
+  ProtectedAssetsRoute: ProtectedAssetsRoute,
+  ProtectedContractsRoute: ProtectedContractsRoute,
+  ProtectedCustomersRoute: ProtectedCustomersRoute,
+  ProtectedInvoicesRoute: ProtectedInvoicesRoute,
+  ProtectedPaymentsRoute: ProtectedPaymentsRoute,
+  ProtectedRefundsRoute: ProtectedRefundsRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
 }
 

@@ -85,6 +85,12 @@ function LoginPage() {
           </Button>
         </form>
       </Form>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        계정이 없으신가요?{' '}
+        <a href="/terms" className="text-primary underline-offset-4 hover:underline">
+          회원가입
+        </a>
+      </p>
     </div>
   );
 }

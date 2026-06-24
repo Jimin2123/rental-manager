@@ -1,8 +1,31 @@
+import path from 'path';
+import type { IncomingMessage } from 'http';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 
-// https://vite.dev/config/
+// 브라우저 전체 페이지 네비게이션(text/html)은 SPA에게 위임,
+// AJAX(application/json 등)만 API로 프록시
+const apiProxy = (target = 'http://localhost:3000') => ({
+  target,
+  changeOrigin: true,
+  bypass: (req: IncomingMessage) => {
+    const accept = (req.headers?.['accept'] as string) ?? '';
+    if (accept.includes('text/html')) return '/index.html';
+  },
+});
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [TanStackRouterVite({ routesDirectory: './src/routes' }), react(), tailwindcss()],
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
+  server: {
+    proxy: {
+      '/auth': apiProxy(),
+      '/organizations': apiProxy(),
+      '/assets': apiProxy(),
+    },
+  },
 });

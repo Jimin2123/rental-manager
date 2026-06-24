@@ -16,7 +16,7 @@ export class SocialAuthController {
 
   @Post(':provider')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async login(
     @Param('provider') provider: string,
     @Body() dto: SocialLoginDto,

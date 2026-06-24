@@ -18,6 +18,8 @@ import { Route as ProtectedInvoicesRouteImport } from './routes/_protected/invoi
 import { Route as ProtectedCustomersRouteImport } from './routes/_protected/customers'
 import { Route as ProtectedContractsRouteImport } from './routes/_protected/contracts'
 import { Route as ProtectedAssetsRouteImport } from './routes/_protected/assets'
+import { Route as AuthTermsRouteImport } from './routes/_auth/terms'
+import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 
 const ProtectedRoute = ProtectedRouteImport.update({
@@ -63,6 +65,16 @@ const ProtectedAssetsRoute = ProtectedAssetsRouteImport.update({
   path: '/assets',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const AuthTermsRoute = AuthTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -72,6 +84,8 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
   '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
+  '/terms': typeof AuthTermsRoute
   '/assets': typeof ProtectedAssetsRoute
   '/contracts': typeof ProtectedContractsRoute
   '/customers': typeof ProtectedCustomersRoute
@@ -82,6 +96,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
   '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
+  '/terms': typeof AuthTermsRoute
   '/assets': typeof ProtectedAssetsRoute
   '/contracts': typeof ProtectedContractsRoute
   '/customers': typeof ProtectedCustomersRoute
@@ -94,6 +110,8 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
+  '/_auth/register': typeof AuthRegisterRoute
+  '/_auth/terms': typeof AuthTermsRoute
   '/_protected/assets': typeof ProtectedAssetsRoute
   '/_protected/contracts': typeof ProtectedContractsRoute
   '/_protected/customers': typeof ProtectedCustomersRoute
@@ -107,6 +125,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/register'
+    | '/terms'
     | '/assets'
     | '/contracts'
     | '/customers'
@@ -117,6 +137,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/register'
+    | '/terms'
     | '/assets'
     | '/contracts'
     | '/customers'
@@ -128,6 +150,8 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_protected'
     | '/_auth/login'
+    | '/_auth/register'
+    | '/_auth/terms'
     | '/_protected/assets'
     | '/_protected/contracts'
     | '/_protected/customers'
@@ -207,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAssetsRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_auth/terms': {
+      id: '/_auth/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AuthTermsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/register': {
+      id: '/_auth/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/login': {
       id: '/_auth/login'
       path: '/login'
@@ -219,10 +257,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthTermsRoute: typeof AuthTermsRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
+  AuthTermsRoute: AuthTermsRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

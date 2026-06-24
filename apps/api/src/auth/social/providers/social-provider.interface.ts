@@ -7,5 +7,5 @@ export interface SocialUserInfo {
 export interface ISocialProvider {
   verify(accessToken: string): Promise<SocialUserInfo>;
   getAuthorizationUrl(redirectUri: string, state: string): string;
-  exchangeCode(code: string, redirectUri: string): Promise<SocialUserInfo>;
+  exchangeCode(code: string, redirectUri: string, state?: string): Promise<SocialUserInfo>;
 }

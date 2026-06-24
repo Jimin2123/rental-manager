@@ -144,8 +144,13 @@ describe('SocialAuthService', () => {
         'code-abc',
         'http://localhost:5173/auth/social/google/callback',
         {},
+        'test-state',
       );
-      expect(exchangeMock).toHaveBeenCalledWith('code-abc', 'http://localhost:5173/auth/social/google/callback');
+      expect(exchangeMock).toHaveBeenCalledWith(
+        'code-abc',
+        'http://localhost:5173/auth/social/google/callback',
+        'test-state',
+      );
       expect(result.accessToken).toBe('access-jwt');
       expect(result.userId).toBe('user-1');
     });

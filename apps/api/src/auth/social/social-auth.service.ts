@@ -63,8 +63,14 @@ export class SocialAuthService {
     return this._processLogin(info, this.toOAuthProvider(providerName), meta);
   }
 
-  async loginOrRegisterWithCode(providerName: string, code: string, redirectUri: string, meta: SessionMeta) {
-    const info = await this.resolveProvider(providerName).exchangeCode(code, redirectUri);
+  async loginOrRegisterWithCode(
+    providerName: string,
+    code: string,
+    redirectUri: string,
+    meta: SessionMeta,
+    state?: string,
+  ) {
+    const info = await this.resolveProvider(providerName).exchangeCode(code, redirectUri, state);
     return this._processLogin(info, this.toOAuthProvider(providerName), meta);
   }
 

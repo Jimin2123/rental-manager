@@ -38,13 +38,14 @@ export class NaverProvider implements ISocialProvider {
     return `https://nid.naver.com/oauth2.0/authorize?${params.toString()}`;
   }
 
-  async exchangeCode(code: string, redirectUri: string): Promise<SocialUserInfo> {
+  async exchangeCode(code: string, redirectUri: string, state?: string): Promise<SocialUserInfo> {
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: this.getRequiredConfig('NAVER_CLIENT_ID'),
       client_secret: this.getRequiredConfig('NAVER_CLIENT_SECRET'),
       redirect_uri: redirectUri,
       code,
+      ...(state ? { state } : {}),
     });
     const res = await fetch('https://nid.naver.com/oauth2.0/token', {
       method: 'POST',

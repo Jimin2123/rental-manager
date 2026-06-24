@@ -79,7 +79,13 @@ export class SocialAuthController {
     try {
       const redirectUri = `${frontendUrl}/auth/social/${provider}/callback`;
       const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
-      const { userId, ...tokens } = await this.socialAuth.loginOrRegisterWithCode(provider, code, redirectUri, meta);
+      const { userId, ...tokens } = await this.socialAuth.loginOrRegisterWithCode(
+        provider,
+        code,
+        redirectUri,
+        meta,
+        state,
+      );
       const orgs = await this.socialAuth.getOrganizations(userId);
       setAuthCookies(res, tokens, false);
       return res.redirect(orgs.length > 0 ? `${frontendUrl}/` : `${frontendUrl}/setup`);

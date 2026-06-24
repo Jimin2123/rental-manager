@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,8 +39,13 @@ function LoginPage() {
       const { data } = await api.get<Organization[]>('/organizations/me');
       useAuthStore.getState().setAuth(data);
       await navigate({ to: '/' });
-    } catch {
-      toast.error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    } catch (err) {
+      const status = (err as AxiosError).response?.status;
+      if (status === 401) {
+        toast.error('이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else {
+        toast.error('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
     }
   };
 
@@ -47,7 +53,7 @@ function LoginPage() {
     <div className="rounded-lg border bg-card p-6 shadow-sm">
       <h2 className="mb-6 text-lg font-semibold text-card-foreground">로그인</h2>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <FormField
             control={form.control}
             name="email"

@@ -32,4 +32,36 @@ export class KakaoProvider implements ISocialProvider {
       providerData: {},
     };
   }
+
+  getAuthorizationUrl(redirectUri: string, state: string): string {
+    const clientId = this.config.get<string>('KAKAO_CLIENT_ID') ?? '';
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      state,
+    });
+    return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+  }
+
+  async exchangeCode(code: string, redirectUri: string): Promise<SocialUserInfo> {
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: this.config.get<string>('KAKAO_CLIENT_ID') ?? '',
+      redirect_uri: redirectUri,
+      code,
+    });
+    const clientSecret = this.config.get<string>('KAKAO_CLIENT_SECRET');
+    if (clientSecret) body.set('client_secret', clientSecret);
+
+    const res = await fetch('https://kauth.kakao.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    if (!res.ok) throw new UnauthorizedException('Kakao 코드 교환에 실패했습니다.');
+    const data = (await res.json()) as { access_token?: string };
+    if (!data.access_token) throw new UnauthorizedException('Kakao 코드 교환에 실패했습니다.');
+    return this.verify(data.access_token);
+  }
 }

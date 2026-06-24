@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AssetEventSourceType, AssetStatus, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
+import { AuditAction, AssetEventSourceType, AssetStatus, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
 import { CreateRentalContractDto } from './dto/create-rental-contract.dto';
@@ -25,6 +26,7 @@ export class RentalContractService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docSeq: DocumentSequenceService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async create(organizationId: string, dto: CreateRentalContractDto) {
@@ -141,7 +143,7 @@ export class RentalContractService {
     });
   }
 
-  async updateStatus(organizationId: string, id: string, dto: UpdateRentalContractStatusDto) {
+  async updateStatus(organizationId: string, id: string, dto: UpdateRentalContractStatusDto, memberId: string | null) {
     const contract = await this.prisma.rentalContract.findUnique({
       where: { id_organizationId: { id, organizationId } },
       include: { items: true },
@@ -152,8 +154,10 @@ export class RentalContractService {
     if (!allowed.includes(dto.status))
       throw new BadRequestException(`${contract.status} 상태에서 ${dto.status}로 전환할 수 없습니다.`);
 
+    const { items, ...beforeSnapshot } = contract;
+
     if (dto.status === RentalContractStatus.ACTIVE) {
-      const pendingItems = contract.items.filter((i) => i.status === RentalContractItemStatus.PENDING);
+      const pendingItems = items.filter((i) => i.status === RentalContractItemStatus.PENDING);
       if (pendingItems.length === 0) throw new BadRequestException('계약 활성화를 위한 장비 항목이 없습니다.');
 
       await this.prisma.$transaction(async (tx) => {
@@ -169,9 +173,18 @@ export class RentalContractService {
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.ACTIVE },
         });
+        await this.auditLog.log(tx, {
+          organizationId,
+          actorId: memberId,
+          action: AuditAction.STATUS_CHANGE,
+          targetType: 'RentalContract',
+          targetId: id,
+          before: beforeSnapshot,
+          after: { ...beforeSnapshot, status: dto.status },
+        });
       });
     } else if (dto.status === RentalContractStatus.ENDED) {
-      const activeItems = contract.items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
+      const activeItems = items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
 
       await this.prisma.$transaction(async (tx) => {
         const now = new Date();
@@ -186,9 +199,18 @@ export class RentalContractService {
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.ENDED },
         });
+        await this.auditLog.log(tx, {
+          organizationId,
+          actorId: memberId,
+          action: AuditAction.STATUS_CHANGE,
+          targetType: 'RentalContract',
+          targetId: id,
+          before: beforeSnapshot,
+          after: { ...beforeSnapshot, status: dto.status },
+        });
       });
     } else if (dto.status === RentalContractStatus.CANCELED) {
-      const activeItems = contract.items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
+      const activeItems = items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
 
       await this.prisma.$transaction(async (tx) => {
         // ACTIVE 아이템의 Asset 반환
@@ -207,6 +229,15 @@ export class RentalContractService {
         await tx.rentalContract.update({
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.CANCELED },
+        });
+        await this.auditLog.log(tx, {
+          organizationId,
+          actorId: memberId,
+          action: AuditAction.CANCEL,
+          targetType: 'RentalContract',
+          targetId: id,
+          before: beforeSnapshot,
+          after: { ...beforeSnapshot, status: dto.status },
         });
       });
     }

@@ -42,7 +42,7 @@ export class RentalContractController {
 
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() dto: UpdateRentalContractStatusDto, @OrgCtx() ctx: OrgContext) {
-    return this.service.updateStatus(ctx.organizationId, id, dto);
+    return this.service.updateStatus(ctx.organizationId, id, dto, ctx.memberId);
   }
 
   @Patch(':id/extend')

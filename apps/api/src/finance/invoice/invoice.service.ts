@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentSequenceType, InvoiceItemType, InvoiceStatus, InvoiceType, VatType } from '@prisma/client';
+import { AuditAction, DocumentSequenceType, InvoiceItemType, InvoiceStatus, InvoiceType, VatType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { calculateAmounts } from '../common/amount.util';
 import { calculateMeterOverage } from '../common/meter-overage.util';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -36,6 +37,7 @@ export class InvoiceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docSeq: FinanceDocumentSequenceService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async create(organizationId: string, memberId: string, dto: CreateInvoiceDto) {
@@ -120,35 +122,56 @@ export class InvoiceService {
     });
   }
 
-  async issue(organizationId: string, id: string) {
-    const invoice = await this.prisma.invoice.findUnique({
+  async issue(organizationId: string, id: string, memberId: string) {
+    const before = await this.prisma.invoice.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { status: true },
     });
-    if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
-    if (invoice.status !== InvoiceStatus.DRAFT)
+    if (!before) throw new NotFoundException('청구서를 찾을 수 없습니다.');
+    if (before.status !== InvoiceStatus.DRAFT)
       throw new BadRequestException('DRAFT 상태의 청구서만 발행할 수 있습니다.');
 
-    await this.prisma.invoice.update({
-      where: { id_organizationId: { id, organizationId } },
-      data: { status: InvoiceStatus.ISSUED, issuedAt: new Date() },
+    const issuedAt = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.invoice.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: { status: InvoiceStatus.ISSUED, issuedAt },
+      });
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.STATUS_CHANGE,
+        targetType: 'Invoice',
+        targetId: id,
+        before,
+        after: { ...before, status: InvoiceStatus.ISSUED, issuedAt },
+      });
     });
   }
 
-  async cancel(organizationId: string, id: string) {
-    const invoice = await this.prisma.invoice.findUnique({
+  async cancel(organizationId: string, id: string, memberId: string) {
+    const before = await this.prisma.invoice.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { status: true, paidAmount: true },
     });
-    if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
-    if (invoice.status !== InvoiceStatus.ISSUED)
+    if (!before) throw new NotFoundException('청구서를 찾을 수 없습니다.');
+    if (before.status !== InvoiceStatus.ISSUED)
       throw new BadRequestException('ISSUED 상태의 청구서만 취소할 수 있습니다.');
-    if (invoice.paidAmount > 0)
+    if (before.paidAmount > 0)
       throw new BadRequestException('수납된 금액이 있어 취소할 수 없습니다. 환불 처리 후 취소하세요.');
 
-    await this.prisma.invoice.update({
-      where: { id_organizationId: { id, organizationId } },
-      data: { status: InvoiceStatus.CANCELED },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.invoice.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: { status: InvoiceStatus.CANCELED },
+      });
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.CANCEL,
+        targetType: 'Invoice',
+        targetId: id,
+        before,
+        after: { ...before, status: InvoiceStatus.CANCELED },
+      });
     });
   }
 

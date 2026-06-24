@@ -40,7 +40,7 @@ export class RentalContractExpiryCron {
       try {
         await this.rentalContractService.updateStatus(contract.organizationId, contract.id, {
           status: RentalContractStatus.ENDED,
-        });
+        }, null);
         success++;
       } catch (err) {
         fail++;

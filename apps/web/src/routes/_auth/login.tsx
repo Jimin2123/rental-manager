@@ -13,8 +13,9 @@ import type { Organization } from '@/store/auth.store';
 
 export const Route = createFileRoute('/_auth/login')({
   beforeLoad: () => {
-    const { currentOrganization } = useAuthStore.getState();
-    if (currentOrganization) throw redirect({ to: '/' });
+    const { isAuthenticated, currentOrganization } = useAuthStore.getState();
+    if (isAuthenticated && currentOrganization) throw redirect({ to: '/' });
+    if (isAuthenticated && !currentOrganization) throw redirect({ to: '/setup' });
   },
   component: LoginPage,
 });

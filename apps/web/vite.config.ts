@@ -11,6 +11,8 @@ const apiProxy = (target = 'http://localhost:3000') => ({
   target,
   changeOrigin: true,
   bypass: (req: IncomingMessage) => {
+    const url = req.url ?? '';
+    if (/\/auth\/social\/[^/]+\/(redirect|callback)/.test(url)) return undefined;
     const accept = (req.headers?.['accept'] as string) ?? '';
     if (accept.includes('text/html')) return '/index.html';
   },

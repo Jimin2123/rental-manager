@@ -6,8 +6,9 @@ import { useAuthStore } from '@/store/auth.store';
 
 export const Route = createFileRoute('/_auth/terms')({
   beforeLoad: () => {
-    const { currentOrganization } = useAuthStore.getState();
-    if (currentOrganization) throw redirect({ to: '/' });
+    const { isAuthenticated, currentOrganization } = useAuthStore.getState();
+    if (isAuthenticated && currentOrganization) throw redirect({ to: '/' });
+    if (isAuthenticated && !currentOrganization) throw redirect({ to: '/setup' });
   },
   component: TermsPage,
 });

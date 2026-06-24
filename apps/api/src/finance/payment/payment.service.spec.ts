@@ -194,7 +194,7 @@ describe('PaymentService', () => {
         method: PaymentMethod.BANK_TRANSFER,
         amount: 100000,
         paidAt: '2026-06-23',
-      } as any);
+      });
 
       expect(auditLog.log).toHaveBeenCalledWith(
         expect.anything(),

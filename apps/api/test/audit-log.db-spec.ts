@@ -65,10 +65,10 @@ describe('AuditLog DB integration', () => {
       businessProfileId,
       now,
     ]);
-    await client.query(
-      `INSERT INTO "IndividualProfile" ("id","name","updatedAt") VALUES ($1,'Test Customer',$2)`,
-      [individualProfileId, now],
-    );
+    await client.query(`INSERT INTO "IndividualProfile" ("id","name","updatedAt") VALUES ($1,'Test Customer',$2)`, [
+      individualProfileId,
+      now,
+    ]);
     await client.query(
       `INSERT INTO "Customer" ("id","organizationId","type","individualProfileId","updatedAt") VALUES ($1,$2,'INDIVIDUAL',$3,$4)`,
       [customerId, organizationId, individualProfileId, now],
@@ -108,8 +108,16 @@ describe('AuditLog DB integration', () => {
       `INSERT INTO "AuditLog" ("id","organizationId","actorId","action","targetType","targetId","before","after","reason","createdAt")
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
       [
-        row.id, row.organizationId, row.actorId, row.action,
-        row.targetType, row.targetId, row.before, row.after, row.reason, row.createdAt,
+        row.id,
+        row.organizationId,
+        row.actorId,
+        row.action,
+        row.targetType,
+        row.targetId,
+        row.before,
+        row.after,
+        row.reason,
+        row.createdAt,
       ],
     );
   };

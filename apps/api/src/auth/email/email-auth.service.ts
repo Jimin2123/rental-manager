@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtPayload } from '../core/jwt.strategy';
 import { SessionService } from '../session/session.service';
 import { TokenService } from '../session/token.service';
+import type { SignupDto } from './dto/signup.dto';
 
 const BCRYPT_ROUNDS = 12;
 const TTL_30D_MS = 30 * 24 * 60 * 60 * 1000;
@@ -32,6 +33,71 @@ export class EmailAuthService {
       const account = await tx.account.create({ data: { userId: user.id, email, passwordHash } });
       await tx.passwordHistory.create({ data: { accountId: account.id, passwordHash } });
     });
+  }
+
+  async getOrganizations(userId: string) {
+    const memberships = await this.prisma.organizationMember.findMany({
+      where: { userId, isActive: true },
+      include: { organization: { include: { businessProfile: true } } },
+    });
+    return memberships.map((m) => ({
+      id: m.organization.id,
+      name: m.organization.businessProfile.name,
+      businessRegistrationNo: m.organization.businessProfile.businessRegistrationNo,
+      role: m.role,
+    }));
+  }
+
+  async signup(
+    dto: SignupDto,
+    meta: SessionMeta,
+  ): Promise<{
+    tokens: { accessToken: string; refreshToken: string };
+    organizations: Awaited<ReturnType<EmailAuthService['getOrganizations']>>;
+  }> {
+    const existing = await this.prisma.account.findUnique({ where: { email: dto.email } });
+    if (existing) throw new ConflictException('이미 사용 중인 이메일입니다.');
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+
+    const { accountId, userId } = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({ data: { type: 'PERSONAL' } });
+      const account = await tx.account.create({ data: { userId: user.id, email: dto.email, passwordHash } });
+      await tx.passwordHistory.create({ data: { accountId: account.id, passwordHash } });
+
+      const address = await tx.address.create({
+        data: {
+          zonecode: dto.zonecode,
+          address: dto.address,
+          addressDetail: dto.addressDetail,
+          jibunAddress: dto.jibunAddress,
+          roadAddress: dto.roadAddress,
+          buildingName: dto.buildingName,
+        },
+      });
+      const businessProfile = await tx.businessProfile.create({
+        data: {
+          name: dto.name,
+          businessRegistrationNo: dto.businessRegistrationNo,
+          representativeName: dto.representativeName,
+          businessType: dto.businessType,
+          businessItem: dto.businessItem,
+          email: dto.orgEmail,
+          phone: dto.orgPhone,
+          addressId: address.id,
+        },
+      });
+      const organization = await tx.organization.create({ data: { businessProfileId: businessProfile.id } });
+      await tx.organizationMember.create({
+        data: { userId: user.id, organizationId: organization.id, name: dto.memberName, role: 'OWNER', isActive: true },
+      });
+
+      return { accountId: account.id, userId: user.id };
+    });
+
+    const tokens = await this.issueTokens(accountId, userId, dto.email, false, meta);
+    const organizations = await this.getOrganizations(userId);
+    return { tokens, organizations };
   }
 
   async validateCredentials(email: string, password: string) {

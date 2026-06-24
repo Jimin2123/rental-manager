@@ -38,9 +38,14 @@ export class RentalContractExpiryCron {
 
     for (const contract of contracts) {
       try {
-        await this.rentalContractService.updateStatus(contract.organizationId, contract.id, {
-          status: RentalContractStatus.ENDED,
-        }, null);
+        await this.rentalContractService.updateStatus(
+          contract.organizationId,
+          contract.id,
+          {
+            status: RentalContractStatus.ENDED,
+          },
+          null,
+        );
         success++;
       } catch (err) {
         fail++;

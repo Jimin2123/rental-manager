@@ -35,8 +35,7 @@ function LoginPage() {
 
   const onSubmit = async (values: LoginForm) => {
     try {
-      await api.post('/auth/login', values);
-      const { data } = await api.get<Organization[]>('/organizations/me');
+      const { data } = await api.post<Organization[]>('/auth/login', values);
       useAuthStore.getState().setAuth(data);
       await navigate({ to: '/' });
     } catch (err) {
@@ -85,6 +84,12 @@ function LoginPage() {
           </Button>
         </form>
       </Form>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        계정이 없으신가요?{' '}
+        <a href="/terms" className="text-primary underline-offset-4 hover:underline">
+          회원가입
+        </a>
+      </p>
     </div>
   );
 }

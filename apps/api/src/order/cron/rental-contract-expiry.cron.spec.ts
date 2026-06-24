@@ -51,12 +51,22 @@ describe('RentalContractExpiryCron', () => {
     await cron.expireRentalContracts();
 
     expect(rentalContractService.updateStatus).toHaveBeenCalledTimes(2);
-    expect(rentalContractService.updateStatus).toHaveBeenCalledWith('org-1', 'c1', {
-      status: RentalContractStatus.ENDED,
-    }, null);
-    expect(rentalContractService.updateStatus).toHaveBeenCalledWith('org-1', 'c2', {
-      status: RentalContractStatus.ENDED,
-    }, null);
+    expect(rentalContractService.updateStatus).toHaveBeenCalledWith(
+      'org-1',
+      'c1',
+      {
+        status: RentalContractStatus.ENDED,
+      },
+      null,
+    );
+    expect(rentalContractService.updateStatus).toHaveBeenCalledWith(
+      'org-1',
+      'c2',
+      {
+        status: RentalContractStatus.ENDED,
+      },
+      null,
+    );
   });
 
   it('만료 대상이 없으면 updateStatus를 호출하지 않는다', async () => {

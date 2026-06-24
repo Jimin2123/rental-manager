@@ -6,7 +6,7 @@ import { TokenService } from '../session/token.service';
 import { GoogleProvider } from './providers/google.provider';
 import { KakaoProvider } from './providers/kakao.provider';
 import { NaverProvider } from './providers/naver.provider';
-import type { ISocialProvider } from './providers/social-provider.interface';
+import type { ISocialProvider, SocialUserInfo } from './providers/social-provider.interface';
 
 const TTL_30D_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -41,10 +41,56 @@ export class SocialAuthService {
     throw new UnauthorizedException(`지원하지 않는 소셜 로그인 제공자입니다: ${name}`);
   }
 
+  getAuthorizationUrl(providerName: string, redirectUri: string, state: string): string {
+    return this.resolveProvider(providerName).getAuthorizationUrl(redirectUri, state);
+  }
+
+  async getOrganizations(userId: string) {
+    const memberships = await this.prisma.organizationMember.findMany({
+      where: { userId, isActive: true },
+      include: { organization: { include: { businessProfile: true } } },
+    });
+    return memberships.map((m) => ({
+      id: m.organization.id,
+      name: m.organization.businessProfile.name,
+      businessRegistrationNo: m.organization.businessProfile.businessRegistrationNo,
+      role: m.role,
+    }));
+  }
+
   async loginOrRegister(providerName: string, accessToken: string, meta: SessionMeta) {
+    const info = await this.resolveProvider(providerName).verify(accessToken);
+    return this._processLogin(info, this.toOAuthProvider(providerName), meta);
+  }
+
+  async loginOrRegisterWithCode(providerName: string, code: string, redirectUri: string, meta: SessionMeta) {
+    const info = await this.resolveProvider(providerName).exchangeCode(code, redirectUri);
+    return this._processLogin(info, this.toOAuthProvider(providerName), meta);
+  }
+
+  async linkAccount(accountId: string, providerName: string, accessToken: string): Promise<void> {
     const info = await this.resolveProvider(providerName).verify(accessToken);
     const provider = this.toOAuthProvider(providerName);
 
+    const existing = await this.prisma.accountIdentity.findUnique({
+      where: { provider_providerId: { provider, providerId: info.providerId } },
+    });
+    if (existing) {
+      throw new ConflictException('이미 연동된 소셜 계정입니다.');
+    }
+
+    await this.prisma.accountIdentity.create({
+      data: {
+        accountId,
+        provider,
+        providerId: info.providerId,
+        providerEmail: info.providerEmail,
+        providerData: info.providerData,
+      },
+    });
+  }
+
+  private async _processLogin(info: SocialUserInfo, provider: OAuthProvider, meta: SessionMeta) {
     const existing = await this.prisma.accountIdentity.findUnique({
       where: { provider_providerId: { provider, providerId: info.providerId } },
       include: { account: true },
@@ -53,7 +99,8 @@ export class SocialAuthService {
     if (existing) {
       const account = existing.account;
       if (!account.isActive) throw new UnauthorizedException('비활성화된 계정입니다.');
-      return this.issueTokens(account.id, account.userId, account.email, meta);
+      const tokens = await this.issueTokens(account.id, account.userId, account.email, meta);
+      return { ...tokens, userId: account.userId };
     }
 
     if (!info.providerEmail) {
@@ -100,29 +147,8 @@ export class SocialAuthService {
       email = result.email;
     }
 
-    return this.issueTokens(accountId, userId, email, meta);
-  }
-
-  async linkAccount(accountId: string, providerName: string, accessToken: string): Promise<void> {
-    const info = await this.resolveProvider(providerName).verify(accessToken);
-    const provider = this.toOAuthProvider(providerName);
-
-    const existing = await this.prisma.accountIdentity.findUnique({
-      where: { provider_providerId: { provider, providerId: info.providerId } },
-    });
-    if (existing) {
-      throw new ConflictException('이미 연동된 소셜 계정입니다.');
-    }
-
-    await this.prisma.accountIdentity.create({
-      data: {
-        accountId,
-        provider,
-        providerId: info.providerId,
-        providerEmail: info.providerEmail,
-        providerData: info.providerData,
-      },
-    });
+    const tokens = await this.issueTokens(accountId, userId, email, meta);
+    return { ...tokens, userId };
   }
 
   private async issueTokens(accountId: string, userId: string, email: string, meta: SessionMeta) {

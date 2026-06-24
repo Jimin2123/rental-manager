@@ -20,6 +20,7 @@ describe('SocialAuthService', () => {
     accountIdentity: { findUnique: jest.Mock; create: jest.Mock };
     account: { findUnique: jest.Mock; create: jest.Mock };
     user: { create: jest.Mock };
+    organizationMember: { findMany: jest.Mock };
     $transaction: jest.Mock;
   };
   let tokenService: { generateAccessToken: jest.Mock; generateRawRefreshToken: jest.Mock };
@@ -30,6 +31,7 @@ describe('SocialAuthService', () => {
       accountIdentity: { findUnique: jest.fn(), create: jest.fn() },
       account: { findUnique: jest.fn(), create: jest.fn() },
       user: { create: jest.fn() },
+      organizationMember: { findMany: jest.fn() },
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     tokenService = {
@@ -111,6 +113,74 @@ describe('SocialAuthService', () => {
       prisma.accountIdentity.create.mockResolvedValue({});
       await expect(service.linkAccount('my-acc', 'google', 'token')).resolves.toBeUndefined();
       expect(prisma.accountIdentity.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('loginOrRegisterWithCode', () => {
+    it('exchanges code and returns tokens with userId for new user', async () => {
+      // google provider mock에 exchangeCode 추가
+      const exchangeMock = jest.fn().mockResolvedValue(makeSocialInfo());
+      const module3 = await Test.createTestingModule({
+        providers: [
+          SocialAuthService,
+          { provide: PrismaService, useValue: prisma },
+          { provide: TokenService, useValue: tokenService },
+          { provide: SessionService, useValue: sessionService },
+          { provide: GoogleProvider, useValue: { verify: jest.fn(), exchangeCode: exchangeMock } },
+          { provide: KakaoProvider, useValue: { verify: jest.fn(), exchangeCode: jest.fn() } },
+          { provide: NaverProvider, useValue: { verify: jest.fn(), exchangeCode: jest.fn() } },
+        ],
+      }).compile();
+      const svc3 = module3.get(SocialAuthService);
+
+      prisma.accountIdentity.findUnique.mockResolvedValue(null);
+      prisma.account.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockResolvedValue({ id: 'user-1' });
+      prisma.account.create.mockResolvedValue({ id: 'acc-1', userId: 'user-1', email: 'a@gmail.com' });
+      prisma.accountIdentity.create.mockResolvedValue({});
+
+      const result = await svc3.loginOrRegisterWithCode(
+        'google',
+        'code-abc',
+        'http://localhost:5173/auth/social/google/callback',
+        {},
+      );
+      expect(exchangeMock).toHaveBeenCalledWith('code-abc', 'http://localhost:5173/auth/social/google/callback');
+      expect(result.accessToken).toBe('access-jwt');
+      expect(result.userId).toBe('user-1');
+    });
+  });
+
+  describe('getOrganizations', () => {
+    it('returns mapped organization list for user', async () => {
+      prisma.organizationMember = {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            role: 'OWNER',
+            organization: {
+              id: 'org-1',
+              businessProfile: { name: '테스트회사', businessRegistrationNo: '1234567890' },
+            },
+          },
+        ]),
+      };
+
+      const result = await service.getOrganizations('user-1');
+      expect(result).toEqual([
+        { id: 'org-1', name: '테스트회사', businessRegistrationNo: '1234567890', role: 'OWNER' },
+      ]);
+    });
+  });
+
+  describe('loginOrRegister userId', () => {
+    it('includes userId in return value', async () => {
+      prisma.accountIdentity.findUnique.mockResolvedValue({
+        accountId: 'acc-1',
+        account: { id: 'acc-1', userId: 'user-1', email: 'a@gmail.com', isActive: true },
+      });
+
+      const result = await service.loginOrRegister('google', 'token', {});
+      expect(result.userId).toBe('user-1');
     });
   });
 });

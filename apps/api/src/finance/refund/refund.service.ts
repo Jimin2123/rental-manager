@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentSequenceType, RefundStatus } from '@prisma/client';
+import { AuditAction, DocumentSequenceType, RefundStatus } from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { computeSettlementStatus } from '../common/settlement.util';
@@ -11,6 +12,7 @@ export class RefundService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docSeq: FinanceDocumentSequenceService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async create(organizationId: string, memberId: string, dto: CreateRefundDto) {
@@ -53,12 +55,20 @@ export class RefundService {
           memo: dto.memo,
           createdById: memberId,
         },
-        select: { id: true },
       });
 
       if (dto.invoiceId) {
         await this.recalcInvoiceAfterRefund(tx, organizationId, dto.invoiceId, dto.amount);
       }
+
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.CREATE,
+        targetType: 'Refund',
+        targetId: refund.id,
+        after: refund,
+      });
 
       return { id: refund.id };
     });
@@ -114,36 +124,56 @@ export class RefundService {
     return refund;
   }
 
-  async complete(organizationId: string, id: string) {
-    const refund = await this.prisma.refund.findUnique({
+  async complete(organizationId: string, id: string, memberId: string) {
+    const before = await this.prisma.refund.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { status: true },
     });
-    if (!refund) throw new NotFoundException('환불 내역을 찾을 수 없습니다.');
-    if (refund.status !== RefundStatus.PENDING)
+    if (!before) throw new NotFoundException('환불 내역을 찾을 수 없습니다.');
+    if (before.status !== RefundStatus.PENDING)
       throw new BadRequestException('PENDING 상태의 환불만 완료 처리할 수 있습니다.');
 
-    await this.prisma.refund.update({
-      where: { id_organizationId: { id, organizationId } },
-      data: { status: RefundStatus.COMPLETED, refundedAt: new Date() },
+    const refundedAt = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refund.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: { status: RefundStatus.COMPLETED, refundedAt },
+      });
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.STATUS_CHANGE,
+        targetType: 'Refund',
+        targetId: id,
+        before,
+        after: { ...before, status: RefundStatus.COMPLETED, refundedAt },
+      });
     });
   }
 
-  async cancel(organizationId: string, id: string) {
-    const refund = await this.prisma.refund.findUnique({
+  async cancel(organizationId: string, id: string, memberId: string) {
+    const before = await this.prisma.refund.findUnique({
       where: { id_organizationId: { id, organizationId } },
     });
-    if (!refund) throw new NotFoundException('환불 내역을 찾을 수 없습니다.');
-    if (refund.status !== RefundStatus.PENDING)
+    if (!before) throw new NotFoundException('환불 내역을 찾을 수 없습니다.');
+    if (before.status !== RefundStatus.PENDING)
       throw new BadRequestException('PENDING 상태의 환불만 취소할 수 있습니다.');
 
     await this.prisma.$transaction(async (tx) => {
-      if (refund.invoiceId) {
-        await this.recalcInvoiceAfterRefund(tx, organizationId, refund.invoiceId, -refund.amount);
+      if (before.invoiceId) {
+        await this.recalcInvoiceAfterRefund(tx, organizationId, before.invoiceId, -before.amount);
       }
       await tx.refund.update({
         where: { id_organizationId: { id, organizationId } },
         data: { status: RefundStatus.CANCELED },
+      });
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.CANCEL,
+        targetType: 'Refund',
+        targetId: id,
+        before,
+        after: { ...before, status: RefundStatus.CANCELED },
       });
     });
   }

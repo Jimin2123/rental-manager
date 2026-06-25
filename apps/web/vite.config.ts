@@ -29,6 +29,7 @@ export default defineConfig({
       '/organizations': apiProxy(),
       '/assets': apiProxy(),
       '/business-partners': apiProxy(),
+      '/products': apiProxy(),
     },
   },
 });

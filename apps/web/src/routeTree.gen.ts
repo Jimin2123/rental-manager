@@ -20,6 +20,7 @@ import { Route as ProtectedCustomersRouteImport } from './routes/_protected/cust
 import { Route as ProtectedContractsRouteImport } from './routes/_protected/contracts'
 import { Route as ProtectedAssetsRouteImport } from './routes/_protected/assets'
 import { Route as AuthTermsRouteImport } from './routes/_auth/terms'
+import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
@@ -78,6 +79,11 @@ const AuthTermsRoute = AuthTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/reset-password': typeof AuthResetPasswordRoute
   '/terms': typeof AuthTermsRoute
   '/assets': typeof ProtectedAssetsRoute
   '/contracts': typeof ProtectedContractsRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/reset-password': typeof AuthResetPasswordRoute
   '/terms': typeof AuthTermsRoute
   '/assets': typeof ProtectedAssetsRoute
   '/contracts': typeof ProtectedContractsRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_auth/forgot-password': typeof AuthForgotPasswordRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
+  '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_auth/terms': typeof AuthTermsRoute
   '/_protected/assets': typeof ProtectedAssetsRoute
   '/_protected/contracts': typeof ProtectedContractsRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/terms'
     | '/assets'
     | '/contracts'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/terms'
     | '/assets'
     | '/contracts'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_auth/forgot-password'
     | '/_auth/login'
     | '/_auth/register'
+    | '/_auth/reset-password'
     | '/_auth/terms'
     | '/_protected/assets'
     | '/_protected/contracts'
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthTermsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/reset-password': {
+      id: '/_auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/register': {
       id: '/_auth/register'
       path: '/register'
@@ -318,6 +337,7 @@ interface AuthRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthTermsRoute: typeof AuthTermsRoute
 }
 
@@ -325,6 +345,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthTermsRoute: AuthTermsRoute,
 }
 

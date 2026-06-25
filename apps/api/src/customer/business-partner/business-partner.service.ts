@@ -106,10 +106,19 @@ export class BusinessPartnerService {
           }
         }
         if (dto.roles !== undefined) {
-          await tx.businessPartnerRole.deleteMany({ where: { businessPartnerId: id, organizationId } });
-          if (dto.roles.length) {
+          const current = await tx.businessPartnerRole.findMany({
+            where: { businessPartnerId: id, organizationId },
+            select: { id: true, type: true },
+          });
+          const currentTypes = current.map((r) => r.type);
+          const toDelete = current.filter((r) => !dto.roles!.includes(r.type));
+          const toCreate = dto.roles.filter((type) => !currentTypes.includes(type));
+          if (toDelete.length) {
+            await tx.businessPartnerRole.deleteMany({ where: { id: { in: toDelete.map((r) => r.id) } } });
+          }
+          if (toCreate.length) {
             await tx.businessPartnerRole.createMany({
-              data: dto.roles.map((type) => ({ organizationId, businessPartnerId: id, type })),
+              data: toCreate.map((type) => ({ organizationId, businessPartnerId: id, type })),
             });
           }
         }

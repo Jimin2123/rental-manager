@@ -7,7 +7,7 @@ async function login(page: import('@playwright/test').Page) {
   await page.goto('/login');
   await page.locator('input[type="email"]').fill(EMAIL);
   await page.locator('input[type="password"]').fill(PASSWORD);
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
   await page.waitForURL('/');
 }
 
@@ -29,7 +29,7 @@ test('잘못된 비밀번호로 로그인하면 에러 토스트가 표시된다
   await page.goto('/login');
   await page.locator('input[type="email"]').fill(EMAIL);
   await page.locator('input[type="password"]').fill('wrongpassword');
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
 
   await expect(page.getByText('이메일 또는 비밀번호가 올바르지 않습니다.')).toBeVisible();
   await expect(page).toHaveURL('/login');
@@ -39,7 +39,7 @@ test('이메일 형식이 올바르지 않으면 폼 유효성 검사 메시지�
   await page.goto('/login');
   await page.locator('input[type="email"]').fill('not-an-email');
   await page.locator('input[type="password"]').fill(PASSWORD);
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
 
   await expect(page.getByText('올바른 이메일을 입력해주세요.')).toBeVisible();
   await expect(page).toHaveURL('/login');

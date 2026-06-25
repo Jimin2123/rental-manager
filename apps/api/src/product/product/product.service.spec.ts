@@ -43,6 +43,7 @@ describe('ProductService', () => {
   describe('findAll', () => {
     it('returns products filtered by category', async () => {
       prisma.product.findMany.mockResolvedValue([{ id: 'prod-1' }]);
+      prisma.asset.groupBy.mockResolvedValue([]);
       const result = await service.findAll('org-1', { category: '복합기' });
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -54,6 +55,7 @@ describe('ProductService', () => {
 
     it('filters by isActive=false', async () => {
       prisma.product.findMany.mockResolvedValue([]);
+      prisma.asset.groupBy.mockResolvedValue([]);
       await service.findAll('org-1', { isActive: false });
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: expect.objectContaining({ isActive: false }) }),
@@ -62,12 +64,35 @@ describe('ProductService', () => {
 
     it('filters by search term (name contains)', async () => {
       prisma.product.findMany.mockResolvedValue([]);
+      prisma.asset.groupBy.mockResolvedValue([]);
       await service.findAll('org-1', { search: 'A4' });
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ name: { contains: 'A4' } }),
         }),
       );
+    });
+
+    it('returns products with assetStats grouped by status', async () => {
+      prisma.product.findMany.mockResolvedValue([
+        { id: 'prod-1', name: '복합기 A' },
+        { id: 'prod-2', name: '프린터 B' },
+      ]);
+      prisma.asset.groupBy.mockResolvedValue([
+        { productId: 'prod-1', status: 'AVAILABLE', _count: { status: 2 } },
+        { productId: 'prod-1', status: 'RENTED', _count: { status: 1 } },
+        { productId: 'prod-2', status: 'AVAILABLE', _count: { status: 1 } },
+      ]);
+      const result = await service.findAll('org-1', {});
+      expect(result[0].assetStats).toEqual({ total: 3, byStatus: { AVAILABLE: 2, RENTED: 1 } });
+      expect(result[1].assetStats).toEqual({ total: 1, byStatus: { AVAILABLE: 1 } });
+    });
+
+    it('returns empty assetStats for products with no assets', async () => {
+      prisma.product.findMany.mockResolvedValue([{ id: 'prod-1', name: '복합기 A' }]);
+      prisma.asset.groupBy.mockResolvedValue([]);
+      const result = await service.findAll('org-1', {});
+      expect(result[0].assetStats).toEqual({ total: 0, byStatus: {} });
     });
   });
 

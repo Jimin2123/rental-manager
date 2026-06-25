@@ -17,7 +17,7 @@ export class ProductService {
 
   async findAll(organizationId: string, query: QueryProductDto) {
     const { category, isActive, search } = query;
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: {
         organizationId,
         deletedAt: null,
@@ -26,6 +26,19 @@ export class ProductService {
         ...(search && { name: { contains: search } }),
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    const assetStatsList = await this.prisma.asset.groupBy({
+      by: ['productId', 'status'],
+      where: { organizationId, deletedAt: null, productId: { in: products.map((p) => p.id) } },
+      _count: { status: true },
+    });
+
+    return products.map((product) => {
+      const rows = assetStatsList.filter((r) => r.productId === product.id);
+      const total = rows.reduce((s, r) => s + r._count.status, 0);
+      const byStatus = Object.fromEntries(rows.map((r) => [r.status, r._count.status]));
+      return { ...product, assetStats: { total, byStatus } };
     });
   }
 

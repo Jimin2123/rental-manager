@@ -57,7 +57,7 @@ const contactSchema = z.object({
   role: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email('올바른 이메일을 입력해주세요.').optional().or(z.literal('')),
-  isPrimary: z.boolean().optional(),
+  isPrimary: z.boolean().default(false),
 });
 type ContactFormValues = z.infer<typeof contactSchema>;
 
@@ -69,12 +69,12 @@ function BusinessPartnerDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: partner, isLoading } = useQuery<BusinessPartnerDetail>({
-    queryKey: ['business-partners', id],
+    queryKey: ['business-partners', 'detail', id],
     queryFn: () => api.get<BusinessPartnerDetail>(`/business-partners/${id}`).then((r) => r.data),
   });
 
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ['business-partners', id] });
+    void queryClient.invalidateQueries({ queryKey: ['business-partners', 'detail', id] });
     void queryClient.invalidateQueries({ queryKey: ['business-partners'] });
   };
 
@@ -271,8 +271,17 @@ function ContactSection({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const normalizeContact = (data: ContactFormValues) => ({
+    ...data,
+    email: data.email || undefined,
+    department: data.department || undefined,
+    position: data.position || undefined,
+    role: data.role || undefined,
+    phone: data.phone || undefined,
+  });
+
   const addMutation = useMutation({
-    mutationFn: (data: ContactFormValues) => api.post(`/business-partners/${partnerId}/contacts`, data),
+    mutationFn: (data: ContactFormValues) => api.post(`/business-partners/${partnerId}/contacts`, normalizeContact(data)),
     onSuccess: () => {
       toast.success('담당자가 추가되었습니다.');
       setShowAddForm(false);
@@ -283,7 +292,7 @@ function ContactSection({
 
   const updateMutation = useMutation({
     mutationFn: ({ contactId, data }: { contactId: string; data: ContactFormValues }) =>
-      api.patch(`/business-partners/${partnerId}/contacts/${contactId}`, data),
+      api.patch(`/business-partners/${partnerId}/contacts/${contactId}`, normalizeContact(data)),
     onSuccess: () => {
       toast.success('담당자 정보가 수정되었습니다.');
       setEditingId(null);
@@ -403,7 +412,7 @@ function ContactForm({
   isPending: boolean;
   submitLabel: string;
 }) {
-  const form = useForm<ContactFormValues>({
+  const form = useForm<z.input<typeof contactSchema>, unknown, ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues,
   });

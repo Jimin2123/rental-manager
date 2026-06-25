@@ -172,7 +172,7 @@ function NewBusinessPartnerPage() {
       contacts: values.contacts?.map((c) => ({ ...c, email: c.email || undefined })) ?? [],
       memo: values.memo || undefined,
     };
-    mutation.mutate(payload);
+    void mutation.mutate(payload);
   };
 
   return (

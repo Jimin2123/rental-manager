@@ -21,7 +21,7 @@ function BusinessPartnersPage() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
 
   const { data = [], isLoading } = useQuery<BusinessPartnerListItem[]>({
-    queryKey: ['business-partners', search, roleFilter],
+    queryKey: ['business-partners', 'list', { search, roleFilter }],
     queryFn: () =>
       api
         .get<BusinessPartnerListItem[]>('/business-partners', {

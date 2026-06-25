@@ -102,6 +102,7 @@ function BusinessPartnerDetailPage() {
             setIsEditing(false);
             invalidate();
           }}
+          onContactChanged={invalidate}
         />
       ) : (
         <DetailView partner={partner} onEdit={() => setIsEditing(true)} onChanged={invalidate} navigate={navigate} />
@@ -520,10 +521,12 @@ function EditForm({
   partner,
   onCancel,
   onSaved,
+  onContactChanged,
 }: {
   partner: BusinessPartnerDetail;
   onCancel: () => void;
   onSaved: () => void;
+  onContactChanged: () => void;
 }) {
   const bp = partner.businessProfile;
   const form = useForm<EditFormValues>({
@@ -728,13 +731,7 @@ function EditForm({
         </div>
 
         {/* 담당자 섹션 — 편집 모드에서도 항상 표시 */}
-        <ContactSection
-          partnerId={partner.id}
-          contacts={partner.contacts}
-          onChanged={() => {
-            /* contacts are refreshed via the parent's invalidate on onSaved/onCancel */
-          }}
-        />
+        <ContactSection partnerId={partner.id} contacts={partner.contacts} onChanged={onContactChanged} />
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel}>

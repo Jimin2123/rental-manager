@@ -418,6 +418,7 @@ function ContactForm({
   });
 
   return (
+    <Form {...form}>
     <div className="rounded-md border p-3 space-y-3 bg-muted/30">
       <div className="grid grid-cols-2 gap-3">
         <FormField
@@ -522,6 +523,7 @@ function ContactForm({
         </Button>
       </div>
     </div>
+    </Form>
   );
 }
 

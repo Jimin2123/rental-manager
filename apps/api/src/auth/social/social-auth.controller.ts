@@ -32,6 +32,18 @@ export class SocialAuthController {
     private readonly config: ConfigService,
   ) {}
 
+  @Post('merge')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async merge(@Body() dto: MergeAccountDto, @CurrentUser() user: AuthUser) {
+    const payload = this.socialAuth.verifyMergeToken(dto.token);
+    if (payload.type !== 'account_merge' || payload.targetAccountId !== user.accountId) {
+      throw new UnauthorizedException('유효하지 않은 병합 토큰입니다.');
+    }
+    await this.socialAuth.mergeAccounts(payload.sourceAccountId, payload.targetAccountId);
+    return { message: '계정이 병합되었습니다.' };
+  }
+
   @Post(':provider')
   @HttpCode(200)
   @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
@@ -158,17 +170,5 @@ export class SocialAuthController {
   async link(@Param('provider') provider: string, @Body() dto: SocialLoginDto, @CurrentUser() user: AuthUser) {
     await this.socialAuth.linkAccount(user.accountId, provider, dto.accessToken);
     return { message: '소셜 계정 연동이 완료되었습니다.' };
-  }
-
-  @Post('merge')
-  @HttpCode(200)
-  @UseGuards(JwtAuthGuard)
-  async merge(@Body() dto: MergeAccountDto, @CurrentUser() user: AuthUser) {
-    const payload = this.socialAuth.verifyMergeToken(dto.token);
-    if (payload.type !== 'account_merge' || payload.targetAccountId !== user.accountId) {
-      throw new UnauthorizedException('유효하지 않은 병합 토큰입니다.');
-    }
-    await this.socialAuth.mergeAccounts(payload.sourceAccountId, payload.targetAccountId);
-    return { message: '계정이 병합되었습니다.' };
   }
 }

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
@@ -106,6 +106,13 @@ function ProductInfoCard({ product, onDeleted }: { product: Product; onDeleted: 
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('제품 정보가 수정되었습니다.');
       setIsEditing(false);
+      form.reset({
+        name: product.name,
+        manufacturer: product.manufacturer ?? '',
+        modelName: product.modelName ?? '',
+        category: product.category ?? '',
+        memo: product.memo ?? '',
+      });
     },
     onError: () => toast.error('수정 중 오류가 발생했습니다.'),
   });
@@ -140,7 +147,7 @@ function ProductInfoCard({ product, onDeleted }: { product: Product; onDeleted: 
               <DialogDescription>이 제품을 삭제하시겠습니까? 자산이 있으면 삭제할 수 없습니다.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <DialogTrigger asChild><Button variant="outline">취소</Button></DialogTrigger>
+              <DialogClose asChild><Button variant="outline">취소</Button></DialogClose>
               <Button variant="destructive" disabled={deleteMutation.isPending}
                 onClick={() => void deleteMutation.mutate()}>
                 {deleteMutation.isPending ? '삭제 중...' : '삭제'}
@@ -274,6 +281,7 @@ function AssetTable({ productId }: { productId: string }) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>자산 추가</DialogTitle>
+              <DialogDescription>이 제품에 자산을 추가합니다.</DialogDescription>
             </DialogHeader>
             <Form {...addForm}>
               <form
@@ -315,16 +323,18 @@ function AssetTable({ productId }: { productId: string }) {
                 <FormField control={addForm.control} name="supplierId" render={({ field }) => (
                   <FormItem>
                     <FormLabel>매입처</FormLabel>
-                    <select
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none"
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(e.target.value || undefined)}
-                    >
-                      <option value="">선택 안 함</option>
-                      {suppliers.map((s) => (
-                        <option key={s.id} value={s.id}>{s.businessProfile.name}</option>
-                      ))}
-                    </select>
+                    <FormControl>
+                      <select
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value || undefined)}
+                      >
+                        <option value="">선택 안 함</option>
+                        {suppliers.map((s) => (
+                          <option key={s.id} value={s.id}>{s.businessProfile.name}</option>
+                        ))}
+                      </select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -343,7 +353,7 @@ function AssetTable({ productId }: { productId: string }) {
                   <FormField control={addForm.control} name="purchasePrice" render={({ field }) => (
                     <FormItem>
                       <FormLabel>매입가 (원)</FormLabel>
-                      <FormControl><Input type="number" min={0} placeholder="0" {...field} /></FormControl>
+                      <FormControl><Input type="number" min={0} placeholder="0" {...field} value={field.value ?? ''} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

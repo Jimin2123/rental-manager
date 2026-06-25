@@ -9,6 +9,9 @@ export const Route = createRootRoute({
     if (useAuthStore.getState().isInitialized) return;
     try {
       const { data } = await api.get<Organization[]>('/organizations/me');
+      if (data[0]) {
+        await api.post('/auth/switch-org', { organizationId: data[0].id });
+      }
       useAuthStore.getState().setAuth(data);
     } catch {
       useAuthStore.getState().clearAuth();

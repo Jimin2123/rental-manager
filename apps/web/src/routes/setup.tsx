@@ -59,6 +59,17 @@ type BrnStatus = 'idle' | 'valid' | 'invalid';
 function SetupPage() {
   const navigate = useNavigate();
   const [brnStatus, setBrnStatus] = useState<BrnStatus>('idle');
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // ignore
+    }
+    useAuthStore.getState().clearAuth();
+    await navigate({ to: '/login' });
+    toast.success('로그아웃되었습니다.');
+  };
   const [brnMessage, setBrnMessage] = useState('');
   const [brnVerifying, setBrnVerifying] = useState(false);
 
@@ -147,7 +158,12 @@ function SetupPage() {
           <h1 className="text-2xl font-bold text-foreground">렌탈 매니저</h1>
         </div>
         <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <h2 className="mb-2 text-lg font-semibold text-card-foreground">조직 정보 입력</h2>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-card-foreground">조직 정보 입력</h2>
+            <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={handleLogout}>
+              로그아웃
+            </Button>
+          </div>
           <p className="mb-6 text-sm text-muted-foreground">서비스 이용을 위해 사업자 정보를 입력해주세요.</p>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>

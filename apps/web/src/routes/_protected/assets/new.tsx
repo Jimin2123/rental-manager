@@ -9,12 +9,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
-} from '@/components/ui/command';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { api } from '@/lib/api';
 import type { Product } from './-types';
@@ -59,14 +55,14 @@ function NewAssetPage() {
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['products', 'list', productSearch],
     queryFn: () =>
-      api.get<Product[]>('/products', { params: { ...(productSearch && { search: productSearch }) } })
+      api
+        .get<Product[]>('/products', { params: { ...(productSearch && { search: productSearch }) } })
         .then((r) => r.data),
   });
 
   const { data: suppliers = [] } = useQuery<Supplier[]>({
     queryKey: ['business-partners', 'list', { roleFilter: 'PURCHASE' }],
-    queryFn: () =>
-      api.get<Supplier[]>('/business-partners', { params: { role: 'PURCHASE' } }).then((r) => r.data),
+    queryFn: () => api.get<Supplier[]>('/business-partners', { params: { role: 'PURCHASE' } }).then((r) => r.data),
   });
 
   const form = useForm<AssetFormValues>({
@@ -141,10 +137,7 @@ function NewAssetPage() {
       </div>
 
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit((d) => void createAssetMutation.mutate(d))}
-          className="space-y-4"
-        >
+        <form onSubmit={form.handleSubmit((d) => void createAssetMutation.mutate(d))} className="space-y-4">
           {/* 제품 선택 */}
           <FormField
             control={form.control}
@@ -183,9 +176,7 @@ function NewAssetPage() {
                               }}
                             >
                               <span className="font-medium">{p.name}</span>
-                              {p.category && (
-                                <span className="ml-2 text-xs text-muted-foreground">{p.category}</span>
-                              )}
+                              {p.category && <span className="ml-2 text-xs text-muted-foreground">{p.category}</span>}
                             </CommandItem>
                           ))}
                           <CommandItem
@@ -321,11 +312,7 @@ function NewAssetPage() {
           />
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void navigate({ to: '/assets' })}
-            >
+            <Button type="button" variant="outline" onClick={() => void navigate({ to: '/assets' })}>
               취소
             </Button>
             <Button type="submit" disabled={createAssetMutation.isPending}>
@@ -401,11 +388,7 @@ function NewAssetPage() {
                 )}
               />
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setNewProductDialogOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setNewProductDialogOpen(false)}>
                   취소
                 </Button>
                 <Button type="submit" disabled={createProductMutation.isPending}>

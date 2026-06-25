@@ -281,7 +281,8 @@ function ContactSection({
   });
 
   const addMutation = useMutation({
-    mutationFn: (data: ContactFormValues) => api.post(`/business-partners/${partnerId}/contacts`, normalizeContact(data)),
+    mutationFn: (data: ContactFormValues) =>
+      api.post(`/business-partners/${partnerId}/contacts`, normalizeContact(data)),
     onSuccess: () => {
       toast.success('담당자가 추가되었습니다.');
       setShowAddForm(false);
@@ -419,110 +420,110 @@ function ContactForm({
 
   return (
     <Form {...form}>
-    <div className="rounded-md border p-3 space-y-3 bg-muted/30">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  이름 <span className="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="홍길동" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="department"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>부서</FormLabel>
+                <FormControl>
+                  <Input placeholder="영업부" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="position"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>직급</FormLabel>
+                <FormControl>
+                  <Input placeholder="과장" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>역할</FormLabel>
+                <FormControl>
+                  <Input placeholder="계약 담당자" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>전화</FormLabel>
+                <FormControl>
+                  <Input placeholder="010-1234-5678" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>이메일</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="hong@company.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
-          name="name"
+          name="isPrimary"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                이름 <span className="text-destructive">*</span>
-              </FormLabel>
+            <FormItem className="flex items-center gap-2 space-y-0">
               <FormControl>
-                <Input placeholder="홍길동" {...field} />
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
-              <FormMessage />
+              <FormLabel className="cursor-pointer font-normal text-sm">대표 담당자</FormLabel>
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="department"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>부서</FormLabel>
-              <FormControl>
-                <Input placeholder="영업부" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="position"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>직급</FormLabel>
-              <FormControl>
-                <Input placeholder="과장" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>역할</FormLabel>
-              <FormControl>
-                <Input placeholder="계약 담당자" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>전화</FormLabel>
-              <FormControl>
-                <Input placeholder="010-1234-5678" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>이메일</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="hong@company.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+            취소
+          </Button>
+          <Button type="button" size="sm" onClick={form.handleSubmit(onSubmit)} disabled={isPending}>
+            {isPending ? '처리 중...' : submitLabel}
+          </Button>
+        </div>
       </div>
-      <FormField
-        control={form.control}
-        name="isPrimary"
-        render={({ field }) => (
-          <FormItem className="flex items-center gap-2 space-y-0">
-            <FormControl>
-              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-            </FormControl>
-            <FormLabel className="cursor-pointer font-normal text-sm">대표 담당자</FormLabel>
-          </FormItem>
-        )}
-      />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
-          취소
-        </Button>
-        <Button type="button" size="sm" onClick={form.handleSubmit(onSubmit)} disabled={isPending}>
-          {isPending ? '처리 중...' : submitLabel}
-        </Button>
-      </div>
-    </div>
     </Form>
   );
 }

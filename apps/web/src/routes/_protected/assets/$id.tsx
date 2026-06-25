@@ -12,11 +12,15 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import type { AssetDetail, AssetEvent, AssetStatus, MeterReading } from './-types';
 import { ASSET_STATUS_LABEL, ASSET_STATUS_VARIANT } from './-types';
@@ -39,10 +43,7 @@ type EditFormValues = z.infer<typeof editSchema>;
 
 // ─── 상태 변경 폼 스키마 ──────────────────────────────────────────
 const statusSchema = z.object({
-  status: z.enum([
-    'INCOMING', 'AVAILABLE', 'RENTED', 'SOLD',
-    'REPAIR', 'DISPOSED', 'LOST', 'UNAVAILABLE',
-  ] as const),
+  status: z.enum(['INCOMING', 'AVAILABLE', 'RENTED', 'SOLD', 'REPAIR', 'DISPOSED', 'LOST', 'UNAVAILABLE'] as const),
   note: z.string().optional(),
 });
 type StatusFormValues = z.infer<typeof statusSchema>;
@@ -84,9 +85,7 @@ function AssetDetailPage() {
         </Button>
         <h1 className="text-xl font-semibold text-foreground">
           {asset.product.name}{' '}
-          <span className="text-base font-normal text-muted-foreground">
-            {asset.serialNumber ?? 'S/N 미등록'}
-          </span>
+          <span className="text-base font-normal text-muted-foreground">{asset.serialNumber ?? 'S/N 미등록'}</span>
         </h1>
         <Badge variant={ASSET_STATUS_VARIANT[asset.status]} className="ml-auto">
           {ASSET_STATUS_LABEL[asset.status]}
@@ -99,7 +98,10 @@ function AssetDetailPage() {
           isEditing={isEditing}
           onEdit={() => setIsEditing(true)}
           onCancel={() => setIsEditing(false)}
-          onSaved={() => { setIsEditing(false); invalidate(); }}
+          onSaved={() => {
+            setIsEditing(false);
+            invalidate();
+          }}
           onStatusChanged={invalidate}
           onDeleted={() => void navigate({ to: '/assets' })}
         />
@@ -112,7 +114,13 @@ function AssetDetailPage() {
 
 // ─── 기본 정보 카드 ───────────────────────────────────────────────
 function InfoCard({
-  asset, isEditing, onEdit, onCancel, onSaved, onStatusChanged, onDeleted,
+  asset,
+  isEditing,
+  onEdit,
+  onCancel,
+  onSaved,
+  onStatusChanged,
+  onDeleted,
 }: {
   asset: AssetDetail;
   isEditing: boolean;
@@ -126,8 +134,7 @@ function InfoCard({
 
   const { data: suppliers = [] } = useQuery<Supplier[]>({
     queryKey: ['business-partners', 'list', { roleFilter: 'PURCHASE' }],
-    queryFn: () =>
-      api.get<Supplier[]>('/business-partners', { params: { role: 'PURCHASE' } }).then((r) => r.data),
+    queryFn: () => api.get<Supplier[]>('/business-partners', { params: { role: 'PURCHASE' } }).then((r) => r.data),
     enabled: isEditing,
   });
 
@@ -168,7 +175,10 @@ function InfoCard({
         purchasePrice: data.purchasePrice,
         memo: data.memo || undefined,
       }),
-    onSuccess: () => { toast.success('자산 정보가 수정되었습니다.'); onSaved(); },
+    onSuccess: () => {
+      toast.success('자산 정보가 수정되었습니다.');
+      onSaved();
+    },
     onError: (err) => {
       const status = (err as AxiosError).response?.status;
       if (status === 409) toast.error('이미 등록된 시리얼 번호입니다.');
@@ -190,7 +200,10 @@ function InfoCard({
 
   const deleteMutation = useMutation({
     mutationFn: () => api.delete(`/assets/${asset.id}`),
-    onSuccess: () => { toast.success('자산이 삭제되었습니다.'); onDeleted(); },
+    onSuccess: () => {
+      toast.success('자산이 삭제되었습니다.');
+      onDeleted();
+    },
     onError: () => toast.error('삭제 중 오류가 발생했습니다.'),
   });
 
@@ -203,28 +216,33 @@ function InfoCard({
       {/* 액션 버튼 */}
       <div className="flex justify-end gap-2">
         {/* 상태 변경 Dialog */}
-        <Dialog open={statusOpen} onOpenChange={(open) => { setStatusOpen(open); if (!open) statusForm.reset({ note: '' }); }}>
+        <Dialog
+          open={statusOpen}
+          onOpenChange={(open) => {
+            setStatusOpen(open);
+            if (!open) statusForm.reset({ note: '' });
+          }}
+        >
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>상태 변경</Button>
+            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
+              상태 변경
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>상태 변경</DialogTitle>
-              <DialogDescription>
-                현재 상태: {ASSET_STATUS_LABEL[asset.status]}
-              </DialogDescription>
+              <DialogDescription>현재 상태: {ASSET_STATUS_LABEL[asset.status]}</DialogDescription>
             </DialogHeader>
             <Form {...statusForm}>
-              <form
-                onSubmit={statusForm.handleSubmit((d) => void statusMutation.mutate(d))}
-                className="space-y-4"
-              >
+              <form onSubmit={statusForm.handleSubmit((d) => void statusMutation.mutate(d))} className="space-y-4">
                 <FormField
                   control={statusForm.control}
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>변경할 상태 <span className="text-destructive">*</span></FormLabel>
+                      <FormLabel>
+                        변경할 상태 <span className="text-destructive">*</span>
+                      </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -233,7 +251,9 @@ function InfoCard({
                         </FormControl>
                         <SelectContent>
                           {otherStatuses.map((s) => (
-                            <SelectItem key={s} value={s}>{ASSET_STATUS_LABEL[s]}</SelectItem>
+                            <SelectItem key={s} value={s}>
+                              {ASSET_STATUS_LABEL[s]}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -247,7 +267,9 @@ function InfoCard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>메모</FormLabel>
-                      <FormControl><Input placeholder="변경 사유" {...field} /></FormControl>
+                      <FormControl>
+                        <Input placeholder="변경 사유" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -263,20 +285,22 @@ function InfoCard({
         </Dialog>
 
         {!isEditing && (
-          <Button size="sm" onClick={onEdit}>수정</Button>
+          <Button size="sm" onClick={onEdit}>
+            수정
+          </Button>
         )}
 
         {/* 삭제 확인 Dialog */}
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="destructive" size="sm">삭제</Button>
+            <Button variant="destructive" size="sm">
+              삭제
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>자산 삭제</DialogTitle>
-              <DialogDescription>
-                이 자산을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-              </DialogDescription>
+              <DialogDescription>이 자산을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <DialogTrigger asChild>
@@ -299,10 +323,22 @@ function InfoCard({
         <h2 className="text-sm font-semibold mb-2">제품 정보</h2>
         <Separator className="mb-3" />
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <div><dt className="text-muted-foreground">제품명</dt><dd>{asset.product.name}</dd></div>
-          <div><dt className="text-muted-foreground">카테고리</dt><dd>{asset.product.category ?? '-'}</dd></div>
-          <div><dt className="text-muted-foreground">제조사</dt><dd>{asset.product.manufacturer ?? '-'}</dd></div>
-          <div><dt className="text-muted-foreground">모델명</dt><dd>{asset.product.modelName ?? '-'}</dd></div>
+          <div>
+            <dt className="text-muted-foreground">제품명</dt>
+            <dd>{asset.product.name}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">카테고리</dt>
+            <dd>{asset.product.category ?? '-'}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">제조사</dt>
+            <dd>{asset.product.manufacturer ?? '-'}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">모델명</dt>
+            <dd>{asset.product.modelName ?? '-'}</dd>
+          </div>
         </dl>
       </div>
 
@@ -319,7 +355,9 @@ function InfoCard({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>시리얼번호</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -337,7 +375,9 @@ function InfoCard({
                   >
                     <option value="">선택 안 함</option>
                     {suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>{s.businessProfile.name}</option>
+                      <option key={s.id} value={s.id}>
+                        {s.businessProfile.name}
+                      </option>
                     ))}
                   </select>
                   <FormMessage />
@@ -351,7 +391,9 @@ function InfoCard({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>매입일</FormLabel>
-                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -362,7 +404,9 @@ function InfoCard({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>매입가 (원)</FormLabel>
-                    <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="number" min={0} {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -374,13 +418,17 @@ function InfoCard({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>메모</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onCancel}>취소</Button>
+              <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+                취소
+              </Button>
               <Button type="submit" size="sm" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? '저장 중...' : '저장'}
               </Button>
@@ -483,8 +531,7 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
 
   const { data: readings = [], isLoading } = useQuery<MeterReading[]>({
     queryKey: ['assets', 'meter-readings', assetId],
-    queryFn: () =>
-      api.get<MeterReading[]>(`/assets/${assetId}/meter-readings`).then((r) => r.data),
+    queryFn: () => api.get<MeterReading[]>(`/assets/${assetId}/meter-readings`).then((r) => r.data),
   });
 
   const form = useForm<MeterFormValues>({
@@ -513,7 +560,9 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
   });
 
   const METHOD_LABEL: Record<string, string> = {
-    MANUAL: '수동', PHOTO: '사진', REMOTE: '원격',
+    MANUAL: '수동',
+    PHOTO: '사진',
+    REMOTE: '원격',
   };
 
   return (
@@ -574,7 +623,9 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
                     <FormLabel>
                       검침일 <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -587,7 +638,9 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
                     <FormLabel>
                       흑백 누적값 <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="number" min={0} {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -598,7 +651,9 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>컬러 누적값</FormLabel>
-                    <FormControl><Input type="number" min={0} placeholder="없으면 비워두세요" {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="number" min={0} placeholder="없으면 비워두세요" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -609,7 +664,9 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>메모</FormLabel>
-                    <FormControl><Input placeholder="특이사항" {...field} /></FormControl>
+                    <FormControl>
+                      <Input placeholder="특이사항" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -620,7 +677,10 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => { setShowAddForm(false); form.reset(); }}
+                onClick={() => {
+                  setShowAddForm(false);
+                  form.reset();
+                }}
               >
                 취소
               </Button>

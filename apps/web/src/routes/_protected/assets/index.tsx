@@ -31,7 +31,11 @@ function AssetsPage() {
   const [statusFilter, setStatusFilter] = useState<AssetStatus | 'ALL'>('ALL');
   const [productId, setProductId] = useState<string>('');
 
-  const { data: assets = [], isLoading, isError } = useQuery<AssetListItem[]>({
+  const {
+    data: assets = [],
+    isLoading,
+    isError,
+  } = useQuery<AssetListItem[]>({
     queryKey: ['assets', 'list', { search, statusFilter, productId }],
     queryFn: () =>
       api
@@ -133,14 +137,10 @@ function AssetsPage() {
                   <TableCell>{asset.product.category ?? '-'}</TableCell>
                   <TableCell>{asset.serialNumber ?? '-'}</TableCell>
                   <TableCell>
-                    <Badge variant={ASSET_STATUS_VARIANT[asset.status]}>
-                      {ASSET_STATUS_LABEL[asset.status]}
-                    </Badge>
+                    <Badge variant={ASSET_STATUS_VARIANT[asset.status]}>{ASSET_STATUS_LABEL[asset.status]}</Badge>
                   </TableCell>
                   <TableCell>
-                    {asset.purchaseDate
-                      ? new Date(asset.purchaseDate).toLocaleDateString('ko-KR')
-                      : '-'}
+                    {asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString('ko-KR') : '-'}
                   </TableCell>
                 </TableRow>
               ))

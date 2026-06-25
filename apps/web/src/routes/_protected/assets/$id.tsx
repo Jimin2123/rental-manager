@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -147,6 +147,18 @@ function InfoCard({
     defaultValues: { note: '' },
   });
 
+  const [statusOpen, setStatusOpen] = useState(false);
+
+  useEffect(() => {
+    form.reset({
+      serialNumber: asset.serialNumber ?? '',
+      supplierId: asset.supplier?.id ?? '',
+      purchaseDate: asset.purchaseDate ? asset.purchaseDate.slice(0, 10) : '',
+      purchasePrice: asset.purchasePrice ?? '',
+      memo: asset.memo ?? '',
+    });
+  }, [asset, form]);
+
   const updateMutation = useMutation({
     mutationFn: (data: EditFormValues) =>
       api.patch(`/assets/${asset.id}`, {
@@ -169,6 +181,7 @@ function InfoCard({
       api.patch(`/assets/${asset.id}/status`, { status: data.status, note: data.note || undefined }),
     onSuccess: () => {
       toast.success('상태가 변경되었습니다.');
+      setStatusOpen(false);
       void queryClient.invalidateQueries({ queryKey: ['assets', 'events', asset.id] });
       onStatusChanged();
     },
@@ -190,9 +203,9 @@ function InfoCard({
       {/* 액션 버튼 */}
       <div className="flex justify-end gap-2">
         {/* 상태 변경 Dialog */}
-        <Dialog onOpenChange={(open) => { if (!open) statusForm.reset({ note: '' }); }}>
+        <Dialog open={statusOpen} onOpenChange={(open) => { setStatusOpen(open); if (!open) statusForm.reset({ note: '' }); }}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">상태 변경</Button>
+            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>상태 변경</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

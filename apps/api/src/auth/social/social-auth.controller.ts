@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -170,5 +171,13 @@ export class SocialAuthController {
   async link(@Param('provider') provider: string, @Body() dto: SocialLoginDto, @CurrentUser() user: AuthUser) {
     await this.socialAuth.linkAccount(user.accountId, provider, dto.accessToken);
     return { message: '소셜 계정 연동이 완료되었습니다.' };
+  }
+
+  @Delete('link/:provider')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async unlink(@Param('provider') provider: string, @CurrentUser() user: AuthUser) {
+    await this.socialAuth.unlinkAccount(user.accountId, provider);
+    return { message: '소셜 계정 연동이 해제되었습니다.' };
   }
 }

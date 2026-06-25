@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { OAuthProvider } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SessionService } from '../session/session.service';
@@ -162,6 +162,25 @@ export class SocialAuthService {
   ) {
     const info = await this.resolveProvider(providerName).exchangeCode(code, redirectUri, state);
     return this._processLogin(info, this.toOAuthProvider(providerName), meta);
+  }
+
+  async unlinkAccount(accountId: string, providerName: string): Promise<void> {
+    const provider = this.toOAuthProvider(providerName);
+
+    const identity = await this.prisma.accountIdentity.findFirst({
+      where: { accountId, provider },
+    });
+    if (!identity) throw new NotFoundException('연동된 소셜 계정을 찾을 수 없습니다.');
+
+    const account = await this.prisma.account.findUniqueOrThrow({ where: { id: accountId } });
+    if (!account.passwordHash) {
+      const identityCount = await this.prisma.accountIdentity.count({ where: { accountId } });
+      if (identityCount <= 1) {
+        throw new ConflictException('비밀번호를 설정하거나 다른 소셜 계정을 연동한 후 해제할 수 있습니다.');
+      }
+    }
+
+    await this.prisma.accountIdentity.delete({ where: { id: identity.id } });
   }
 
   async linkAccount(accountId: string, providerName: string, accessToken: string): Promise<void> {

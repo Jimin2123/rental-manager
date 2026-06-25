@@ -20,8 +20,10 @@ import { Route as ProtectedCustomersRouteImport } from './routes/_protected/cust
 import { Route as ProtectedContractsRouteImport } from './routes/_protected/contracts'
 import { Route as ProtectedAssetsRouteImport } from './routes/_protected/assets'
 import { Route as AuthTermsRouteImport } from './routes/_auth/terms'
+import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
 import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
 
 const SetupRoute = SetupRouteImport.update({
@@ -77,6 +79,11 @@ const AuthTermsRoute = AuthTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -85,6 +92,11 @@ const AuthRegisterRoute = AuthRegisterRouteImport.update({
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AuthRoute,
 } as any)
 const ProtectedSettingsAccountRoute =
@@ -97,8 +109,10 @@ const ProtectedSettingsAccountRoute =
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
   '/setup': typeof SetupRoute
+  '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/reset-password': typeof AuthResetPasswordRoute
   '/terms': typeof AuthTermsRoute
   '/assets': typeof ProtectedAssetsRoute
   '/contracts': typeof ProtectedContractsRoute
@@ -111,8 +125,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
   '/setup': typeof SetupRoute
+  '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/reset-password': typeof AuthResetPasswordRoute
   '/terms': typeof AuthTermsRoute
   '/assets': typeof ProtectedAssetsRoute
   '/contracts': typeof ProtectedContractsRoute
@@ -127,8 +143,10 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
   '/setup': typeof SetupRoute
+  '/_auth/forgot-password': typeof AuthForgotPasswordRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
+  '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_auth/terms': typeof AuthTermsRoute
   '/_protected/assets': typeof ProtectedAssetsRoute
   '/_protected/contracts': typeof ProtectedContractsRoute
@@ -144,8 +162,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/setup'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/terms'
     | '/assets'
     | '/contracts'
@@ -158,8 +178,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/setup'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/terms'
     | '/assets'
     | '/contracts'
@@ -173,8 +195,10 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_protected'
     | '/setup'
+    | '/_auth/forgot-password'
     | '/_auth/login'
     | '/_auth/register'
+    | '/_auth/reset-password'
     | '/_auth/terms'
     | '/_protected/assets'
     | '/_protected/contracts'
@@ -271,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthTermsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/reset-password': {
+      id: '/_auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/register': {
       id: '/_auth/register'
       path: '/register'
@@ -285,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/forgot-password': {
+      id: '/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_protected/settings/account': {
       id: '/_protected/settings/account'
       path: '/settings/account'
@@ -296,14 +334,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthRouteChildren {
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthTermsRoute: typeof AuthTermsRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthTermsRoute: AuthTermsRoute,
 }
 

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,22 @@ function AccountSettingsPage() {
 
   const handleLink = (provider: string) => {
     window.location.assign(`/auth/social/link/${provider.toLowerCase()}/redirect`);
+  };
+
+  const handleUnlink = async (provider: OAuthProvider) => {
+    try {
+      await api.delete(`/auth/social/link/${provider.toLowerCase()}`);
+      const { data } = await api.get<LinkedIdentity[]>('/auth/social/identities');
+      setLinked(data);
+      toast.success('연동이 해제되었습니다.');
+    } catch (err) {
+      const status = (err as AxiosError).response?.status;
+      if (status === 409) {
+        toast.error('비밀번호를 설정하거나 다른 소셜 계정을 연동한 후 해제할 수 있습니다.');
+      } else {
+        toast.error('연동 해제 중 오류가 발생했습니다.');
+      }
+    }
   };
 
   const handleMerge = async () => {
@@ -113,7 +130,9 @@ function AccountSettingsPage() {
                   )}
                 </div>
                 {isLinked(key) ? (
-                  <span className="text-xs font-medium text-green-600">연동됨</span>
+                  <Button variant="outline" size="sm" onClick={() => handleUnlink(key)}>
+                    해제
+                  </Button>
                 ) : (
                   <Button variant="outline" size="sm" onClick={() => handleLink(key)}>
                     연동

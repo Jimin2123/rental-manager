@@ -311,4 +311,55 @@ describe('Social Auth (e2e)', () => {
       expect(newAccount?.email).toBeNull();
     });
   });
+
+  // ── DELETE /auth/social/link/:provider ────────────────────────────────────
+
+  describe('DELETE /auth/social/link/:provider', () => {
+    it('returns 401 without auth cookie', async () => {
+      await request(app.getHttpServer()).delete('/auth/social/link/google').expect(401);
+    });
+
+    it('returns 404 when provider is not linked', async () => {
+      const { account } = await createTestUser(prisma, 'unlink-not-linked');
+      const jwt = tokenService.generateAccessToken({ sub: account.id, userId: account.userId, email: account.email });
+
+      await request(app.getHttpServer())
+        .delete('/auth/social/link/google')
+        .set('Cookie', [`access_token=${jwt}`])
+        .expect(404);
+    });
+
+    it('returns 409 when it is the only auth method (no password, one identity)', async () => {
+      const { account } = await createTestUser(prisma, 'unlink-only-method');
+      await prisma.accountIdentity.create({
+        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-only', providerEmail: `unlink-only-method${TEST_DOMAIN}` },
+      });
+      // account has no passwordHash (createTestUser sets it null)
+      const jwt = tokenService.generateAccessToken({ sub: account.id, userId: account.userId, email: account.email });
+
+      await request(app.getHttpServer())
+        .delete('/auth/social/link/google')
+        .set('Cookie', [`access_token=${jwt}`])
+        .expect(409);
+    });
+
+    it('returns 200 and removes identity when account has multiple identities', async () => {
+      const { account } = await createTestUser(prisma, 'unlink-multi');
+      await prisma.accountIdentity.create({
+        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-multi-g', providerEmail: `unlink-multi${TEST_DOMAIN}` },
+      });
+      await prisma.accountIdentity.create({
+        data: { accountId: account.id, provider: 'KAKAO', providerId: 'kid-multi-k', providerEmail: `unlink-multi-k${TEST_DOMAIN}` },
+      });
+      const jwt = tokenService.generateAccessToken({ sub: account.id, userId: account.userId, email: account.email });
+
+      await request(app.getHttpServer())
+        .delete('/auth/social/link/google')
+        .set('Cookie', [`access_token=${jwt}`])
+        .expect(200);
+
+      const remaining = await prisma.accountIdentity.findFirst({ where: { providerId: 'gid-multi-g' } });
+      expect(remaining).toBeNull();
+    });
+  });
 });

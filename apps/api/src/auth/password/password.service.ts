@@ -34,7 +34,7 @@ export class PasswordService {
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const resetUrl = `${appUrl}/auth/password/reset?token=${rawToken}`;
-    await this.mailService.sendPasswordReset(account.email, resetUrl);
+    await this.mailService.sendPasswordReset(account.email!, resetUrl);
   }
 
   async resetPassword(rawToken: string, newPassword: string): Promise<void> {

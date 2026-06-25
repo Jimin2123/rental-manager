@@ -205,40 +205,40 @@ export class SocialAuthService {
 
     let accountId: string;
     let userId: string;
-    let email: string;
+    let email: string | null;
 
-    const byEmail = await this.prisma.account.findUnique({ where: { email: info.providerEmail } });
-    if (byEmail) {
-      throw new UnauthorizedException(
-        '이미 해당 이메일로 가입된 계정이 있습니다. 기존 로그인 방식으로 로그인한 후 설정에서 소셜 계정을 연동해주세요.',
-      );
-    } else {
-      const result = await this.prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({ data: { type: 'PERSONAL' } });
-        const account = await tx.account.create({
-          data: { userId: user.id, email: info.providerEmail!, emailVerifiedAt: new Date() },
-        });
-        await tx.accountIdentity.create({
-          data: {
-            accountId: account.id,
-            provider,
-            providerId: info.providerId,
-            providerEmail: info.providerEmail,
-            providerData: info.providerData,
-          },
-        });
-        return { accountId: account.id, userId: user.id, email: account.email };
+    const emailTaken = await this.prisma.account.findUnique({ where: { email: info.providerEmail } });
+    const result = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({ data: { type: 'PERSONAL' } });
+      const account = await tx.account.create({
+        data: {
+          userId: user.id,
+          // 같은 이메일을 가진 다른 계정이 있으면 이 계정의 email은 null로 설정
+          // 소셜 이메일은 AccountIdentity.providerEmail에 저장됨
+          email: emailTaken ? null : info.providerEmail,
+          emailVerifiedAt: emailTaken ? null : new Date(),
+        },
       });
-      accountId = result.accountId;
-      userId = result.userId;
-      email = result.email;
-    }
+      await tx.accountIdentity.create({
+        data: {
+          accountId: account.id,
+          provider,
+          providerId: info.providerId,
+          providerEmail: info.providerEmail,
+          providerData: info.providerData,
+        },
+      });
+      return { accountId: account.id, userId: user.id, email: account.email };
+    });
+    accountId = result.accountId;
+    userId = result.userId;
+    email = result.email;
 
     const tokens = await this.issueTokens(accountId, userId, email, meta);
     return { ...tokens, userId };
   }
 
-  private async issueTokens(accountId: string, userId: string, email: string, meta: SessionMeta) {
+  private async issueTokens(accountId: string, userId: string, email: string | null, meta: SessionMeta) {
     const accessToken = this.tokenService.generateAccessToken({ sub: accountId, userId, email });
     const refreshToken = this.tokenService.generateRawRefreshToken();
     const expiresAt = new Date(Date.now() + TTL_30D_MS);

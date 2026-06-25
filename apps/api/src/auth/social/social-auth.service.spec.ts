@@ -281,20 +281,33 @@ describe('SocialAuthService', () => {
 
     it('creates user, account, identity and issues tokens on first social login', async () => {
       prisma.accountIdentity.findUnique.mockResolvedValue(null);
-      prisma.account.findUnique.mockResolvedValue(null);
+      prisma.account.findUnique.mockResolvedValue(null); // 이메일 미사용
       prisma.user.create.mockResolvedValue({ id: 'user-1' });
       prisma.account.create.mockResolvedValue({ id: 'acc-1', userId: 'user-1', email: 'a@gmail.com' });
       prisma.accountIdentity.create.mockResolvedValue({});
       const result = await service.loginOrRegister('google', 'token', {});
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result.accessToken).toBe('access-jwt');
+      // 이메일이 없을 때 null로 계정 생성
+      expect(prisma.account.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ email: 'a@gmail.com' }) }),
+      );
     });
 
-    it('throws UnauthorizedException when email already belongs to another account', async () => {
+    it('creates a separate account with null email when providerEmail is already taken', async () => {
       prisma.accountIdentity.findUnique.mockResolvedValue(null);
+      // 같은 이메일이 이미 다른 계정에 있음
       prisma.account.findUnique.mockResolvedValue({ id: 'other-acc', userId: 'other-user', email: 'a@gmail.com' });
-      await expect(service.loginOrRegister('google', 'token', {})).rejects.toThrow(UnauthorizedException);
-      expect(prisma.$transaction).not.toHaveBeenCalled();
+      prisma.user.create.mockResolvedValue({ id: 'user-2' });
+      prisma.account.create.mockResolvedValue({ id: 'acc-2', userId: 'user-2', email: null });
+      prisma.accountIdentity.create.mockResolvedValue({});
+      const result = await service.loginOrRegister('google', 'token', {});
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(result.accessToken).toBe('access-jwt');
+      // email null로 새 계정 생성
+      expect(prisma.account.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ email: null }) }),
+      );
     });
 
     it('includes userId in return value', async () => {
@@ -352,17 +365,28 @@ describe('SocialAuthService', () => {
       expect(result.userId).toBe('user-1');
     });
 
-    it('throws UnauthorizedException when email already belongs to another account', async () => {
+    it('creates separate account with null email when providerEmail is already taken', async () => {
       const exchangeMock = jest.fn().mockResolvedValue(makeSocialInfo());
       const svc = await buildModule({ google: { verify: jest.fn(), exchangeCode: exchangeMock } });
 
       prisma.accountIdentity.findUnique.mockResolvedValue(null);
       prisma.account.findUnique.mockResolvedValue({ id: 'other-acc', userId: 'other-user', email: 'a@gmail.com' });
+      prisma.user.create.mockResolvedValue({ id: 'user-2' });
+      prisma.account.create.mockResolvedValue({ id: 'acc-2', userId: 'user-2', email: null });
+      prisma.accountIdentity.create.mockResolvedValue({});
 
-      await expect(
-        svc.loginOrRegisterWithCode('google', 'code-abc', 'http://localhost:5173/auth/social/google/callback', {}),
-      ).rejects.toThrow(UnauthorizedException);
-      expect(prisma.$transaction).not.toHaveBeenCalled();
+      const result = await svc.loginOrRegisterWithCode(
+        'google',
+        'code-abc',
+        'http://localhost:5173/auth/social/google/callback',
+        {},
+        'test-state',
+      );
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(result.accessToken).toBe('access-jwt');
+      expect(prisma.account.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ email: null }) }),
+      );
     });
   });
 

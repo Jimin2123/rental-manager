@@ -274,29 +274,41 @@ describe('Social Auth (e2e)', () => {
       expect(res.headers.location).toMatch(/\/(setup)?$/);
     });
 
-    it('redirects to login?error=social when email already belongs to another account (blocks auto-linking)', async () => {
-      // 이미 다른 방식(이메일/패스워드)으로 가입된 계정
-      await createTestUser(prisma, 'cb-autlink-existing');
+    it('creates a separate account when providerEmail is already taken (no auto-linking)', async () => {
+      // Account A: email cb-autolink-existing@social-e2e.test (이미 이 이메일로 계정 있음)
+      const { account: existingAccount } = await createTestUser(prisma, 'cb-autolink-existing');
 
-      // 같은 이메일로 Kakao 로그인 시도 — 자동 연동이 일어나면 안 됨
+      // 같은 이메일로 Kakao 로그인 시도 — 자동 연동 대신 새 계정 생성
       mockExchangeCode.mockResolvedValue({
-        providerId: 'kakao-new-uid',
-        providerEmail: `cb-autlink-existing${TEST_DOMAIN}`,
+        providerId: 'kakao-separate-uid',
+        providerEmail: `cb-autolink-existing${TEST_DOMAIN}`,
         providerData: {},
       });
 
-      const state = 'test-autolink-block-state';
+      const state = 'test-autolink-separate-state';
       const res = await request(app.getHttpServer())
         .get('/auth/social/kakao/callback')
         .query({ code: 'auth-code', state })
         .set('Cookie', [`oauth_state=${state}`])
         .expect(302);
 
-      expect(res.headers.location).toMatch(/\/login\?error=social/);
+      // 로그인 성공 (setup 또는 / 으로 리다이렉트)
+      expect(res.headers.location).toMatch(/\/(setup)?$/);
 
-      // KAKAO identity가 생성되지 않았는지 확인
-      const identity = await prisma.accountIdentity.findFirst({ where: { providerId: 'kakao-new-uid' } });
-      expect(identity).toBeNull();
+      // KAKAO identity가 기존 계정(existingAccount)에 연동되지 않았는지 확인
+      const identityOnExisting = await prisma.accountIdentity.findFirst({
+        where: { accountId: existingAccount.id, provider: 'KAKAO' },
+      });
+      expect(identityOnExisting).toBeNull();
+
+      // KAKAO identity가 새 별도 계정에 생성됐는지 확인
+      const kakaoIdentity = await prisma.accountIdentity.findFirst({ where: { providerId: 'kakao-separate-uid' } });
+      expect(kakaoIdentity).not.toBeNull();
+      expect(kakaoIdentity?.accountId).not.toBe(existingAccount.id);
+
+      // 새 계정은 email이 null (이메일 충돌로 별도 계정 생성)
+      const newAccount = await prisma.account.findUnique({ where: { id: kakaoIdentity!.accountId } });
+      expect(newAccount?.email).toBeNull();
     });
   });
 });

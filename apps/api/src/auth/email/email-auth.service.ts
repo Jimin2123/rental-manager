@@ -161,7 +161,7 @@ export class EmailAuthService {
   async switchOrg(
     accountId: string,
     userId: string,
-    email: string,
+    email: string | null,
     organizationId: string,
   ): Promise<{ accessToken: string }> {
     const member = await this.prisma.organizationMember.findUnique({

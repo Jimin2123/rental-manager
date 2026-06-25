@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
@@ -21,7 +22,13 @@ import { Route as ProtectedAssetsRouteImport } from './routes/_protected/assets'
 import { Route as AuthTermsRouteImport } from './routes/_auth/terms'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
 
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
@@ -80,9 +87,16 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AuthRoute,
 } as any)
+const ProtectedSettingsAccountRoute =
+  ProtectedSettingsAccountRouteImport.update({
+    id: '/settings/account',
+    path: '/settings/account',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
+  '/setup': typeof SetupRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/terms': typeof AuthTermsRoute
@@ -92,9 +106,11 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof ProtectedInvoicesRoute
   '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
+  '/settings/account': typeof ProtectedSettingsAccountRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
+  '/setup': typeof SetupRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/terms': typeof AuthTermsRoute
@@ -104,11 +120,13 @@ export interface FileRoutesByTo {
   '/invoices': typeof ProtectedInvoicesRoute
   '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
+  '/settings/account': typeof ProtectedSettingsAccountRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
+  '/setup': typeof SetupRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/terms': typeof AuthTermsRoute
@@ -119,11 +137,13 @@ export interface FileRoutesById {
   '/_protected/payments': typeof ProtectedPaymentsRoute
   '/_protected/refunds': typeof ProtectedRefundsRoute
   '/_protected/': typeof ProtectedIndexRoute
+  '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/setup'
     | '/login'
     | '/register'
     | '/terms'
@@ -133,9 +153,11 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/payments'
     | '/refunds'
+    | '/settings/account'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/setup'
     | '/login'
     | '/register'
     | '/terms'
@@ -145,10 +167,12 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/payments'
     | '/refunds'
+    | '/settings/account'
   id:
     | '__root__'
     | '/_auth'
     | '/_protected'
+    | '/setup'
     | '/_auth/login'
     | '/_auth/register'
     | '/_auth/terms'
@@ -159,15 +183,24 @@ export interface FileRouteTypes {
     | '/_protected/payments'
     | '/_protected/refunds'
     | '/_protected/'
+    | '/_protected/settings/account'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ProtectedRoute: typeof ProtectedRouteWithChildren
+  SetupRoute: typeof SetupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected': {
       id: '/_protected'
       path: ''
@@ -252,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_protected/settings/account': {
+      id: '/_protected/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof ProtectedSettingsAccountRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
@@ -277,6 +317,7 @@ interface ProtectedRouteChildren {
   ProtectedPaymentsRoute: typeof ProtectedPaymentsRoute
   ProtectedRefundsRoute: typeof ProtectedRefundsRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
+  ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -287,6 +328,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedPaymentsRoute: ProtectedPaymentsRoute,
   ProtectedRefundsRoute: ProtectedRefundsRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
+  ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
@@ -296,6 +338,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ProtectedRoute: ProtectedRouteWithChildren,
+  SetupRoute: SetupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

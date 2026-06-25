@@ -12,6 +12,7 @@ export type Organization = {
 type AuthState = {
   organizations: Organization[];
   currentOrganization: Organization | null;
+  isAuthenticated: boolean;
   isInitialized: boolean;
   setAuth: (organizations: Organization[]) => void;
   clearAuth: () => void;
@@ -20,17 +21,20 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   organizations: [],
   currentOrganization: null,
+  isAuthenticated: false,
   isInitialized: false,
   setAuth: (organizations) =>
     set({
       organizations,
       currentOrganization: organizations[0] ?? null,
+      isAuthenticated: true,
       isInitialized: true,
     }),
   clearAuth: () =>
     set({
       organizations: [],
       currentOrganization: null,
+      isAuthenticated: false,
       isInitialized: true,
     }),
 }));

@@ -49,7 +49,7 @@ export class EmailAuthController {
     const tokens = await this.emailAuth.issueTokens(
       account.id,
       account.userId,
-      account.email,
+      account.email!, // 이메일/패스워드 계정은 항상 email 존재
       dto.rememberMe ?? false,
       meta,
     );

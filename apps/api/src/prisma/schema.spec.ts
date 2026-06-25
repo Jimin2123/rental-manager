@@ -751,7 +751,7 @@ describe('Prisma customer schema', () => {
       expect(accountSchema).toContain(
         'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
       );
-      expect(accountSchema).toContain('email        String  @unique');
+      expect(accountSchema).toContain('email        String? @unique');
       expect(accountSchema).toContain('passwordHash String?');
       expect(accountSchema).toContain('isActive');
       expect(accountSchema).toContain('Boolean   @default(true)');

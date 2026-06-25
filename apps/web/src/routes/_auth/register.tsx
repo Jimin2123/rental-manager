@@ -16,8 +16,9 @@ import type { Organization } from '@/store/auth.store';
 
 export const Route = createFileRoute('/_auth/register')({
   beforeLoad: () => {
-    const { currentOrganization } = useAuthStore.getState();
-    if (currentOrganization) throw redirect({ to: '/' });
+    const { isAuthenticated, currentOrganization } = useAuthStore.getState();
+    if (isAuthenticated && currentOrganization) throw redirect({ to: '/' });
+    if (isAuthenticated && !currentOrganization) throw redirect({ to: '/setup' });
     if (!sessionStorage.getItem('terms_agreed')) throw redirect({ to: '/terms' });
   },
   component: RegisterPage,

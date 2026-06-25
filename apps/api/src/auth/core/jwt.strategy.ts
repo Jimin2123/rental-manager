@@ -8,7 +8,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 export interface JwtPayload {
   sub: string; // accountId
   userId: string;
-  email: string;
+  email: string | null;
   organizationId?: string;
   role?: OrganizationMemberRole;
 }
@@ -16,7 +16,7 @@ export interface JwtPayload {
 export interface AuthUser {
   accountId: string;
   userId: string;
-  email: string;
+  email: string | null;
   organizationId?: string;
   role?: OrganizationMemberRole;
 }

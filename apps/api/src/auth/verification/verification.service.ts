@@ -31,7 +31,7 @@ export class VerificationService {
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const verifyUrl = `${appUrl}/verify-email?token=${rawToken}`;
-    await this.mailService.sendEmailVerification(account.email, verifyUrl);
+    await this.mailService.sendEmailVerification(account.email!, verifyUrl);
   }
 
   async verifyEmail(rawToken: string): Promise<void> {

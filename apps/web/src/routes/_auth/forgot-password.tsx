@@ -40,10 +40,12 @@ function ForgotPasswordPage() {
     return (
       <div className="rounded-lg border bg-card p-6 shadow-sm text-center space-y-4">
         <h2 className="text-lg font-semibold text-card-foreground">이메일을 확인해주세요</h2>
-        <p className="text-sm text-muted-foreground">
-          비밀번호 재설정 링크를 발송했습니다. 이메일을 확인해주세요.
-        </p>
-        <Link to="/login" search={{ error: undefined }} className="text-sm text-primary underline-offset-4 hover:underline">
+        <p className="text-sm text-muted-foreground">비밀번호 재설정 링크를 발송했습니다. 이메일을 확인해주세요.</p>
+        <Link
+          to="/login"
+          search={{ error: undefined }}
+          className="text-sm text-primary underline-offset-4 hover:underline"
+        >
           로그인으로 돌아가기
         </Link>
       </div>

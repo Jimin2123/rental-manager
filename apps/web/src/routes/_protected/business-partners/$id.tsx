@@ -584,7 +584,15 @@ function EditForm({
       toast.success('거래처 정보가 수정되었습니다.');
       onSaved();
     },
-    onError: () => toast.error('수정 중 오류가 발생했습니다.'),
+    onError: (err) => {
+      const status = (err as AxiosError).response?.status;
+      const message = (err as AxiosError<{ message?: string }>).response?.data?.message;
+      if (status === 409 && message) {
+        toast.error(message);
+      } else {
+        toast.error('수정 중 오류가 발생했습니다.');
+      }
+    },
   });
 
   return (

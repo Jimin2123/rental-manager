@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/Header';
 export const Route = createFileRoute('/_protected')({
   beforeLoad: () => {
     const { isAuthenticated, currentOrganization } = useAuthStore.getState();
-    if (!isAuthenticated) throw redirect({ to: '/login' });
+    if (!isAuthenticated) throw redirect({ to: '/login', search: { error: undefined } });
     if (!currentOrganization) throw redirect({ to: '/setup' });
   },
   component: ProtectedLayout,
@@ -21,7 +21,7 @@ function ProtectedLayout() {
   // 세션 만료(인터셉터가 clearAuth 호출)시 로그인 페이지로 이동
   useEffect(() => {
     if (isInitialized && !currentOrganization) {
-      void navigate({ to: '/login' });
+      void navigate({ to: '/login', search: { error: undefined } });
     }
   }, [isInitialized, currentOrganization, navigate]);
 

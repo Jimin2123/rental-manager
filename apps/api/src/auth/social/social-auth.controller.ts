@@ -1,5 +1,17 @@
 import { randomUUID } from 'crypto';
-import { Body, ConflictException, Controller, Get, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -8,6 +20,7 @@ import { setAuthCookies } from '../core/cookie.util';
 import { CurrentUser } from '../core/current-user.decorator';
 import { JwtAuthGuard } from '../core/jwt-auth.guard';
 import type { AuthUser } from '../core/jwt.strategy';
+import { MergeAccountDto } from './dto/merge-account.dto';
 import { SocialLoginDto } from './dto/social-login.dto';
 import { SocialAuthService } from './social-auth.service';
 
@@ -83,11 +96,14 @@ export class SocialAuthController {
     if (linkAccountId) {
       res.clearCookie('oauth_link_account');
       try {
-        await this.socialAuth.linkAccountWithCode(linkAccountId, provider, code, redirectUri, state);
+        const result = await this.socialAuth.linkAccountWithCode(linkAccountId, provider, code, redirectUri, state);
+        if (result.status === 'conflict') {
+          const mergeToken = this.socialAuth.generateMergeToken(result.sourceAccountId, linkAccountId, provider);
+          return res.redirect(`${frontendUrl}/settings/account?merge_token=${encodeURIComponent(mergeToken)}`);
+        }
         return res.redirect(`${frontendUrl}/settings/account?success=linked`);
-      } catch (err) {
-        const errorCode = err instanceof ConflictException ? 'link_conflict' : 'link';
-        return res.redirect(`${frontendUrl}/settings/account?error=${errorCode}`);
+      } catch {
+        return res.redirect(`${frontendUrl}/settings/account?error=link`);
       }
     }
 
@@ -142,5 +158,17 @@ export class SocialAuthController {
   async link(@Param('provider') provider: string, @Body() dto: SocialLoginDto, @CurrentUser() user: AuthUser) {
     await this.socialAuth.linkAccount(user.accountId, provider, dto.accessToken);
     return { message: '소셜 계정 연동이 완료되었습니다.' };
+  }
+
+  @Post('merge')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async merge(@Body() dto: MergeAccountDto, @CurrentUser() user: AuthUser) {
+    const payload = this.socialAuth.verifyMergeToken(dto.token);
+    if (payload.type !== 'account_merge' || payload.targetAccountId !== user.accountId) {
+      throw new UnauthorizedException('유효하지 않은 병합 토큰입니다.');
+    }
+    await this.socialAuth.mergeAccounts(payload.sourceAccountId, payload.targetAccountId);
+    return { message: '계정이 병합되었습니다.' };
   }
 }

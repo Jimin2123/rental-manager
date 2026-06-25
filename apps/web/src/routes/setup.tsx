@@ -17,7 +17,7 @@ import type { Organization } from '@/store/auth.store';
 export const Route = createFileRoute('/setup')({
   beforeLoad: () => {
     const { isAuthenticated, currentOrganization } = useAuthStore.getState();
-    if (!isAuthenticated) throw redirect({ to: '/login' });
+    if (!isAuthenticated) throw redirect({ to: '/login', search: { error: undefined } });
     if (currentOrganization) throw redirect({ to: '/' });
   },
   component: SetupPage,
@@ -67,7 +67,7 @@ function SetupPage() {
       // ignore
     }
     useAuthStore.getState().clearAuth();
-    await navigate({ to: '/login' });
+    await navigate({ to: '/login', search: { error: undefined } });
     toast.success('로그아웃되었습니다.');
   };
   const [brnMessage, setBrnMessage] = useState('');

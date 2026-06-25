@@ -2,7 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { OAuthProvider } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SessionService } from '../session/session.service';
-import { TokenService } from '../session/token.service';
+import { MergeTokenPayload, TokenService } from '../session/token.service';
 import { GoogleProvider } from './providers/google.provider';
 import { KakaoProvider } from './providers/kakao.provider';
 import { NaverProvider } from './providers/naver.provider';
@@ -14,6 +14,8 @@ interface SessionMeta {
   userAgent?: string;
   ipAddress?: string;
 }
+
+type LinkResult = { status: 'linked' | 'already_linked' } | { status: 'conflict'; sourceAccountId: string };
 
 @Injectable()
 export class SocialAuthService {
@@ -59,7 +61,7 @@ export class SocialAuthService {
     code: string,
     redirectUri: string,
     state?: string,
-  ) {
+  ): Promise<LinkResult> {
     const info = await this.resolveProvider(providerName).exchangeCode(code, redirectUri, state);
     const provider = this.toOAuthProvider(providerName);
 
@@ -67,8 +69,8 @@ export class SocialAuthService {
       where: { provider_providerId: { provider, providerId: info.providerId } },
     });
     if (existing) {
-      if (existing.accountId === accountId) return; // 이미 내 계정에 연동됨 — 멱등성 처리
-      throw new ConflictException('이 소셜 계정은 다른 계정에 이미 연동되어 있습니다.');
+      if (existing.accountId === accountId) return { status: 'already_linked' };
+      return { status: 'conflict', sourceAccountId: existing.accountId };
     }
 
     await this.prisma.accountIdentity.create({
@@ -79,6 +81,57 @@ export class SocialAuthService {
         providerEmail: info.providerEmail,
         providerData: info.providerData,
       },
+    });
+    return { status: 'linked' };
+  }
+
+  generateMergeToken(sourceAccountId: string, targetAccountId: string, provider: string): string {
+    return this.tokenService.generateMergeToken({ type: 'account_merge', sourceAccountId, targetAccountId, provider });
+  }
+
+  verifyMergeToken(token: string): MergeTokenPayload {
+    return this.tokenService.verifyMergeToken(token);
+  }
+
+  async mergeAccounts(sourceAccountId: string, targetAccountId: string): Promise<void> {
+    const source = await this.prisma.account.findUniqueOrThrow({ where: { id: sourceAccountId } });
+    const target = await this.prisma.account.findUniqueOrThrow({ where: { id: targetAccountId } });
+
+    await this.prisma.$transaction(async (tx) => {
+      // 1. AccountIdentity 이전 (target에 이미 있는 provider는 건너뜀)
+      const sourceIdentities = await tx.accountIdentity.findMany({ where: { accountId: sourceAccountId } });
+      const targetProviders = new Set(
+        (await tx.accountIdentity.findMany({ where: { accountId: targetAccountId }, select: { provider: true } })).map(
+          (i) => i.provider,
+        ),
+      );
+      for (const identity of sourceIdentities) {
+        if (!targetProviders.has(identity.provider)) {
+          await tx.accountIdentity.update({ where: { id: identity.id }, data: { accountId: targetAccountId } });
+        }
+      }
+
+      // 2. OrganizationMember 이전 (target 유저가 이미 같은 org에 있으면 건너뜀)
+      const sourceMembers = await tx.organizationMember.findMany({ where: { userId: source.userId } });
+      for (const member of sourceMembers) {
+        const conflict = await tx.organizationMember.findUnique({
+          where: { userId_organizationId: { userId: target.userId, organizationId: member.organizationId } },
+        });
+        if (!conflict) {
+          await tx.organizationMember.update({ where: { id: member.id }, data: { userId: target.userId } });
+        }
+      }
+
+      // 3. source 세션 무효화
+      const now = new Date();
+      await tx.refreshToken.updateMany({ where: { accountId: sourceAccountId }, data: { revokedAt: now } });
+
+      // 4. source 계정 소프트 삭제 (email 해제 → 재가입 가능하도록)
+      await tx.account.update({
+        where: { id: sourceAccountId },
+        data: { deletedAt: now, isActive: false, email: `deleted_${sourceAccountId}@merged.local` },
+      });
+      await tx.user.update({ where: { id: source.userId }, data: { deletedAt: now } });
     });
   }
 

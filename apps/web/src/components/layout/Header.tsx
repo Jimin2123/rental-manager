@@ -42,7 +42,7 @@ export function Header() {
       // 쿠키 만료 등 — 무시하고 로그아웃 처리
     }
     clearAuth();
-    await navigate({ to: '/login' });
+    await navigate({ to: '/login', search: { error: undefined } });
     toast.success('로그아웃되었습니다.');
   };
 

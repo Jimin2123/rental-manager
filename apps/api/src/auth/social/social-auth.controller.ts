@@ -174,10 +174,9 @@ export class SocialAuthController {
   }
 
   @Delete('link/:provider')
-  @HttpCode(200)
+  @HttpCode(204)
   @UseGuards(JwtAuthGuard)
-  async unlink(@Param('provider') provider: string, @CurrentUser() user: AuthUser) {
+  async unlink(@Param('provider') provider: string, @CurrentUser() user: AuthUser): Promise<void> {
     await this.socialAuth.unlinkAccount(user.accountId, provider);
-    return { message: '소셜 계정 연동이 해제되었습니다.' };
   }
 }

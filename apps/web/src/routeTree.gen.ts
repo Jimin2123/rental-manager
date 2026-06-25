@@ -24,7 +24,10 @@ import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-pass
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
+import { Route as ProtectedBusinessPartnersIndexRouteImport } from './routes/_protected/business-partners/index'
 import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
+import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
+import { Route as ProtectedBusinessPartnersIdRouteImport } from './routes/_protected/business-partners/$id'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -99,10 +102,28 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const ProtectedBusinessPartnersIndexRoute =
+  ProtectedBusinessPartnersIndexRouteImport.update({
+    id: '/business-partners/',
+    path: '/business-partners/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedSettingsAccountRoute =
   ProtectedSettingsAccountRouteImport.update({
     id: '/settings/account',
     path: '/settings/account',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ProtectedBusinessPartnersNewRoute =
+  ProtectedBusinessPartnersNewRouteImport.update({
+    id: '/business-partners/new',
+    path: '/business-partners/new',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ProtectedBusinessPartnersIdRoute =
+  ProtectedBusinessPartnersIdRouteImport.update({
+    id: '/business-partners/$id',
+    path: '/business-partners/$id',
     getParentRoute: () => ProtectedRoute,
   } as any)
 
@@ -120,7 +141,10 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof ProtectedInvoicesRoute
   '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
+  '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
+  '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
+  '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
@@ -136,7 +160,10 @@ export interface FileRoutesByTo {
   '/invoices': typeof ProtectedInvoicesRoute
   '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
+  '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
+  '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
+  '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,7 +182,10 @@ export interface FileRoutesById {
   '/_protected/payments': typeof ProtectedPaymentsRoute
   '/_protected/refunds': typeof ProtectedRefundsRoute
   '/_protected/': typeof ProtectedIndexRoute
+  '/_protected/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
+  '/_protected/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
+  '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -173,7 +203,10 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/payments'
     | '/refunds'
+    | '/business-partners/$id'
+    | '/business-partners/new'
     | '/settings/account'
+    | '/business-partners/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -189,7 +222,10 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/payments'
     | '/refunds'
+    | '/business-partners/$id'
+    | '/business-partners/new'
     | '/settings/account'
+    | '/business-partners'
   id:
     | '__root__'
     | '/_auth'
@@ -207,7 +243,10 @@ export interface FileRouteTypes {
     | '/_protected/payments'
     | '/_protected/refunds'
     | '/_protected/'
+    | '/_protected/business-partners/$id'
+    | '/_protected/business-partners/new'
     | '/_protected/settings/account'
+    | '/_protected/business-partners/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -323,11 +362,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_protected/business-partners/': {
+      id: '/_protected/business-partners/'
+      path: '/business-partners'
+      fullPath: '/business-partners/'
+      preLoaderRoute: typeof ProtectedBusinessPartnersIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/settings/account': {
       id: '/_protected/settings/account'
       path: '/settings/account'
       fullPath: '/settings/account'
       preLoaderRoute: typeof ProtectedSettingsAccountRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/business-partners/new': {
+      id: '/_protected/business-partners/new'
+      path: '/business-partners/new'
+      fullPath: '/business-partners/new'
+      preLoaderRoute: typeof ProtectedBusinessPartnersNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/business-partners/$id': {
+      id: '/_protected/business-partners/$id'
+      path: '/business-partners/$id'
+      fullPath: '/business-partners/$id'
+      preLoaderRoute: typeof ProtectedBusinessPartnersIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
   }
@@ -359,7 +419,10 @@ interface ProtectedRouteChildren {
   ProtectedPaymentsRoute: typeof ProtectedPaymentsRoute
   ProtectedRefundsRoute: typeof ProtectedRefundsRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
+  ProtectedBusinessPartnersIdRoute: typeof ProtectedBusinessPartnersIdRoute
+  ProtectedBusinessPartnersNewRoute: typeof ProtectedBusinessPartnersNewRoute
   ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
+  ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -370,7 +433,10 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedPaymentsRoute: ProtectedPaymentsRoute,
   ProtectedRefundsRoute: ProtectedRefundsRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
+  ProtectedBusinessPartnersIdRoute: ProtectedBusinessPartnersIdRoute,
+  ProtectedBusinessPartnersNewRoute: ProtectedBusinessPartnersNewRoute,
   ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
+  ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

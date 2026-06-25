@@ -356,7 +356,7 @@ describe('Social Auth (e2e)', () => {
       await request(app.getHttpServer())
         .delete('/auth/social/link/google')
         .set('Cookie', [`access_token=${jwt}`])
-        .expect(200);
+        .expect(204);
 
       const remaining = await prisma.accountIdentity.findFirst({ where: { providerId: 'gid-multi-g' } });
       expect(remaining).toBeNull();

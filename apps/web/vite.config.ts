@@ -28,6 +28,7 @@ export default defineConfig({
       '/auth': apiProxy(),
       '/organizations': apiProxy(),
       '/assets': apiProxy(),
+      '/business-partners': apiProxy(),
     },
   },
 });

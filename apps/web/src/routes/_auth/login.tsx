@@ -54,6 +54,9 @@ function LoginPage() {
   const onSubmit = async (values: LoginForm) => {
     try {
       const { data } = await api.post<Organization[]>('/auth/login', values);
+      if (data[0]) {
+        await api.post('/auth/switch-org', { organizationId: data[0].id });
+      }
       useAuthStore.getState().setAuth(data);
       await navigate({ to: '/' });
     } catch (err) {

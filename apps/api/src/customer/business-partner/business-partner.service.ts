@@ -132,9 +132,7 @@ export class BusinessPartnerService {
     } catch (e) {
       const cause = (e as { cause?: { code?: string; originalMessage?: string } })?.cause;
       if (cause?.code === 'P0001') {
-        throw new ConflictException(
-          '이 거래처를 참조하는 활성 법인고객이 있어 매출 거래처 역할을 해제할 수 없습니다. 먼저 해당 고객을 삭제하거나 비활성화하세요.',
-        );
+        throw new ConflictException(cause.originalMessage ?? '업무 규칙 위반으로 수정할 수 없습니다.');
       }
       throw e;
     }

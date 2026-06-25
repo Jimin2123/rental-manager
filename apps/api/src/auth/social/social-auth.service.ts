@@ -203,17 +203,14 @@ export class SocialAuthService {
       throw new UnauthorizedException('소셜 계정에 이메일 정보가 없습니다. 이메일로 가입 후 연동해주세요.');
     }
 
-    let accountId: string;
-    let userId: string;
-    let email: string | null;
-
-    const emailTaken = await this.prisma.account.findUnique({ where: { email: info.providerEmail } });
-    const result = await this.prisma.$transaction(async (tx) => {
+    const { accountId, userId, email } = await this.prisma.$transaction(async (tx) => {
+      // 트랜잭션 안에서 체크해야 TOCTOU 경쟁 조건 창을 최소화할 수 있음
+      const emailTaken = await tx.account.findUnique({ where: { email: info.providerEmail! } });
       const user = await tx.user.create({ data: { type: 'PERSONAL' } });
       const account = await tx.account.create({
         data: {
           userId: user.id,
-          // 같은 이메일을 가진 다른 계정이 있으면 이 계정의 email은 null로 설정
+          // 같은 이메일을 가진 다른 계정이 있으면 null로 설정
           // 소셜 이메일은 AccountIdentity.providerEmail에 저장됨
           email: emailTaken ? null : info.providerEmail,
           emailVerifiedAt: emailTaken ? null : new Date(),
@@ -230,9 +227,6 @@ export class SocialAuthService {
       });
       return { accountId: account.id, userId: user.id, email: account.email };
     });
-    accountId = result.accountId;
-    userId = result.userId;
-    email = result.email;
 
     const tokens = await this.issueTokens(accountId, userId, email, meta);
     return { ...tokens, userId };

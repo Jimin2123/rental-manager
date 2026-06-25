@@ -290,6 +290,13 @@ describe('SocialAuthService', () => {
       expect(result.accessToken).toBe('access-jwt');
     });
 
+    it('throws UnauthorizedException when email already belongs to another account', async () => {
+      prisma.accountIdentity.findUnique.mockResolvedValue(null);
+      prisma.account.findUnique.mockResolvedValue({ id: 'other-acc', userId: 'other-user', email: 'a@gmail.com' });
+      await expect(service.loginOrRegister('google', 'token', {})).rejects.toThrow(UnauthorizedException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
     it('includes userId in return value', async () => {
       prisma.accountIdentity.findUnique.mockResolvedValue({
         accountId: 'acc-1',
@@ -343,6 +350,19 @@ describe('SocialAuthService', () => {
       );
       expect(result.accessToken).toBe('access-jwt');
       expect(result.userId).toBe('user-1');
+    });
+
+    it('throws UnauthorizedException when email already belongs to another account', async () => {
+      const exchangeMock = jest.fn().mockResolvedValue(makeSocialInfo());
+      const svc = await buildModule({ google: { verify: jest.fn(), exchangeCode: exchangeMock } });
+
+      prisma.accountIdentity.findUnique.mockResolvedValue(null);
+      prisma.account.findUnique.mockResolvedValue({ id: 'other-acc', userId: 'other-user', email: 'a@gmail.com' });
+
+      await expect(
+        svc.loginOrRegisterWithCode('google', 'code-abc', 'http://localhost:5173/auth/social/google/callback', {}),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
 

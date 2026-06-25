@@ -251,4 +251,52 @@ describe('Social Auth (e2e)', () => {
       expect(res.headers.location).toMatch(/\/login\?error=social/);
     });
   });
+
+  // ── GET /auth/social/:provider/callback (login flow) ─────────────────────
+
+  describe('GET /auth/social/:provider/callback (login flow)', () => {
+    it('redirects to / when logging in with a known social identity', async () => {
+      const { account } = await createTestUser(prisma, 'cb-login-known');
+      await prisma.accountIdentity.create({
+        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-login-known', providerEmail: `cb-login-known${TEST_DOMAIN}` },
+      });
+
+      mockExchangeCode.mockResolvedValue({ providerId: 'gid-login-known', providerEmail: `cb-login-known${TEST_DOMAIN}`, providerData: {} });
+
+      const state = 'test-login-known-state';
+      const res = await request(app.getHttpServer())
+        .get('/auth/social/google/callback')
+        .query({ code: 'auth-code', state })
+        .set('Cookie', [`oauth_state=${state}`])
+        .expect(302);
+
+      // 조직이 없으면 /setup으로 리다이렉트
+      expect(res.headers.location).toMatch(/\/(setup)?$/);
+    });
+
+    it('redirects to login?error=social when email already belongs to another account (blocks auto-linking)', async () => {
+      // 이미 다른 방식(이메일/패스워드)으로 가입된 계정
+      await createTestUser(prisma, 'cb-autlink-existing');
+
+      // 같은 이메일로 Kakao 로그인 시도 — 자동 연동이 일어나면 안 됨
+      mockExchangeCode.mockResolvedValue({
+        providerId: 'kakao-new-uid',
+        providerEmail: `cb-autlink-existing${TEST_DOMAIN}`,
+        providerData: {},
+      });
+
+      const state = 'test-autolink-block-state';
+      const res = await request(app.getHttpServer())
+        .get('/auth/social/kakao/callback')
+        .query({ code: 'auth-code', state })
+        .set('Cookie', [`oauth_state=${state}`])
+        .expect(302);
+
+      expect(res.headers.location).toMatch(/\/login\?error=social/);
+
+      // KAKAO identity가 생성되지 않았는지 확인
+      const identity = await prisma.accountIdentity.findFirst({ where: { providerId: 'kakao-new-uid' } });
+      expect(identity).toBeNull();
+    });
+  });
 });

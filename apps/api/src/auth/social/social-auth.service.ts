@@ -209,18 +209,9 @@ export class SocialAuthService {
 
     const byEmail = await this.prisma.account.findUnique({ where: { email: info.providerEmail } });
     if (byEmail) {
-      accountId = byEmail.id;
-      userId = byEmail.userId;
-      email = byEmail.email;
-      await this.prisma.accountIdentity.create({
-        data: {
-          accountId,
-          provider,
-          providerId: info.providerId,
-          providerEmail: info.providerEmail,
-          providerData: info.providerData,
-        },
-      });
+      throw new UnauthorizedException(
+        '이미 해당 이메일로 가입된 계정이 있습니다. 기존 로그인 방식으로 로그인한 후 설정에서 소셜 계정을 연동해주세요.',
+      );
     } else {
       const result = await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.create({ data: { type: 'PERSONAL' } });

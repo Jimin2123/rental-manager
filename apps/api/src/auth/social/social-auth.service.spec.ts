@@ -1,4 +1,4 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SessionService } from '../session/session.service';
@@ -17,9 +17,12 @@ const makeSocialInfo = () => ({
 type MockPrisma = {
   accountIdentity: {
     findUnique: jest.Mock;
+    findFirst: jest.Mock;
     findMany: jest.Mock;
     create: jest.Mock;
     update: jest.Mock;
+    count: jest.Mock;
+    delete: jest.Mock;
   };
   account: {
     findUnique: jest.Mock;
@@ -47,9 +50,12 @@ describe('SocialAuthService', () => {
   const buildPrisma = (): MockPrisma => ({
     accountIdentity: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      count: jest.fn(),
+      delete: jest.fn(),
     },
     account: {
       findUnique: jest.fn(),
@@ -405,6 +411,39 @@ describe('SocialAuthService', () => {
       ]);
       const result = await service.getOrganizations('user-1');
       expect(result).toEqual([{ id: 'org-1', name: '테스트회사', businessRegistrationNo: '1234567890', role: 'OWNER' }]);
+    });
+  });
+
+  // ── unlinkAccount ──────────────────────────────────────────────────────────
+
+  describe('unlinkAccount', () => {
+    it('throws NotFoundException when identity does not exist', async () => {
+      prisma.accountIdentity.findFirst.mockResolvedValue(null);
+      await expect(service.unlinkAccount('acc-1', 'google')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when account has no password and only one identity', async () => {
+      prisma.accountIdentity.findFirst.mockResolvedValue({ id: 'id-1', accountId: 'acc-1', provider: 'GOOGLE' });
+      prisma.account.findUniqueOrThrow.mockResolvedValue({ id: 'acc-1', passwordHash: null });
+      prisma.accountIdentity.count.mockResolvedValue(1);
+      await expect(service.unlinkAccount('acc-1', 'google')).rejects.toThrow(ConflictException);
+    });
+
+    it('deletes identity when account has a password', async () => {
+      prisma.accountIdentity.findFirst.mockResolvedValue({ id: 'id-1', accountId: 'acc-1', provider: 'GOOGLE' });
+      prisma.account.findUniqueOrThrow.mockResolvedValue({ id: 'acc-1', passwordHash: '$2b$12$hash' });
+      prisma.accountIdentity.delete.mockResolvedValue({});
+      await service.unlinkAccount('acc-1', 'google');
+      expect(prisma.accountIdentity.delete).toHaveBeenCalledWith({ where: { id: 'id-1' } });
+    });
+
+    it('deletes identity when account has no password but multiple identities', async () => {
+      prisma.accountIdentity.findFirst.mockResolvedValue({ id: 'id-1', accountId: 'acc-1', provider: 'GOOGLE' });
+      prisma.account.findUniqueOrThrow.mockResolvedValue({ id: 'acc-1', passwordHash: null });
+      prisma.accountIdentity.count.mockResolvedValue(2);
+      prisma.accountIdentity.delete.mockResolvedValue({});
+      await service.unlinkAccount('acc-1', 'google');
+      expect(prisma.accountIdentity.delete).toHaveBeenCalledWith({ where: { id: 'id-1' } });
     });
   });
 });

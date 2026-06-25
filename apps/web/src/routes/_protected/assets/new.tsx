@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,7 +39,7 @@ const assetSchema = z.object({
   serialNumber: z.string().optional(),
   supplierId: z.string().optional(),
   purchaseDate: z.string().optional(),
-  purchasePrice: z.coerce.number().int().min(0).optional().or(z.literal('')),
+  purchasePrice: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).optional()),
   memo: z.string().optional(),
 });
 type AssetFormValues = z.infer<typeof assetSchema>;
@@ -70,7 +70,7 @@ function NewAssetPage() {
   });
 
   const form = useForm<AssetFormValues>({
-    resolver: zodResolver(assetSchema),
+    resolver: zodResolver(assetSchema) as Resolver<AssetFormValues>,
     defaultValues: { initialStatus: 'AVAILABLE' },
   });
 
@@ -113,7 +113,7 @@ function NewAssetPage() {
         serialNumber: data.serialNumber || undefined,
         supplierId: data.supplierId || undefined,
         purchaseDate: data.purchaseDate || undefined,
-        purchasePrice: data.purchasePrice !== '' ? data.purchasePrice : undefined,
+        purchasePrice: data.purchasePrice,
         memo: data.memo || undefined,
       }),
     onSuccess: async (res) => {
@@ -163,7 +163,7 @@ function NewAssetPage() {
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
-                    <Command>
+                    <Command shouldFilter={false}>
                       <CommandInput
                         placeholder="제품명 검색..."
                         value={productSearch}

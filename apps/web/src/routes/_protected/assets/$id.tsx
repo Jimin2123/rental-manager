@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ const editSchema = z.object({
   serialNumber: z.string().optional(),
   supplierId: z.string().optional(),
   purchaseDate: z.string().optional(),
-  purchasePrice: z.coerce.number().int().min(0).optional().or(z.literal('')),
+  purchasePrice: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).optional()),
   memo: z.string().optional(),
 });
 type EditFormValues = z.infer<typeof editSchema>;
@@ -51,7 +51,7 @@ type StatusFormValues = z.infer<typeof statusSchema>;
 const meterSchema = z.object({
   readingDate: z.string().min(1, '검침일을 입력해주세요.'),
   blackCount: z.coerce.number().int().min(0, '0 이상의 값을 입력해주세요.'),
-  colorCount: z.coerce.number().int().min(0).optional().or(z.literal('')),
+  colorCount: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).optional()),
   note: z.string().optional(),
 });
 type MeterFormValues = z.infer<typeof meterSchema>;
@@ -132,12 +132,12 @@ function InfoCard({
   });
 
   const form = useForm<EditFormValues>({
-    resolver: zodResolver(editSchema),
+    resolver: zodResolver(editSchema) as Resolver<EditFormValues>,
     defaultValues: {
       serialNumber: asset.serialNumber ?? '',
       supplierId: asset.supplier?.id ?? '',
       purchaseDate: asset.purchaseDate ? asset.purchaseDate.slice(0, 10) : '',
-      purchasePrice: asset.purchasePrice ?? '',
+      purchasePrice: asset.purchasePrice ?? undefined,
       memo: asset.memo ?? '',
     },
   });
@@ -154,7 +154,7 @@ function InfoCard({
       serialNumber: asset.serialNumber ?? '',
       supplierId: asset.supplier?.id ?? '',
       purchaseDate: asset.purchaseDate ? asset.purchaseDate.slice(0, 10) : '',
-      purchasePrice: asset.purchasePrice ?? '',
+      purchasePrice: asset.purchasePrice ?? undefined,
       memo: asset.memo ?? '',
     });
   }, [asset, form]);
@@ -165,7 +165,7 @@ function InfoCard({
         serialNumber: data.serialNumber || undefined,
         supplierId: data.supplierId || undefined,
         purchaseDate: data.purchaseDate || undefined,
-        purchasePrice: data.purchasePrice !== '' ? data.purchasePrice : undefined,
+        purchasePrice: data.purchasePrice,
         memo: data.memo || undefined,
       }),
     onSuccess: () => { toast.success('자산 정보가 수정되었습니다.'); onSaved(); },
@@ -488,8 +488,8 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
   });
 
   const form = useForm<MeterFormValues>({
-    resolver: zodResolver(meterSchema),
-    defaultValues: { readingDate: '', blackCount: 0, colorCount: '', note: '' },
+    resolver: zodResolver(meterSchema) as Resolver<MeterFormValues>,
+    defaultValues: { readingDate: '', blackCount: 0, colorCount: undefined, note: '' },
   });
 
   const addMutation = useMutation({
@@ -497,14 +497,14 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
       api.post(`/assets/${assetId}/meter-readings`, {
         readingDate: data.readingDate,
         blackCount: Number(data.blackCount),
-        colorCount: data.colorCount !== '' ? Number(data.colorCount) : undefined,
+        colorCount: data.colorCount,
         note: data.note || undefined,
       }),
     onSuccess: () => {
       toast.success('검침이 등록되었습니다.');
       void queryClient.invalidateQueries({ queryKey: ['assets', 'meter-readings', assetId] });
       setShowAddForm(false);
-      form.reset({ readingDate: '', blackCount: 0, colorCount: '', note: '' });
+      form.reset({ readingDate: '', blackCount: 0, colorCount: undefined, note: '' });
     },
     onError: (err) => {
       const msg = (err as AxiosError<{ message?: string }>).response?.data?.message;

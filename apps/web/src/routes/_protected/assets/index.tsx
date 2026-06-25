@@ -31,7 +31,7 @@ function AssetsPage() {
   const [statusFilter, setStatusFilter] = useState<AssetStatus | 'ALL'>('ALL');
   const [productId, setProductId] = useState<string>('');
 
-  const { data: assets = [], isLoading } = useQuery<AssetListItem[]>({
+  const { data: assets = [], isLoading, isError } = useQuery<AssetListItem[]>({
     queryKey: ['assets', 'list', { search, statusFilter, productId }],
     queryFn: () =>
       api
@@ -108,6 +108,12 @@ function AssetsPage() {
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   불러오는 중...
+                </TableCell>
+              </TableRow>
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                  자산 목록을 불러오지 못했습니다.
                 </TableCell>
               </TableRow>
             ) : assets.length === 0 ? (

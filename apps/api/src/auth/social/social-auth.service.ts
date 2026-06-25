@@ -45,6 +45,43 @@ export class SocialAuthService {
     return this.resolveProvider(providerName).getAuthorizationUrl(redirectUri, state);
   }
 
+  async getLinkedProviders(accountId: string) {
+    const identities = await this.prisma.accountIdentity.findMany({
+      where: { accountId },
+      select: { provider: true, providerEmail: true },
+    });
+    return identities;
+  }
+
+  async linkAccountWithCode(
+    accountId: string,
+    providerName: string,
+    code: string,
+    redirectUri: string,
+    state?: string,
+  ) {
+    const info = await this.resolveProvider(providerName).exchangeCode(code, redirectUri, state);
+    const provider = this.toOAuthProvider(providerName);
+
+    const existing = await this.prisma.accountIdentity.findUnique({
+      where: { provider_providerId: { provider, providerId: info.providerId } },
+    });
+    if (existing) {
+      if (existing.accountId === accountId) return; // 이미 내 계정에 연동됨 — 멱등성 처리
+      throw new ConflictException('이 소셜 계정은 다른 계정에 이미 연동되어 있습니다.');
+    }
+
+    await this.prisma.accountIdentity.create({
+      data: {
+        accountId,
+        provider,
+        providerId: info.providerId,
+        providerEmail: info.providerEmail,
+        providerData: info.providerData,
+      },
+    });
+  }
+
   async getOrganizations(userId: string) {
     const memberships = await this.prisma.organizationMember.findMany({
       where: { userId, isActive: true },

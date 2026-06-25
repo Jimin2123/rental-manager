@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -74,10 +74,24 @@ export class SocialAuthController {
       return res.redirect(`${frontendUrl}/login?error=social`);
     }
 
+    const cookies = req.cookies as Record<string, string | undefined>;
+    const linkAccountId = cookies['oauth_link_account'];
     res.clearCookie('oauth_state');
 
+    const redirectUri = `${frontendUrl}/auth/social/${provider}/callback`;
+
+    if (linkAccountId) {
+      res.clearCookie('oauth_link_account');
+      try {
+        await this.socialAuth.linkAccountWithCode(linkAccountId, provider, code, redirectUri, state);
+        return res.redirect(`${frontendUrl}/settings/account?success=linked`);
+      } catch (err) {
+        const errorCode = err instanceof ConflictException ? 'link_conflict' : 'link';
+        return res.redirect(`${frontendUrl}/settings/account?error=${errorCode}`);
+      }
+    }
+
     try {
-      const redirectUri = `${frontendUrl}/auth/social/${provider}/callback`;
       const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
       const { userId, ...tokens } = await this.socialAuth.loginOrRegisterWithCode(
         provider,
@@ -91,6 +105,34 @@ export class SocialAuthController {
       return res.redirect(orgs.length > 0 ? `${frontendUrl}/` : `${frontendUrl}/setup`);
     } catch {
       return res.redirect(`${frontendUrl}/login?error=social`);
+    }
+  }
+
+  @Get('identities')
+  @UseGuards(JwtAuthGuard)
+  async identities(@CurrentUser() user: AuthUser) {
+    return this.socialAuth.getLinkedProviders(user.accountId);
+  }
+
+  @Get('link/:provider/redirect')
+  @UseGuards(JwtAuthGuard)
+  linkRedirect(@Param('provider') provider: string, @CurrentUser() user: AuthUser, @Res() res: Response) {
+    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
+    try {
+      const state = randomUUID();
+      const redirectUri = `${frontendUrl}/auth/social/${provider}/callback`;
+      const url = this.socialAuth.getAuthorizationUrl(provider, redirectUri, state);
+      const isProd = process.env['NODE_ENV'] === 'production';
+      res.cookie('oauth_state', state, { httpOnly: true, maxAge: 5 * 60 * 1000, sameSite: 'lax', secure: isProd });
+      res.cookie('oauth_link_account', user.accountId, {
+        httpOnly: true,
+        maxAge: 5 * 60 * 1000,
+        sameSite: 'lax',
+        secure: isProd,
+      });
+      res.redirect(url);
+    } catch {
+      res.redirect(`${frontendUrl}/settings/account?error=link`);
     }
   }
 

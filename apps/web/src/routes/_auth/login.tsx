@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -101,6 +101,11 @@ function LoginPage() {
               </FormItem>
             )}
           />
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-xs text-muted-foreground underline-offset-4 hover:underline">
+              비밀번호를 잊으셨나요?
+            </Link>
+          </div>
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? '로그인 중...' : '로그인'}
           </Button>

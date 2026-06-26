@@ -37,6 +37,8 @@ test('/setup 페이지가 정상 렌더링된다 (인증됨, 조직 없음)', as
   // 모든 라우트/initScript는 goto 전에 등록해야 적용된다(특히 카카오 주소 mock).
   // 복귀 사용자: 세션 마커가 있어야 부트스트랩이 /organizations/me를 호출한다
   await page.addInitScript(() => localStorage.setItem('rm_has_session', '1'));
+  // setup 페이지는 받은 초대를 조회한다(무조직+초대 보유 안내) — 미모킹 시 실 API 호출
+  await page.route('**/invitations/mine', (route) => route.fulfill({ status: 200, body: '[]' }));
   let setupVisited = false;
   await page.route('**/organizations/me', async (route) => {
     if (setupVisited) {

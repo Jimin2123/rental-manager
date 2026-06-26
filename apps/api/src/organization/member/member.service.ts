@@ -1,6 +1,5 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { AddMemberDto } from './dto/add-member.dto';
 import type { UpdateMemberDto } from './dto/update-member.dto';
 
 @Injectable()
@@ -11,43 +10,6 @@ export class MemberService {
     return this.prisma.organizationMember.findMany({
       where: { organizationId, isActive: true },
       orderBy: { createdAt: 'asc' },
-    });
-  }
-
-  async addDirect(organizationId: string, dto: AddMemberDto): Promise<void> {
-    const account = await this.prisma.account.findUnique({ where: { email: dto.email }, select: { userId: true } });
-    if (!account) throw new NotFoundException('해당 이메일로 가입된 계정이 없습니다.');
-
-    const existing = await this.prisma.organizationMember.findUnique({
-      where: { userId_organizationId: { userId: account.userId, organizationId } },
-    });
-    if (existing) {
-      if (existing.isActive) throw new ConflictException('이미 조직의 활성 멤버입니다.');
-      await this.prisma.organizationMember.update({
-        where: { userId_organizationId: { userId: account.userId, organizationId } },
-        data: {
-          role: dto.role,
-          name: dto.name,
-          department: dto.department,
-          position: dto.position,
-          phone: dto.memberPhone,
-          isActive: true,
-        },
-      });
-      return;
-    }
-
-    await this.prisma.organizationMember.create({
-      data: {
-        userId: account.userId,
-        organizationId,
-        role: dto.role,
-        name: dto.name,
-        department: dto.department,
-        position: dto.position,
-        phone: dto.memberPhone,
-        isActive: true,
-      },
     });
   }
 

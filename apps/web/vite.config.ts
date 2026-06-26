@@ -27,6 +27,7 @@ export default defineConfig({
     proxy: {
       '/auth': apiProxy(),
       '/organizations': apiProxy(),
+      '/invitations': apiProxy(),
       '/assets': apiProxy(),
       '/business-partners': apiProxy(),
       '/products': apiProxy(),

@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -22,6 +22,13 @@ export class EmailAuthController {
     private readonly sessionService: SessionService,
     private readonly tokenService: TokenService,
   ) {}
+
+  // 현재 로그인된 계정 정보(이메일 등). 프론트 표시용.
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: AuthUser) {
+    return { userId: user.userId, email: user.email };
+  }
 
   @Post('register')
   @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })

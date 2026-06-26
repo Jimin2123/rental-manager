@@ -869,6 +869,7 @@ describe('Prisma customer schema', () => {
       expect(schema).toContain('invitedById String');
       expect(schema).toContain('expiresAt  DateTime');
       expect(schema).toContain('acceptedAt DateTime?');
+      expect(schema).toContain('declinedAt DateTime?');
       expect(schema).toContain('@@index([organizationId])');
       expect(schema).toContain('@@index([email])');
     });

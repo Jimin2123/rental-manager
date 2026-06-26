@@ -13,6 +13,7 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
+import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as ProtectedRefundsRouteImport } from './routes/_protected/refunds'
 import { Route as ProtectedPaymentsRouteImport } from './routes/_protected/payments'
 import { Route as ProtectedInvoicesRouteImport } from './routes/_protected/invoices'
@@ -49,6 +50,11 @@ const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ProtectedRoute,
+} as any)
+const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
+  id: '/invitations/accept',
+  path: '/invitations/accept',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedRefundsRoute = ProtectedRefundsRouteImport.update({
   id: '/refunds',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof ProtectedInvoicesRoute
   '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/products/$id': typeof ProtectedProductsIdRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof ProtectedInvoicesRoute
   '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/products/$id': typeof ProtectedProductsIdRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/_protected/invoices': typeof ProtectedInvoicesRoute
   '/_protected/payments': typeof ProtectedPaymentsRoute
   '/_protected/refunds': typeof ProtectedRefundsRoute
+  '/invitations/accept': typeof InvitationsAcceptRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/_protected/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/payments'
     | '/refunds'
+    | '/invitations/accept'
     | '/business-partners/$id'
     | '/business-partners/new'
     | '/products/$id'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/payments'
     | '/refunds'
+    | '/invitations/accept'
     | '/business-partners/$id'
     | '/business-partners/new'
     | '/products/$id'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/_protected/invoices'
     | '/_protected/payments'
     | '/_protected/refunds'
+    | '/invitations/accept'
     | '/_protected/'
     | '/_protected/business-partners/$id'
     | '/_protected/business-partners/new'
@@ -290,6 +302,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ProtectedRoute: typeof ProtectedRouteWithChildren
   SetupRoute: typeof SetupRoute
+  InvitationsAcceptRoute: typeof InvitationsAcceptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -321,6 +334,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof ProtectedIndexRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/invitations/accept': {
+      id: '/invitations/accept'
+      path: '/invitations/accept'
+      fullPath: '/invitations/accept'
+      preLoaderRoute: typeof InvitationsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_protected/refunds': {
       id: '/_protected/refunds'
@@ -511,6 +531,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ProtectedRoute: ProtectedRouteWithChildren,
   SetupRoute: SetupRoute,
+  InvitationsAcceptRoute: InvitationsAcceptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -26,6 +26,7 @@ export type PendingInvitation = {
   id: string;
   email: string;
   role: MemberRole;
+  status: 'PENDING' | 'DECLINED' | 'EXPIRED';
   expiresAt: string;
   createdAt: string;
   invitedBy: { name: string };

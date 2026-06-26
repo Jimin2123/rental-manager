@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { api } from '@/lib/api';
 import type { Product } from './-types';
+import { fetchProducts, productKeys } from './-api';
 
 export const Route = createFileRoute('/_protected/products/')({
   component: ProductsPage,
@@ -20,8 +20,8 @@ function ProductsPage() {
     isLoading,
     isError,
   } = useQuery<Product[]>({
-    queryKey: ['products', 'list', { search }],
-    queryFn: () => api.get<Product[]>('/products', { params: { ...(search && { search }) } }).then((r) => r.data),
+    queryKey: productKeys.list(search),
+    queryFn: () => fetchProducts(search),
   });
 
   return (

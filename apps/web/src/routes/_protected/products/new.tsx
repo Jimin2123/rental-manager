@@ -1,39 +1,30 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { api } from '@/lib/api';
+import { productKeys } from './-api';
+import { productSchema, type ProductFormValues } from './-schemas';
+import { TextField } from './-components/fields';
 
 export const Route = createFileRoute('/_protected/products/new')({
   component: NewProductPage,
 });
 
-const schema = z.object({
-  name: z.string().min(1, '제품명을 입력해주세요.'),
-  manufacturer: z.string().optional(),
-  modelName: z.string().optional(),
-  category: z.string().optional(),
-  memo: z.string().optional(),
-});
-type FormValues = z.infer<typeof schema>;
-
 function NewProductPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
     defaultValues: { name: '', manufacturer: '', modelName: '', category: '', memo: '' },
   });
 
   const mutation = useMutation({
-    mutationFn: (data: FormValues) =>
+    mutationFn: (data: ProductFormValues) =>
       api.post<{ id: string }>('/products', {
         name: data.name,
         manufacturer: data.manufacturer || undefined,
@@ -42,7 +33,7 @@ function NewProductPage() {
         memo: data.memo || undefined,
       }),
     onSuccess: (res) => {
-      void queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: productKeys.all });
       toast.success('제품이 등록되었습니다.');
       void navigate({ to: '/products/$id', params: { id: res.data.id } });
     },
@@ -65,75 +56,13 @@ function NewProductPage() {
           onSubmit={form.handleSubmit((d) => void mutation.mutate(d))}
           className="space-y-4 rounded-lg border bg-card p-4"
         >
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  제품명 <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="복합기 MX450" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField control={form.control} name="name" label="제품명" placeholder="복합기 MX450" required />
           <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name="manufacturer"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>제조사</FormLabel>
-                  <FormControl>
-                    <Input placeholder="캐논" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="modelName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>모델명</FormLabel>
-                  <FormControl>
-                    <Input placeholder="MX450" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <TextField control={form.control} name="manufacturer" label="제조사" placeholder="캐논" />
+            <TextField control={form.control} name="modelName" label="모델명" placeholder="MX450" />
           </div>
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>카테고리</FormLabel>
-                <FormControl>
-                  <Input placeholder="복합기" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="memo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>메모</FormLabel>
-                <FormControl>
-                  <Input placeholder="내부 메모" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <TextField control={form.control} name="category" label="카테고리" placeholder="복합기" />
+          <TextField control={form.control} name="memo" label="메모" placeholder="내부 메모" />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => void navigate({ to: '/products' })}>
               취소

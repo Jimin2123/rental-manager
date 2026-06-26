@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +14,7 @@ import { api } from '@/lib/api';
 import { openKakaoAddressSearch } from '@/lib/kakao-address';
 import { useAuthStore } from '@/store/auth.store';
 import type { Organization } from '@/store/auth.store';
+import { inviteKeys, fetchMineInvitations, acceptMine } from './invitations/-api';
 
 export const Route = createFileRoute('/setup')({
   beforeLoad: () => {
@@ -59,6 +61,21 @@ type BrnStatus = 'idle' | 'valid' | 'invalid';
 function SetupPage() {
   const navigate = useNavigate();
   const [brnStatus, setBrnStatus] = useState<BrnStatus>('idle');
+
+  const { data: pendingInvites = [] } = useQuery({ queryKey: inviteKeys.mine, queryFn: fetchMineInvitations });
+
+  const acceptMutation = useMutation({
+    mutationFn: (id: string) => acceptMine(id),
+    onSuccess: async () => {
+      const { data: orgs } = await api.get<Organization[]>('/organizations/me');
+      useAuthStore.getState().setAuth(orgs);
+      await navigate({ to: '/' });
+      toast.success('조직에 합류했습니다.');
+    },
+    onError: () => {
+      toast.error('수락 중 오류가 발생했습니다.');
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -157,6 +174,33 @@ function SetupPage() {
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-foreground">렌탈 매니저</h1>
         </div>
+        {pendingInvites.length > 0 && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p className="mb-3 text-sm font-medium text-blue-800">
+              받은 초대가 {pendingInvites.length}건 있습니다. 직원으로 합류하려면 아래에서 수락하세요.
+            </p>
+            <ul className="space-y-2">
+              {pendingInvites.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="flex items-center justify-between rounded-md border border-blue-200 bg-white px-3 py-2"
+                >
+                  <span className="text-sm text-foreground">
+                    {inv.organization.businessProfile.name} · {inv.role}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => acceptMutation.mutate(inv.id)}
+                    disabled={acceptMutation.isPending}
+                  >
+                    수락
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-card-foreground">조직 정보 입력</h2>

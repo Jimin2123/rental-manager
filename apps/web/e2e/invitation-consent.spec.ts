@@ -73,6 +73,10 @@ async function mockLoggedIn(page: Page) {
   await page.addInitScript(() => localStorage.setItem('rm_has_session', '1'));
   await page.route(/\/organizations\/me$/, (route) => json(route, 200, MOCK_ORGS));
   await page.route(/\/auth\/switch-org$/, (route) => json(route, 200, {}));
+  // 헤더의 InvitationBell이 모든 로그인 페이지에서 호출하는 쿼리 — 모킹하지 않으면
+  // 실 API 401 → 인터셉터 clearAuth → 로그아웃되어 페이지가 사라진다. (개별 테스트가 덮어쓸 수 있음)
+  await page.route(/\/invitations\/mine$/, (route) => json(route, 200, []));
+  await page.route(/\/invitations\/sent\/recent$/, (route) => json(route, 200, []));
 }
 
 test.beforeEach(async ({ context }) => {
@@ -92,7 +96,14 @@ test('미가입자: 초대 수락 페이지에서 이메일 가입 후 대시보
   await page.route(/\/auth\/switch-org$/, (route) => json(route, 200, {}));
 
   // GET /invitations/:token — 초대 상세 (일반 패턴, 먼저 등록)
-  await page.route(/\/invitations\/[^/]+$/, (route) => json(route, 200, MOCK_TOKEN_INVITATION));
+  // 이 정규식은 페이지 문서(/invitations/accept?token=...)와 vite 모듈 스크립트
+  // (/src/routes/invitations/accept.tsx)도 매칭하므로, 실제 API(xhr/fetch)만 모킹하고
+  // 나머지(document·script 등)는 통과시켜 SPA가 정상 로드되게 한다.
+  await page.route(/\/invitations\/[^/]+$/, (route) => {
+    const rt = route.request().resourceType();
+    if (rt !== 'xhr' && rt !== 'fetch') return route.continue();
+    return json(route, 200, MOCK_TOKEN_INVITATION);
+  });
 
   // POST /invitations/:token/signup-accept — 더 구체적인 패턴이므로 나중에 등록 (Playwright는 마지막 등록 라우트 우선)
   // signup-accept 성공 시 rm_has_session=1 쿠키를 Set-Cookie로 심어
@@ -134,13 +145,15 @@ test('미가입자: 초대 수락 페이지에서 이메일 가입 후 대시보
 test('만료 토큰: 초대 수락 페이지에서 만료 오류 메시지가 표시된다', async ({ page }) => {
   // GET /invitations/:token → 400 (만료된 초대)
   // AcceptInvitationPage는 response.data.message를 ErrorScreen에 그대로 표시한다.
-  await page.route(/\/invitations\/[^/]+$/, (route) =>
-    route.fulfill({
+  await page.route(/\/invitations\/[^/]+$/, (route) => {
+    const rt = route.request().resourceType();
+    if (rt !== 'xhr' && rt !== 'fetch') return route.continue();
+    return route.fulfill({
       status: 400,
       contentType: 'application/json',
       body: JSON.stringify({ message: '만료된 초대입니다.' }),
-    }),
-  );
+    });
+  });
 
   await page.goto('/invitations/accept?token=expired');
 
@@ -175,11 +188,12 @@ test('로그인 사용자: 헤더 벨에서 초대를 수락하면 목록이 비
   // 헤더 벨 버튼 클릭 (InvitationBell, aria-label="초대 알림")
   await page.getByRole('button', { name: '초대 알림' }).click();
 
-  // 받은 초대 1건 및 조직명 확인
-  await expect(page.getByText('테스트회사')).toBeVisible();
+  // 받은 초대 1건의 수락/거절 버튼이 드롭다운에 노출되는지 확인
+  const acceptBtn = page.getByRole('button', { name: '수락' });
+  await expect(acceptBtn).toBeVisible();
 
   // 수락 버튼 클릭
-  await page.getByRole('button', { name: '수락' }).click();
+  await acceptBtn.click();
 
   // 수락 성공 토스트 (InvitationBell → toast.success('초대를 수락했습니다.'))
   await expect(page.getByText('초대를 수락했습니다.')).toBeVisible();

@@ -43,7 +43,11 @@ function LoginPage() {
   const { error } = Route.useSearch();
 
   useEffect(() => {
-    if (error === 'social') toast.error('소셜 로그인에 실패했습니다. 다시 시도해주세요.');
+    if (error !== 'social') return;
+    // 마운트 즉시 발사하면 같은 틱에 마운트되는 <Toaster/>가 아직 구독 전이라 토스트가 유실된다.
+    // 다음 틱으로 미뤄 안정적으로 표시한다.
+    const id = setTimeout(() => toast.error('소셜 로그인에 실패했습니다. 다시 시도해주세요.'), 0);
+    return () => clearTimeout(id);
   }, [error]);
 
   const form = useForm<LoginForm>({

@@ -58,9 +58,9 @@ test('로그인 후 새로고침해도 대시보드에 머문다', async ({ page
 
 test('로그인 후 보호된 페이지에서 새로고침해도 세션이 유지된다', async ({ page }) => {
   await login(page);
-  await page.goto('/assets');
+  await page.goto('/products');
   await page.reload();
-  await expect(page).toHaveURL('/assets');
+  await expect(page).toHaveURL('/products');
   await expect(page.locator('text=로그인')).not.toBeVisible();
 });
 
@@ -73,8 +73,8 @@ test('비인증 상태에서 / 접근 시 로그인 페이지로 리다이렉트
   await expect(page).toHaveURL('/login');
 });
 
-test('비인증 상태에서 /assets 접근 시 로그인 페이지로 리다이렉트된다', async ({ page }) => {
-  await page.goto('/assets');
+test('비인증 상태에서 /products 접근 시 로그인 페이지로 리다이렉트된다', async ({ page }) => {
+  await page.goto('/products');
   await expect(page).toHaveURL('/login');
 });
 
@@ -114,10 +114,10 @@ test('대시보드 페이지에서만 대시보드 링크가 active 상태다', 
   await expect(dashboardLink).toHaveAttribute('aria-current', 'page');
 
   // 다른 페이지로 이동하면 대시보드 링크가 active 아님
-  await page.getByRole('link', { name: '자산' }).click();
-  await expect(page).toHaveURL('/assets');
+  await page.getByRole('link', { name: '제품' }).click();
+  await expect(page).toHaveURL('/products');
   await expect(dashboardLink).not.toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('link', { name: '자산' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('link', { name: '제품' })).toHaveAttribute('aria-current', 'page');
 });
 
 test('사이드바 네비게이션으로 모든 보호된 페이지를 이동할 수 있다', async ({ page }) => {
@@ -128,7 +128,8 @@ test('사이드바 네비게이션으로 모든 보호된 페이지를 이동할
     { label: '청구서', url: '/invoices' },
     { label: '수납', url: '/payments' },
     { label: '환불', url: '/refunds' },
-    { label: '자산', url: '/assets' },
+    { label: '제품', url: '/products' },
+    { label: '거래처', url: '/business-partners' },
     { label: '고객', url: '/customers' },
   ];
 

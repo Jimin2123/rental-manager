@@ -37,6 +37,8 @@ async function mockLoginFlow(page: import('@playwright/test').Page) {
     loggedIn = true;
     await route.fulfill({ status: 200, body: JSON.stringify(MOCK_ORGS) });
   });
+  // 로그인 성공 후 login.tsx가 활성 조직을 설정한다 — 모킹하지 않으면 흐름이 끊긴다.
+  await page.route('**/auth/switch-org', (route) => route.fulfill({ status: 200, body: '{}' }));
 }
 
 async function agreeTerms(page: import('@playwright/test').Page) {
@@ -77,7 +79,7 @@ test('이미 로그인된 상태에서 /terms 접근 시 대시보드로 리다�
   await page.goto('/login');
   await page.locator('input[type="email"]').fill('test@test.com');
   await page.locator('input[type="password"]').fill('Test1234!');
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
   await page.waitForURL('/');
 
   await page.goto('/terms');
@@ -90,7 +92,7 @@ test('이미 로그인된 상태에서 /register 접근 시 대시보드로 리�
   await page.goto('/login');
   await page.locator('input[type="email"]').fill('test@test.com');
   await page.locator('input[type="password"]').fill('Test1234!');
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
   await page.waitForURL('/');
 
   await page.goto('/register');

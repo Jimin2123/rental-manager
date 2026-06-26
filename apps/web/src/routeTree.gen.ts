@@ -30,6 +30,7 @@ import { Route as ProtectedProductsNewRouteImport } from './routes/_protected/pr
 import { Route as ProtectedProductsIdRouteImport } from './routes/_protected/products/$id'
 import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
 import { Route as ProtectedBusinessPartnersIdRouteImport } from './routes/_protected/business-partners/$id'
+import { Route as ProtectedSettingsMembersIndexRouteImport } from './routes/_protected/settings/members/index'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -138,6 +139,12 @@ const ProtectedBusinessPartnersIdRoute =
     path: '/business-partners/$id',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedSettingsMembersIndexRoute =
+  ProtectedSettingsMembersIndexRouteImport.update({
+    id: '/settings/members/',
+    path: '/settings/members/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/products/': typeof ProtectedProductsIndexRoute
+  '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
   '/products': typeof ProtectedProductsIndexRoute
+  '/settings/members': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -204,6 +213,7 @@ export interface FileRoutesById {
   '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
   '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/_protected/products/': typeof ProtectedProductsIndexRoute
+  '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/business-partners/'
     | '/products/'
+    | '/settings/members/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/business-partners'
     | '/products'
+    | '/settings/members'
   id:
     | '__root__'
     | '/_auth'
@@ -271,6 +283,7 @@ export interface FileRouteTypes {
     | '/_protected/settings/account'
     | '/_protected/business-partners/'
     | '/_protected/products/'
+    | '/_protected/settings/members/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -428,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedBusinessPartnersIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/settings/members/': {
+      id: '/_protected/settings/members/'
+      path: '/settings/members'
+      fullPath: '/settings/members/'
+      preLoaderRoute: typeof ProtectedSettingsMembersIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
@@ -463,6 +483,7 @@ interface ProtectedRouteChildren {
   ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
   ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
   ProtectedProductsIndexRoute: typeof ProtectedProductsIndexRoute
+  ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -479,6 +500,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
   ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
   ProtectedProductsIndexRoute: ProtectedProductsIndexRoute,
+  ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

@@ -6,13 +6,11 @@ import { MemberService } from './member.service';
 describe('MemberService', () => {
   let service: MemberService;
   let prisma: {
-    account: { findUnique: jest.Mock };
     organizationMember: { findMany: jest.Mock; findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
   };
 
   beforeEach(async () => {
     prisma = {
-      account: { findUnique: jest.fn() },
       organizationMember: {
         findMany: jest.fn(),
         findUnique: jest.fn(),

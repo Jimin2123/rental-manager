@@ -267,7 +267,11 @@ describe('InvitationService', () => {
   describe('declineById', () => {
     it('내 이메일 대기 초대를 거절 처리한다', async () => {
       prisma.organizationInvitation.findUnique.mockResolvedValue({
-        id: 'inv-1', email: 'a@x.com', acceptedAt: null, declinedAt: null, expiresAt: new Date(Date.now() + 1000),
+        id: 'inv-1',
+        email: 'a@x.com',
+        acceptedAt: null,
+        declinedAt: null,
+        expiresAt: new Date(Date.now() + 1000),
       });
       await service.declineById('inv-1', 'a@x.com');
       expect(prisma.organizationInvitation.update).toHaveBeenCalledWith(
@@ -277,7 +281,11 @@ describe('InvitationService', () => {
 
     it('다른 이메일 초대면 NotFound', async () => {
       prisma.organizationInvitation.findUnique.mockResolvedValue({
-        id: 'inv-1', email: 'other@x.com', acceptedAt: null, declinedAt: null, expiresAt: new Date(Date.now() + 1000),
+        id: 'inv-1',
+        email: 'other@x.com',
+        acceptedAt: null,
+        declinedAt: null,
+        expiresAt: new Date(Date.now() + 1000),
       });
       await expect(service.declineById('inv-1', 'a@x.com')).rejects.toThrow(NotFoundException);
     });
@@ -287,9 +295,33 @@ describe('InvitationService', () => {
     it('수락 제외, 거절/만료 포함하며 status를 파생한다', async () => {
       const now = Date.now();
       prisma.organizationInvitation.findMany.mockResolvedValue([
-        { id: 'p', email: 'p@x.com', role: 'STAFF', expiresAt: new Date(now + 1000), declinedAt: null, createdAt: new Date(), invitedBy: { name: '홍' } },
-        { id: 'd', email: 'd@x.com', role: 'STAFF', expiresAt: new Date(now + 1000), declinedAt: new Date(), createdAt: new Date(), invitedBy: { name: '홍' } },
-        { id: 'e', email: 'e@x.com', role: 'STAFF', expiresAt: new Date(now - 1000), declinedAt: null, createdAt: new Date(), invitedBy: { name: '홍' } },
+        {
+          id: 'p',
+          email: 'p@x.com',
+          role: 'STAFF',
+          expiresAt: new Date(now + 1000),
+          declinedAt: null,
+          createdAt: new Date(),
+          invitedBy: { name: '홍' },
+        },
+        {
+          id: 'd',
+          email: 'd@x.com',
+          role: 'STAFF',
+          expiresAt: new Date(now + 1000),
+          declinedAt: new Date(),
+          createdAt: new Date(),
+          invitedBy: { name: '홍' },
+        },
+        {
+          id: 'e',
+          email: 'e@x.com',
+          role: 'STAFF',
+          expiresAt: new Date(now - 1000),
+          declinedAt: null,
+          createdAt: new Date(),
+          invitedBy: { name: '홍' },
+        },
       ]);
       const result = await service.listForAdmin('org-1');
       expect(result.map((r) => r.status)).toEqual(['PENDING', 'DECLINED', 'EXPIRED']);

@@ -151,7 +151,13 @@ export class InvitationService {
   }
 
   // 멤버 생성 + 초대 수락 처리(트랜잭션). 이미 멤버면 409.
-  private async createMembership(organizationId: string, userId: string, role: OrganizationMemberRole, email: string, invitationId: string): Promise<void> {
+  private async createMembership(
+    organizationId: string,
+    userId: string,
+    role: OrganizationMemberRole,
+    email: string,
+    invitationId: string,
+  ): Promise<void> {
     const existing = await this.prisma.organizationMember.findUnique({
       where: { userId_organizationId: { userId, organizationId } },
     });
@@ -172,7 +178,10 @@ export class InvitationService {
   }
 
   // 미가입자: 원샷 가입 + 토큰 수락. 세션용 평문 토큰은 컨트롤러가 발급하도록 userId 등을 반환.
-  async signupAccept(rawToken: string, dto: SignupAcceptDto): Promise<{ userId: string; accountId: string; organizationId: string }> {
+  async signupAccept(
+    rawToken: string,
+    dto: SignupAcceptDto,
+  ): Promise<{ userId: string; accountId: string; organizationId: string }> {
     const inv = await this.getByToken(rawToken);
     const dup = await this.prisma.account.findUnique({ where: { email: dto.email }, select: { id: true } });
     if (dup) throw new ConflictException('이미 가입된 이메일입니다. 로그인 후 수락하세요.');
@@ -182,7 +191,13 @@ export class InvitationService {
       const account = await tx.account.create({ data: { userId: user.id, email: dto.email, passwordHash } });
       await tx.passwordHistory.create({ data: { accountId: account.id, passwordHash } });
       await tx.organizationMember.create({
-        data: { userId: user.id, organizationId: inv.organizationId, role: inv.role, name: dto.memberName, isActive: true },
+        data: {
+          userId: user.id,
+          organizationId: inv.organizationId,
+          role: inv.role,
+          name: dto.memberName,
+          isActive: true,
+        },
       });
       await tx.organizationInvitation.update({ where: { id: inv.id }, data: { acceptedAt: new Date() } });
       return { userId: user.id, accountId: account.id, organizationId: inv.organizationId };
@@ -208,7 +223,15 @@ export class InvitationService {
     const rows = await this.prisma.organizationInvitation.findMany({
       where: { organizationId, acceptedAt: null },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, email: true, role: true, expiresAt: true, declinedAt: true, createdAt: true, invitedBy: { select: { name: true } } },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        expiresAt: true,
+        declinedAt: true,
+        createdAt: true,
+        invitedBy: { select: { name: true } },
+      },
     });
     const now = new Date();
     return rows.map((r) => ({

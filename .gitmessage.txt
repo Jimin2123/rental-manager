@@ -1,0 +1,16 @@
+# <type>(<scope>): <제목>  ← 50자 내외, 한국어, 마침표 없이
+#
+# type:  feat | fix | refactor | chore | style | docs | test
+# scope: web | api | products | tooling ... (선택, 생략 가능)
+#
+# 예) feat(web): 제품 등록 페이지 구현
+#     fix(api): LOST → AVAILABLE(발견) 상태 전환 허용
+#     chore: 버전 0.19.2로 범프 (계정 설정 모듈 리팩터)
+
+# ── 본문 (선택, 왜/무엇을 바꿨는지) ──────────────
+# -
+
+# ── 관련 이슈 (선택) ─────────────────────────────
+# Closes #
+#
+# 규칙: Co-Authored-By: Claude 트레일러 금지 (CLAUDE.md)

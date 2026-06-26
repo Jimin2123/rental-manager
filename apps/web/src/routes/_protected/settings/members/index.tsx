@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useAuthStore } from '@/store/auth.store';
 import { SettingsNav } from '../-nav';
 import { MemberTable } from './-components/MemberTable';
+import { PendingInvitations } from './-components/PendingInvitations';
 
 export const Route = createFileRoute('/_protected/settings/members/')({
   component: MembersPage,
@@ -20,6 +21,7 @@ function MembersPage() {
       ) : (
         <div className="space-y-6">
           <MemberTable orgId={org.id} />
+          <PendingInvitations orgId={org.id} />
         </div>
       )}
     </div>

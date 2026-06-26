@@ -7,17 +7,17 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsString()
-  manufacturer?: string;
+  manufacturer?: string | null;
 
   @IsOptional()
   @IsString()
-  modelName?: string;
+  modelName?: string | null;
 
   @IsOptional()
   @IsString()
-  category?: string;
+  category?: string | null;
 
   @IsOptional()
   @IsString()
-  memo?: string;
+  memo?: string | null;
 }

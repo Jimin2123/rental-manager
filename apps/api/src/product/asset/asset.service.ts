@@ -105,13 +105,16 @@ export class AssetService {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        if (dto.supplierId !== undefined) await this.validateSupplier(tx, organizationId, dto.supplierId);
+        // null/빈 값은 "필드 비우기"이므로 거래처 검증을 건너뛴다.
+        if (dto.supplierId) await this.validateSupplier(tx, organizationId, dto.supplierId);
         await tx.asset.update({
           where: { id_organizationId: { id, organizationId } },
           data: {
             ...(dto.serialNumber !== undefined && { serialNumber: dto.serialNumber }),
-            ...(dto.supplierId !== undefined && { supplierId: dto.supplierId }),
-            ...(dto.purchaseDate !== undefined && { purchaseDate: new Date(dto.purchaseDate) }),
+            ...(dto.supplierId !== undefined && { supplierId: dto.supplierId || null }),
+            ...(dto.purchaseDate !== undefined && {
+              purchaseDate: dto.purchaseDate ? new Date(dto.purchaseDate) : null,
+            }),
             ...(dto.purchasePrice !== undefined && { purchasePrice: dto.purchasePrice }),
             ...(dto.memo !== undefined && { memo: dto.memo }),
           },

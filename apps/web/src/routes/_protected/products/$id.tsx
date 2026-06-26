@@ -118,10 +118,10 @@ function ProductInfoCard({ product, onDeleted }: { product: Product; onDeleted: 
     mutationFn: (data: ProductFormValues) =>
       api.patch(`/products/${product.id}`, {
         name: data.name,
-        manufacturer: data.manufacturer || undefined,
-        modelName: data.modelName || undefined,
-        category: data.category || undefined,
-        memo: data.memo || undefined,
+        manufacturer: data.manufacturer || null,
+        modelName: data.modelName || null,
+        category: data.category || null,
+        memo: data.memo || null,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -305,7 +305,10 @@ type EditAssetValues = z.infer<typeof editAssetSchema>;
 // ─── 미터 리딩 폼 스키마 ──────────────────────────────────────────
 const meterSchema = z.object({
   readingDate: z.string().min(1, '검침일을 입력해주세요.'),
-  blackCount: z.coerce.number().int().min(0, '0 이상의 값을 입력해주세요.'),
+  blackCount: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.coerce.number({ error: '흑백 누적값을 입력해주세요.' }).int().min(0, '0 이상의 값을 입력해주세요.'),
+  ),
   colorCount: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).optional()),
   note: z.string().optional(),
 });
@@ -649,11 +652,11 @@ function AssetPanel({
   const updateMutation = useMutation({
     mutationFn: (data: EditAssetValues) =>
       api.patch(`/assets/${assetId}`, {
-        serialNumber: data.serialNumber || undefined,
-        supplierId: data.supplierId || undefined,
-        purchaseDate: data.purchaseDate || undefined,
-        purchasePrice: data.purchasePrice,
-        memo: data.memo || undefined,
+        serialNumber: data.serialNumber || null,
+        supplierId: data.supplierId || null,
+        purchaseDate: data.purchaseDate || null,
+        purchasePrice: data.purchasePrice ?? null,
+        memo: data.memo || null,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['assets', 'detail', assetId] });
@@ -985,7 +988,7 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
 
   const form = useForm<MeterFormValues>({
     resolver: zodResolver(meterSchema) as Resolver<MeterFormValues>,
-    defaultValues: { readingDate: '', blackCount: 0, note: '' },
+    defaultValues: { readingDate: '', note: '' },
   });
 
   const addMutation = useMutation({
@@ -1000,7 +1003,7 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
       toast.success('검침이 등록되었습니다.');
       void queryClient.invalidateQueries({ queryKey: ['assets', 'meter-readings', assetId] });
       setShowForm(false);
-      form.reset({ readingDate: '', blackCount: 0, note: '' });
+      form.reset({ readingDate: '', note: '' });
     },
     onError: (err) => {
       const msg = (err as AxiosError<{ message?: string }>).response?.data?.message;
@@ -1081,7 +1084,7 @@ function MeterReadingSection({ assetId }: { assetId: string }) {
                       흑백 누적값 <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} {...field} />
+                      <Input type="number" min={0} {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

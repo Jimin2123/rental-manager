@@ -52,9 +52,10 @@ export class InvitationService {
       data: { token, email: dto.email, role: dto.role, organizationId, invitedById, expiresAt },
     });
 
+    // 수락 페이지는 프론트엔드에 있으므로 FRONTEND_URL을 사용한다(APP_URL은 백엔드 주소).
     const clientUrl = this.config.get<string>(
       'CLIENT_URL',
-      this.config.get<string>('APP_URL', 'http://localhost:5173'),
+      this.config.get<string>('FRONTEND_URL', 'http://localhost:5173'),
     );
     const inviteUrl = `${clientUrl}/invitations/accept?token=${rawToken}`;
     await this.mailService.sendOrganizationInvite(dto.email, inviteUrl, org.businessProfile.name);

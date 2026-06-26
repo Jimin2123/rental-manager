@@ -80,6 +80,7 @@ export function InvitationBell() {
     mutationFn: declineMine,
     onSuccess: () => {
       invalidateMine(qc);
+      void qc.invalidateQueries({ queryKey: ['members'] });
       toast.success('초대를 거절했습니다.');
     },
     onError: () => {

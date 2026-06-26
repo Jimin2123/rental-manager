@@ -1,7 +1,7 @@
 name: 버그 수정 (Bugfix)
 description: 버그를 보고하고 수정합니다 (운영 긴급 hotfix 포함)
 title: 'fix: '
-labels: ['type: bug']
+labels: ['Bug']
 body:
   - type: markdown
     attributes:

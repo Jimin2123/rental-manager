@@ -1,7 +1,7 @@
 name: 기능 (Feature)
 description: 하위 호환되는 새 기능을 기획합니다
 title: 'feat: '
-labels: ['type: feature', 'flow: feature']
+labels: ['Feature']
 body:
   - type: markdown
     attributes:

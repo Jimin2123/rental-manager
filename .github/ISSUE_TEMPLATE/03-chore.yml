@@ -1,7 +1,7 @@
 name: 리팩터 / 잡무 (Chore)
 description: 리팩터, 문서, 빌드, 툴링 등 유지보수 작업을 추적합니다
 title: 'chore: '
-labels: ['type: chore']
+labels: ['Chore']
 body:
   - type: markdown
     attributes:

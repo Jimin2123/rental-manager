@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { partnerKeys } from '../business-partners/-api';
 import type { Product, AssetListItem, AssetDetail, AssetEvent, MeterReading, Supplier } from './-types';
 
 // ─── 쿼리 키 팩토리 ───────────────────────────────────────────────
@@ -19,8 +20,9 @@ export const assetKeys = {
   meterReadings: (id: string) => [...assetKeys.all, 'meter-readings', id] as const,
 };
 
+// 매입처 드롭다운은 거래처 목록(role=PURCHASE)을 재사용한다 — 거래처 변경 시 함께 무효화되도록 키를 공유.
 export const supplierKeys = {
-  purchaseList: () => ['business-partners', 'list', { role: 'PURCHASE' }] as const,
+  purchaseList: () => partnerKeys.list({ role: 'PURCHASE' }),
 };
 
 // ─── 조회 함수 ────────────────────────────────────────────────────

@@ -3,10 +3,17 @@ name: 보드 Target date 자동 기록
 # PR이 생성되면 본문의 닫기 키워드(Closes/Fixes/Resolves #N)로 참조된 이슈를 찾아
 # 해당 보드 항목의 Target date 필드를 PR 생성일로 채운다.
 # 사용자 소유 프로젝트라 기본 GITHUB_TOKEN으로는 접근 불가 → PROJECTS_TOKEN(PAT) 사용.
+#
+# pull_request_target을 쓰는 이유: base(develop) 브랜치의 워크플로가 실행되어
+# PR을 만든 head 브랜치에 파일이 없어도 항상 동작하고, 시크릿 접근이 보장된다.
+# PR head 코드를 체크아웃·실행하지 않고 이벤트 페이로드(본문·생성일)만 읽으므로 안전하다.
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
+
+permissions:
+  contents: read
 
 jobs:
   set-target-date:

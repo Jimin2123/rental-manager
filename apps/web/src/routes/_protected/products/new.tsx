@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type AxiosError } from 'axios';
+
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +46,7 @@ function NewProductPage() {
       toast.success('제품이 등록되었습니다.');
       void navigate({ to: '/products/$id', params: { id: res.data.id } });
     },
-    onError: (_err: AxiosError) => {
+    onError: () => {
       toast.error('제품 등록 중 오류가 발생했습니다.');
     },
   });
@@ -70,8 +70,12 @@ function NewProductPage() {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>제품명 <span className="text-destructive">*</span></FormLabel>
-                <FormControl><Input placeholder="복합기 MX450" {...field} /></FormControl>
+                <FormLabel>
+                  제품명 <span className="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="복합기 MX450" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -83,7 +87,9 @@ function NewProductPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>제조사</FormLabel>
-                  <FormControl><Input placeholder="캐논" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="캐논" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -94,7 +100,9 @@ function NewProductPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>모델명</FormLabel>
-                  <FormControl><Input placeholder="MX450" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="MX450" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -106,7 +114,9 @@ function NewProductPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>카테고리</FormLabel>
-                <FormControl><Input placeholder="복합기" {...field} /></FormControl>
+                <FormControl>
+                  <Input placeholder="복합기" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -117,7 +127,9 @@ function NewProductPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>메모</FormLabel>
-                <FormControl><Input placeholder="내부 메모" {...field} /></FormControl>
+                <FormControl>
+                  <Input placeholder="내부 메모" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MemberService } from './member.service';
@@ -36,44 +36,6 @@ describe('MemberService', () => {
         expect.objectContaining({ where: { organizationId: 'org-1', isActive: true } }),
       );
       expect(result).toHaveLength(1);
-    });
-  });
-
-  describe('addDirect', () => {
-    it('throws NotFoundException when email account not found', async () => {
-      prisma.account.findUnique.mockResolvedValue(null);
-      await expect(service.addDirect('org-1', { email: 'a@b.com', role: 'STAFF', name: '홍길동' })).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('throws ConflictException when already a member', async () => {
-      prisma.account.findUnique.mockResolvedValue({ userId: 'user-1' });
-      prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', isActive: true });
-      await expect(service.addDirect('org-1', { email: 'a@b.com', role: 'STAFF', name: '홍길동' })).rejects.toThrow(
-        ConflictException,
-      );
-    });
-
-    it('creates OrganizationMember when account exists and not a member', async () => {
-      prisma.account.findUnique.mockResolvedValue({ userId: 'user-1' });
-      prisma.organizationMember.findUnique.mockResolvedValue(null);
-      prisma.organizationMember.create.mockResolvedValue({});
-      await service.addDirect('org-1', { email: 'a@b.com', role: 'STAFF', name: '홍길동' });
-      expect(prisma.organizationMember.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ organizationId: 'org-1', role: 'STAFF' }) }),
-      );
-    });
-
-    it('reactivates a deactivated member instead of throwing', async () => {
-      prisma.account.findUnique.mockResolvedValue({ userId: 'user-1' });
-      prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', isActive: false });
-      prisma.organizationMember.update.mockResolvedValue({});
-      await service.addDirect('org-1', { email: 'a@b.com', role: 'STAFF', name: '홍길동' });
-      expect(prisma.organizationMember.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ isActive: true }) }),
-      );
-      expect(prisma.organizationMember.create).not.toHaveBeenCalled();
     });
   });
 

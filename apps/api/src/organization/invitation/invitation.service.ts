@@ -90,4 +90,35 @@ export class InvitationService {
       });
     });
   }
+
+  // 대기 중(미수락·미만료) 초대 목록을 최신순으로 반환한다.
+  async listPending(organizationId: string) {
+    return this.prisma.organizationInvitation.findMany({
+      where: { organizationId, acceptedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        expiresAt: true,
+        createdAt: true,
+        invitedBy: { select: { name: true } },
+      },
+    });
+  }
+
+  // 초대를 취소(행 삭제)한다. 조직이 다르거나 없으면 404.
+  async cancel(organizationId: string, invitationId: string): Promise<void> {
+    const inv = await this.prisma.organizationInvitation.findUnique({ where: { id: invitationId } });
+    if (!inv || inv.organizationId !== organizationId) throw new NotFoundException('초대를 찾을 수 없습니다.');
+    await this.prisma.organizationInvitation.delete({ where: { id: invitationId } });
+  }
+
+  // 초대를 재발송한다. send()가 동일 이메일의 미수락 초대를 삭제 후 새 토큰·만료로 재생성한다.
+  async resend(organizationId: string, invitationId: string): Promise<void> {
+    const inv = await this.prisma.organizationInvitation.findUnique({ where: { id: invitationId } });
+    if (!inv || inv.organizationId !== organizationId) throw new NotFoundException('초대를 찾을 수 없습니다.');
+    if (inv.acceptedAt) throw new ConflictException('이미 수락된 초대입니다.');
+    await this.send(organizationId, inv.invitedById, { email: inv.email, role: inv.role });
+  }
 }

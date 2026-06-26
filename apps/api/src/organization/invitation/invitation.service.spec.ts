@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -11,7 +11,14 @@ describe('InvitationService', () => {
   let prisma: {
     account: { findUnique: jest.Mock };
     organizationMember: { findUnique: jest.Mock; create: jest.Mock };
-    organizationInvitation: { deleteMany: jest.Mock; create: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    organizationInvitation: {
+      deleteMany: jest.Mock;
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      update: jest.Mock;
+      findMany: jest.Mock;
+      delete: jest.Mock;
+    };
     organization: { findUnique: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -22,7 +29,14 @@ describe('InvitationService', () => {
     prisma = {
       account: { findUnique: jest.fn().mockResolvedValue(null) },
       organizationMember: { findUnique: jest.fn(), create: jest.fn() },
-      organizationInvitation: { deleteMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+      organizationInvitation: {
+        deleteMany: jest.fn(),
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        findMany: jest.fn(),
+        delete: jest.fn(),
+      },
       organization: { findUnique: jest.fn() },
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
@@ -149,6 +163,83 @@ describe('InvitationService', () => {
       expect(prisma.organizationInvitation.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { acceptedAt: expect.any(Date) } }),
       );
+    });
+  });
+
+  describe('listPending', () => {
+    it('미수락·미만료 초대만 조회한다', async () => {
+      prisma.organizationInvitation.findMany.mockResolvedValue([
+        {
+          id: 'inv-1',
+          email: 'a@x.com',
+          role: 'STAFF',
+          expiresAt: new Date(),
+          createdAt: new Date(),
+          invitedBy: { name: '홍길동' },
+        },
+      ]);
+      const result = await service.listPending('org-1');
+      expect(prisma.organizationInvitation.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org-1',
+            acceptedAt: null,
+            expiresAt: expect.objectContaining({ gt: expect.any(Date) }),
+          }),
+        }),
+      );
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('cancel', () => {
+    it('조직이 일치하면 초대를 삭제한다', async () => {
+      prisma.organizationInvitation.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        organizationId: 'org-1',
+        acceptedAt: null,
+      });
+      await service.cancel('org-1', 'inv-1');
+      expect(prisma.organizationInvitation.delete).toHaveBeenCalledWith({ where: { id: 'inv-1' } });
+    });
+
+    it('초대가 없거나 다른 조직이면 NotFound', async () => {
+      prisma.organizationInvitation.findUnique.mockResolvedValue(null);
+      await expect(service.cancel('org-1', 'inv-x')).rejects.toThrow(NotFoundException);
+      prisma.organizationInvitation.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        organizationId: 'other',
+        acceptedAt: null,
+      });
+      await expect(service.cancel('org-1', 'inv-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('resend', () => {
+    it('초대의 email/role로 send를 재호출한다', async () => {
+      prisma.organizationInvitation.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        organizationId: 'org-1',
+        invitedById: 'mem-1',
+        email: 'a@x.com',
+        role: 'MANAGER',
+        acceptedAt: null,
+      });
+      const sendSpy = jest.spyOn(service, 'send').mockResolvedValue(undefined);
+      await service.resend('org-1', 'inv-1');
+      expect(sendSpy).toHaveBeenCalledWith('org-1', 'mem-1', { email: 'a@x.com', role: 'MANAGER' });
+    });
+
+    it('이미 수락된 초대면 Conflict', async () => {
+      prisma.organizationInvitation.findUnique.mockResolvedValue({
+        id: 'inv-1',
+        organizationId: 'org-1',
+        invitedById: 'mem-1',
+        email: 'a@x.com',
+        role: 'STAFF',
+        acceptedAt: new Date(),
+      });
+      await expect(service.resend('org-1', 'inv-1')).rejects.toThrow(ConflictException);
     });
   });
 });

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { AccountMergeBanner } from './-components/AccountMergeBanner';
 import { SocialIdentityCard } from './-components/SocialIdentityCard';
+import { SettingsNav } from './-nav';
 
 export const Route = createFileRoute('/_protected/settings/account')({
   validateSearch: z.object({
@@ -25,8 +26,9 @@ function AccountSettingsPage() {
   }, [success, error]);
 
   return (
-    <div className="mx-auto max-w-xl">
-      <h1 className="mb-6 text-xl font-semibold text-foreground">계정 설정</h1>
+    <div className="mx-auto max-w-3xl">
+      <h1 className="mb-6 text-xl font-semibold text-foreground">설정</h1>
+      <SettingsNav />
       {merge_token && <AccountMergeBanner token={merge_token} />}
       <SocialIdentityCard />
     </div>

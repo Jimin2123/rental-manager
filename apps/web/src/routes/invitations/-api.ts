@@ -15,6 +15,9 @@ export const declineByToken = (token: string) => api.post(`/invitations/${token}
 export const signupAccept = (token: string, body: SignupAcceptValues) =>
   api.post(`/invitations/${token}/signup-accept`, body);
 
+// 현재 로그인된 계정 정보(이미 멤버 안내 화면에서 계정 이메일 표시용)
+export const fetchMe = () => api.get<{ userId: string; email: string | null }>('/auth/me').then((r) => r.data);
+
 export const fetchMineInvitations = () => api.get<MyInvitation[]>('/invitations/mine').then((r) => r.data);
 export const acceptMine = (id: string) => api.post(`/invitations/mine/${id}/accept`);
 export const declineMine = (id: string) => api.post(`/invitations/mine/${id}/decline`);

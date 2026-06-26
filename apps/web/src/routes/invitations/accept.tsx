@@ -11,8 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/store/auth.store';
+import type { Organization } from '@/store/auth.store';
 import { storePendingInvite } from '@/lib/pending-invite';
-import { fetchInvitationByToken, acceptByToken, declineByToken, signupAccept } from './-api';
+import { fetchInvitationByToken, acceptByToken, declineByToken, signupAccept, fetchMe } from './-api';
 import type { InvitationTokenView } from './-types';
 import { signupAcceptSchema, type SignupAcceptValues } from './-schemas';
 
@@ -47,6 +48,45 @@ function ErrorScreen({ message }: { message: string }) {
               로그인
             </Link>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── 이미 멤버: 현재 로그인된 계정 기준 안내 ── */
+const ROLE_LABEL: Record<Organization['role'], string> = {
+  OWNER: '사업자',
+  ADMIN: '관리자',
+  MANAGER: '담당자',
+  STAFF: '직원',
+};
+
+function AlreadyMemberScreen({ org }: { org: Organization }) {
+  const { data: me } = useQuery({ queryKey: ['auth-me'], queryFn: fetchMe, retry: false });
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="w-full max-w-md px-4">
+        <div className="rounded-lg border bg-card p-8 text-center shadow-sm">
+          <h1 className="mb-2 text-xl font-bold text-card-foreground">이미 가입된 조직입니다</h1>
+          <p className="mb-4 text-sm text-muted-foreground">
+            현재 계정은 이미 이 조직의 멤버이므로 초대를 수락할 필요가 없습니다.
+          </p>
+          <div className="mb-6 space-y-3 rounded-lg border bg-muted/30 p-4 text-left">
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted-foreground">현재 로그인된 계정</p>
+              <p className="text-sm font-semibold text-foreground">{me?.email ?? '—'}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted-foreground">현재 로그인된 조직</p>
+              <p className="text-base font-semibold text-foreground">{org.name}</p>
+              <p className="text-xs text-muted-foreground">역할: {ROLE_LABEL[org.role]}</p>
+            </div>
+          </div>
+          <Button asChild className="w-full">
+            <Link to="/">홈으로</Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -295,8 +335,14 @@ function AcceptInvitationPage() {
     return <ErrorScreen message={displayMsg} />;
   }
 
-  // 로그인 상태에서 이미 이 초대 조직의 멤버라면 수락/거절 대신 안내만 보여준다.
-  const isAlreadyMember = isAuthenticated && myOrganizations.some((o) => o.id === data.organization.id);
+  // 로그인 상태에서 이미 이 초대 조직의 멤버라면(예: OWNER가 자기 조직 초대 클릭),
+  // 초대 카드 대신 '현재 로그인된 계정' 기준 안내를 보여준다.
+  // (초대된 이메일과 현재 로그인 계정은 다를 수 있으므로 초대 프레이밍을 쓰지 않는다.)
+  const alreadyMemberOrg = isAuthenticated ? myOrganizations.find((o) => o.id === data.organization.id) : undefined;
+
+  if (alreadyMemberOrg) {
+    return <AlreadyMemberScreen org={alreadyMemberOrg} />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background py-12">
@@ -318,14 +364,7 @@ function AcceptInvitationPage() {
 
           <Separator className="my-4" />
 
-          {isAlreadyMember ? (
-            <div className="space-y-3 text-center">
-              <p className="text-sm text-muted-foreground">이미 이 조직의 멤버입니다.</p>
-              <Button asChild className="w-full">
-                <Link to="/">홈으로</Link>
-              </Button>
-            </div>
-          ) : isAuthenticated ? (
+          {isAuthenticated ? (
             <LoggedInActions token={token} />
           ) : (
             <GuestActions token={token} inviteEmail={data.email} />

@@ -7,6 +7,7 @@ name: 보드 Target date 자동 기록
 # pull_request_target을 쓰는 이유: base(develop) 브랜치의 워크플로가 실행되어
 # PR을 만든 head 브랜치에 파일이 없어도 항상 동작하고, 시크릿 접근이 보장된다.
 # PR head 코드를 체크아웃·실행하지 않고 이벤트 페이로드(본문·생성일)만 읽으므로 안전하다.
+# gh project 대신 프로젝트 node ID 기반 GraphQL 호출을 쓴다('unknown owner type' 회피).
 
 on:
   pull_request_target:
@@ -22,9 +23,7 @@ jobs:
       - name: Target date 기록
         env:
           GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
-          OWNER: Jimin2123
           REPO: ${{ github.repository }}
-          PROJECT_NUMBER: '18'
           PROJECT_ID: PVT_kwHOBUGnqM4BbeyF
           TARGET_FIELD_ID: PVTF_lAHOBUGnqM4BbeyFzhWPAwc
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -41,13 +40,19 @@ jobs:
           fi
           DATE="${PR_CREATED%%T*}"
           for N in $NUMS; do
-            URL="https://github.com/$REPO/issues/$N"
+            # 이슈 번호 → node ID
+            NODE=$(gh api "repos/$REPO/issues/$N" --jq '.node_id')
             # 보드에 항목 추가(이미 있으면 기존 항목 id 반환)
-            ITEM_ID=$(gh project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "$URL" --format json --jq '.id')
-            gh project item-edit \
-              --project-id "$PROJECT_ID" \
-              --id "$ITEM_ID" \
-              --field-id "$TARGET_FIELD_ID" \
-              --date "$DATE"
+            ITEM_ID=$(gh api graphql -f query='
+              mutation($p:ID!, $c:ID!) {
+                addProjectV2ItemById(input: { projectId: $p, contentId: $c }) { item { id } }
+              }' -f p="$PROJECT_ID" -f c="$NODE" --jq '.data.addProjectV2ItemById.item.id')
+            # Target date 필드 기록
+            gh api graphql -f query='
+              mutation($p:ID!, $i:ID!, $f:ID!, $d:Date!) {
+                updateProjectV2ItemFieldValue(input: { projectId: $p, itemId: $i, fieldId: $f, value: { date: $d } }) {
+                  projectV2Item { id }
+                }
+              }' -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$TARGET_FIELD_ID" -f d="$DATE"
             echo "이슈 #$N Target date=$DATE 기록 완료 (item=$ITEM_ID)"
           done

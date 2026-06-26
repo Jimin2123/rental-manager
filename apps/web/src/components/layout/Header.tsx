@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { InvitationBell } from './InvitationBell';
 
 function useTheme() {
   const [isDark, setIsDark] = useState(() => {
@@ -55,6 +56,7 @@ export function Header() {
         <Button variant="ghost" size="icon" onClick={toggle} aria-label="테마 전환">
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
+        <InvitationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">

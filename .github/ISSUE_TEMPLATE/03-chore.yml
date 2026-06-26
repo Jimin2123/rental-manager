@@ -1,0 +1,76 @@
+name: 리팩터 / 잡무 (Chore)
+description: 리팩터, 문서, 빌드, 툴링 등 유지보수 작업을 추적합니다
+title: 'chore: '
+labels: ['type: chore']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        리팩터·문서·빌드·툴링 등 유지보수 작업용 템플릿입니다.
+        `develop`에서 `feature/<scope>/<description>` 브랜치를 생성해 진행하세요.
+
+  - type: input
+    id: summary
+    attributes:
+      label: 요약
+      description: 작업을 한 문장으로 설명하세요.
+      placeholder: '계정 설정 모듈을 React Query로 전환'
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경 / 목적
+      description: 왜 이 작업이 필요한가요?
+      placeholder: |
+        기존 useEffect 기반 데이터 패칭을 React Query로 통일해 캐싱/로딩 처리를 일관화합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 작업 범위
+      description: 수행할 작업을 체크리스트로 작성하세요.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영향 영역 (Area)
+      options:
+        - web
+        - api
+        - full-stack
+        - tooling
+        - docs
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: 검증 계획
+      description: '`apps/api` 또는 `apps/web` 디렉터리에서 실행합니다.'
+      value: |
+        - [ ] pnpm lint
+        - [ ] pnpm build
+        - [ ] pnpm test
+        - [ ] 동작 동일성 확인 (회귀 없음)
+
+  - type: dropdown
+    id: semver
+    attributes:
+      label: SemVer 영향
+      options:
+        - 'PATCH — 내부 변경만'
+        - 'MINOR — 하위 호환 새 기능 동반'
+        - 'MAJOR — 하위 호환 불가 변경 동반'
+        - '미정'
+    validations:
+      required: true

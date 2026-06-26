@@ -15,12 +15,13 @@ function ProductsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
-  const { data: products = [], isLoading, isError } = useQuery<Product[]>({
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+  } = useQuery<Product[]>({
     queryKey: ['products', 'list', { search }],
-    queryFn: () =>
-      api
-        .get<Product[]>('/products', { params: { ...(search && { search }) } })
-        .then((r) => r.data),
+    queryFn: () => api.get<Product[]>('/products', { params: { ...(search && { search }) } }).then((r) => r.data),
   });
 
   return (

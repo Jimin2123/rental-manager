@@ -1,6 +1,4 @@
-export type AssetStatus =
-  | 'INCOMING' | 'AVAILABLE' | 'RENTED' | 'SOLD'
-  | 'REPAIR' | 'DISPOSED' | 'LOST' | 'UNAVAILABLE';
+export type AssetStatus = 'INCOMING' | 'AVAILABLE' | 'RENTED' | 'SOLD' | 'REPAIR' | 'DISPOSED' | 'LOST' | 'UNAVAILABLE';
 
 export const ASSET_STATUS_LABEL: Record<AssetStatus, string> = {
   INCOMING: '입고예정',

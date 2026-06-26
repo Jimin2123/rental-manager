@@ -26,6 +26,8 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-pa
 import { Route as ProtectedProductsIndexRouteImport } from './routes/_protected/products/index'
 import { Route as ProtectedBusinessPartnersIndexRouteImport } from './routes/_protected/business-partners/index'
 import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
+import { Route as ProtectedProductsNewRouteImport } from './routes/_protected/products/new'
+import { Route as ProtectedProductsIdRouteImport } from './routes/_protected/products/$id'
 import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
 import { Route as ProtectedBusinessPartnersIdRouteImport } from './routes/_protected/business-partners/$id'
 
@@ -114,6 +116,16 @@ const ProtectedSettingsAccountRoute =
     path: '/settings/account',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedProductsNewRoute = ProtectedProductsNewRouteImport.update({
+  id: '/products/new',
+  path: '/products/new',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedProductsIdRoute = ProtectedProductsIdRouteImport.update({
+  id: '/products/$id',
+  path: '/products/$id',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedBusinessPartnersNewRoute =
   ProtectedBusinessPartnersNewRouteImport.update({
     id: '/business-partners/new',
@@ -142,6 +154,8 @@ export interface FileRoutesByFullPath {
   '/refunds': typeof ProtectedRefundsRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
+  '/products/$id': typeof ProtectedProductsIdRoute
+  '/products/new': typeof ProtectedProductsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/products/': typeof ProtectedProductsIndexRoute
@@ -161,6 +175,8 @@ export interface FileRoutesByTo {
   '/refunds': typeof ProtectedRefundsRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
+  '/products/$id': typeof ProtectedProductsIdRoute
+  '/products/new': typeof ProtectedProductsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
   '/products': typeof ProtectedProductsIndexRoute
@@ -183,6 +199,8 @@ export interface FileRoutesById {
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/_protected/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
+  '/_protected/products/$id': typeof ProtectedProductsIdRoute
+  '/_protected/products/new': typeof ProtectedProductsNewRoute
   '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
   '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/_protected/products/': typeof ProtectedProductsIndexRoute
@@ -204,6 +222,8 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/business-partners/$id'
     | '/business-partners/new'
+    | '/products/$id'
+    | '/products/new'
     | '/settings/account'
     | '/business-partners/'
     | '/products/'
@@ -223,6 +243,8 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/business-partners/$id'
     | '/business-partners/new'
+    | '/products/$id'
+    | '/products/new'
     | '/settings/account'
     | '/business-partners'
     | '/products'
@@ -244,6 +266,8 @@ export interface FileRouteTypes {
     | '/_protected/'
     | '/_protected/business-partners/$id'
     | '/_protected/business-partners/new'
+    | '/_protected/products/$id'
+    | '/_protected/products/new'
     | '/_protected/settings/account'
     | '/_protected/business-partners/'
     | '/_protected/products/'
@@ -376,6 +400,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSettingsAccountRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/products/new': {
+      id: '/_protected/products/new'
+      path: '/products/new'
+      fullPath: '/products/new'
+      preLoaderRoute: typeof ProtectedProductsNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/products/$id': {
+      id: '/_protected/products/$id'
+      path: '/products/$id'
+      fullPath: '/products/$id'
+      preLoaderRoute: typeof ProtectedProductsIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/business-partners/new': {
       id: '/_protected/business-partners/new'
       path: '/business-partners/new'
@@ -420,6 +458,8 @@ interface ProtectedRouteChildren {
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedBusinessPartnersIdRoute: typeof ProtectedBusinessPartnersIdRoute
   ProtectedBusinessPartnersNewRoute: typeof ProtectedBusinessPartnersNewRoute
+  ProtectedProductsIdRoute: typeof ProtectedProductsIdRoute
+  ProtectedProductsNewRoute: typeof ProtectedProductsNewRoute
   ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
   ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
   ProtectedProductsIndexRoute: typeof ProtectedProductsIndexRoute
@@ -434,6 +474,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedBusinessPartnersIdRoute: ProtectedBusinessPartnersIdRoute,
   ProtectedBusinessPartnersNewRoute: ProtectedBusinessPartnersNewRoute,
+  ProtectedProductsIdRoute: ProtectedProductsIdRoute,
+  ProtectedProductsNewRoute: ProtectedProductsNewRoute,
   ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
   ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
   ProtectedProductsIndexRoute: ProtectedProductsIndexRoute,

@@ -1,48 +1,9 @@
-import type { ReactNode } from 'react';
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import type { Supplier } from '../-types';
 
-type TextFieldProps<T extends FieldValues> = {
-  control: Control<T>;
-  name: FieldPath<T>;
-  label: ReactNode;
-  type?: 'text' | 'number' | 'date';
-  placeholder?: string;
-  required?: boolean;
-  min?: number;
-};
-
-// 프로젝트 전역 입력 패턴(FormItem→Label→Control→Message)을 한곳에 모은다.
-// 숫자 필드의 undefined 값은 '' 로 바꿔 controlled 상태를 유지한다.
-export function TextField<T extends FieldValues>({
-  control,
-  name,
-  label,
-  type = 'text',
-  placeholder,
-  required,
-  min,
-}: TextFieldProps<T>) {
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            {label} {required && <span className="text-destructive">*</span>}
-          </FormLabel>
-          <FormControl>
-            <Input type={type} placeholder={placeholder} min={min} {...field} value={field.value ?? ''} />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
+// 공용 TextField는 @/components/form 으로 승격됨. 기존 import 호환을 위해 재노출.
+export { TextField } from '@/components/form/TextField';
 
 type SupplierFieldProps<T extends FieldValues> = {
   control: Control<T>;

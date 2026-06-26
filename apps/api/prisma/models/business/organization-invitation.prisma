@@ -14,6 +14,7 @@ model OrganizationInvitation {
 
   expiresAt  DateTime  // 초대 유효기간 (7일)
   acceptedAt DateTime? // 수락 시 설정
+  declinedAt DateTime? // 거절 시 설정
 
   createdAt DateTime @default(now())
 

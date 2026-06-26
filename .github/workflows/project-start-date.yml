@@ -1,0 +1,35 @@
+name: 보드 Start date 자동 기록
+
+# 이슈가 생성되면 프로젝트 보드(Rental-Manager #18)에 추가하고
+# Start date 필드를 이슈 생성일로 채운다.
+# 사용자 소유 프로젝트라 기본 GITHUB_TOKEN으로는 접근 불가 → PROJECTS_TOKEN(PAT) 사용.
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  set-start-date:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start date 기록
+        env:
+          GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          OWNER: Jimin2123
+          PROJECT_NUMBER: '18'
+          PROJECT_ID: PVT_kwHOBUGnqM4BbeyF
+          START_FIELD_ID: PVTF_lAHOBUGnqM4BbeyFzhWPAwY
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_CREATED: ${{ github.event.issue.created_at }}
+        run: |
+          set -euo pipefail
+          # 보드에 항목 추가(이미 있으면 기존 항목 id 반환)
+          ITEM_ID=$(gh project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "$ISSUE_URL" --format json --jq '.id')
+          # 생성일(ISO)에서 날짜 부분만 사용
+          DATE="${ISSUE_CREATED%%T*}"
+          gh project item-edit \
+            --project-id "$PROJECT_ID" \
+            --id "$ITEM_ID" \
+            --field-id "$START_FIELD_ID" \
+            --date "$DATE"
+          echo "이슈 Start date=$DATE 기록 완료 (item=$ITEM_ID)"

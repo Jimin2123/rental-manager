@@ -1702,4 +1702,46 @@ describe('Prisma database integrity guards', () => {
       ),
     ).rejects.toThrow(/existing MeterReadings/);
   });
+
+  it('allows LOST → AVAILABLE (발견) and blocks LOST → REPAIR', async () => {
+    if (!client) {
+      throw new Error('DB integration client was not initialized.');
+    }
+
+    const { organizationId } = await seedOrganizationAndCustomer(client);
+    const productId = randomUUID();
+    const assetId = randomUUID();
+    const now = new Date();
+
+    await client.query(
+      `INSERT INTO "Product" ("id", "organizationId", "name", "updatedAt") VALUES ($1, $2, 'Lost Test Product', $3)`,
+      [productId, organizationId, now],
+    );
+    await client.query(
+      `INSERT INTO "Asset" ("id", "organizationId", "productId", "serialNumber", "status", "updatedAt")
+       VALUES ($1, $2, $3, $4, 'LOST', $5)`,
+      [assetId, organizationId, productId, `sn-${randomUUID()}`, now],
+    );
+
+    // LOST → AVAILABLE (발견) 허용
+    await expect(
+      client.query(`UPDATE "Asset" SET "status" = 'AVAILABLE', "updatedAt" = $1 WHERE "id" = $2`, [
+        new Date(),
+        assetId,
+      ]),
+    ).resolves.toBeDefined();
+
+    // 다시 LOST로 되돌린 후 REPAIR 시도 차단 확인
+    await withTransaction(client, async () => {
+      await client.query("SET LOCAL rental_manager.status_transition_override = 'on'");
+      await client.query(`UPDATE "Asset" SET "status" = 'LOST', "updatedAt" = $1 WHERE "id" = $2`, [
+        new Date(),
+        assetId,
+      ]);
+    });
+
+    await expect(
+      client.query(`UPDATE "Asset" SET "status" = 'REPAIR', "updatedAt" = $1 WHERE "id" = $2`, [new Date(), assetId]),
+    ).rejects.toThrow(/Invalid Asset status transition: LOST -> REPAIR/);
+  });
 });

@@ -252,6 +252,7 @@ function GuestActions({ token, inviteEmail }: { token: string; inviteEmail: stri
 function AcceptInvitationPage() {
   const { token } = Route.useSearch();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const myOrganizations = useAuthStore((s) => s.organizations);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['invite', token],
@@ -294,6 +295,9 @@ function AcceptInvitationPage() {
     return <ErrorScreen message={displayMsg} />;
   }
 
+  // 로그인 상태에서 이미 이 초대 조직의 멤버라면 수락/거절 대신 안내만 보여준다.
+  const isAlreadyMember = isAuthenticated && myOrganizations.some((o) => o.id === data.organization.id);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background py-12">
       <div className="w-full max-w-md px-4">
@@ -314,7 +318,14 @@ function AcceptInvitationPage() {
 
           <Separator className="my-4" />
 
-          {isAuthenticated ? (
+          {isAlreadyMember ? (
+            <div className="space-y-3 text-center">
+              <p className="text-sm text-muted-foreground">이미 이 조직의 멤버입니다.</p>
+              <Button asChild className="w-full">
+                <Link to="/">홈으로</Link>
+              </Button>
+            </div>
+          ) : isAuthenticated ? (
             <LoggedInActions token={token} />
           ) : (
             <GuestActions token={token} inviteEmail={data.email} />

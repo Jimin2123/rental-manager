@@ -4,7 +4,7 @@ export type InvitationTokenView = {
   id: string;
   email: string;
   role: 'ADMIN' | 'MANAGER' | 'STAFF';
-  organization: { businessProfile: { name: string; businessRegistrationNo: string } };
+  organization: { id: string; businessProfile: { name: string; businessRegistrationNo: string } };
 };
 
 export type MyInvitation = {

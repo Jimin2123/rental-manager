@@ -9,8 +9,8 @@ import { InvitationService } from './invitation.service';
 describe('InvitationService', () => {
   let service: InvitationService;
   let prisma: {
-    account: { findUnique: jest.Mock };
-    organizationMember: { findUnique: jest.Mock; create: jest.Mock };
+    account: { findUnique: jest.Mock; create: jest.Mock };
+    organizationMember: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
     organizationInvitation: {
       deleteMany: jest.Mock;
       create: jest.Mock;
@@ -20,6 +20,8 @@ describe('InvitationService', () => {
       delete: jest.Mock;
     };
     organization: { findUnique: jest.Mock };
+    user: { create: jest.Mock };
+    passwordHistory: { create: jest.Mock };
     $transaction: jest.Mock;
   };
   let tokenService: { hashToken: jest.Mock; generateRawRefreshToken: jest.Mock };
@@ -27,8 +29,8 @@ describe('InvitationService', () => {
 
   beforeEach(async () => {
     prisma = {
-      account: { findUnique: jest.fn().mockResolvedValue(null) },
-      organizationMember: { findUnique: jest.fn(), create: jest.fn() },
+      account: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() },
+      organizationMember: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
       organizationInvitation: {
         deleteMany: jest.fn(),
         create: jest.fn(),
@@ -38,6 +40,8 @@ describe('InvitationService', () => {
         delete: jest.fn(),
       },
       organization: { findUnique: jest.fn() },
+      user: { create: jest.fn() },
+      passwordHistory: { create: jest.fn() },
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
     };
     tokenService = {
@@ -135,7 +139,7 @@ describe('InvitationService', () => {
         organization: { businessProfile: { name: '테스트' } },
       };
       prisma.organizationInvitation.findUnique.mockResolvedValue(inv);
-      prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1' });
+      prisma.organizationMember.findUnique.mockResolvedValue({ id: 'm-1', isActive: true });
       await expect(service.accept('raw-token', 'user-1')).rejects.toThrow(ConflictException);
     });
 
@@ -240,6 +244,55 @@ describe('InvitationService', () => {
         acceptedAt: new Date(),
       });
       await expect(service.resend('org-1', 'inv-1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('listMine', () => {
+    it('내 이메일의 대기 초대만 조회한다', async () => {
+      prisma.organizationInvitation.findMany.mockResolvedValue([{ id: 'inv-1' }]);
+      await service.listMine('a@x.com');
+      expect(prisma.organizationInvitation.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            email: 'a@x.com',
+            acceptedAt: null,
+            declinedAt: null,
+            expiresAt: expect.objectContaining({ gt: expect.any(Date) }),
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('declineById', () => {
+    it('내 이메일 대기 초대를 거절 처리한다', async () => {
+      prisma.organizationInvitation.findUnique.mockResolvedValue({
+        id: 'inv-1', email: 'a@x.com', acceptedAt: null, declinedAt: null, expiresAt: new Date(Date.now() + 1000),
+      });
+      await service.declineById('inv-1', 'a@x.com');
+      expect(prisma.organizationInvitation.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'inv-1' }, data: { declinedAt: expect.any(Date) } }),
+      );
+    });
+
+    it('다른 이메일 초대면 NotFound', async () => {
+      prisma.organizationInvitation.findUnique.mockResolvedValue({
+        id: 'inv-1', email: 'other@x.com', acceptedAt: null, declinedAt: null, expiresAt: new Date(Date.now() + 1000),
+      });
+      await expect(service.declineById('inv-1', 'a@x.com')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('listForAdmin', () => {
+    it('수락 제외, 거절/만료 포함하며 status를 파생한다', async () => {
+      const now = Date.now();
+      prisma.organizationInvitation.findMany.mockResolvedValue([
+        { id: 'p', email: 'p@x.com', role: 'STAFF', expiresAt: new Date(now + 1000), declinedAt: null, createdAt: new Date(), invitedBy: { name: '홍' } },
+        { id: 'd', email: 'd@x.com', role: 'STAFF', expiresAt: new Date(now + 1000), declinedAt: new Date(), createdAt: new Date(), invitedBy: { name: '홍' } },
+        { id: 'e', email: 'e@x.com', role: 'STAFF', expiresAt: new Date(now - 1000), declinedAt: null, createdAt: new Date(), invitedBy: { name: '홍' } },
+      ]);
+      const result = await service.listForAdmin('org-1');
+      expect(result.map((r) => r.status)).toEqual(['PENDING', 'DECLINED', 'EXPIRED']);
     });
   });
 });

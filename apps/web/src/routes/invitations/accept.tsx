@@ -113,8 +113,6 @@ function LoggedInActions({ token }: { token: string }) {
 
 /* ── 미로그인: 이메일 가입 폼 ── */
 function SignupForm({ token, inviteEmail }: { token: string; inviteEmail: string }) {
-  const navigate = useNavigate();
-
   const form = useForm<SignupAcceptValues>({
     resolver: zodResolver(signupAcceptSchema),
     defaultValues: { email: inviteEmail, password: '', memberName: '' },
@@ -123,7 +121,7 @@ function SignupForm({ token, inviteEmail }: { token: string; inviteEmail: string
   const onSubmit = async (values: SignupAcceptValues) => {
     try {
       await signupAccept(token, values);
-      await navigate({ to: '/' });
+      window.location.assign('/');
     } catch (err) {
       const status = (err as AxiosError).response?.status;
       const msg = (err as AxiosError<{ message?: string }>).response?.data?.message;

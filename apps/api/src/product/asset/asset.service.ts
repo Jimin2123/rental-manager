@@ -1,13 +1,28 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AssetEventSourceType, AssetStatus, Prisma } from '@prisma/client';
+import { AssetEventSourceType, AssetStatus, BusinessPartnerRoleType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateAssetDto } from './dto/create-asset.dto';
 import type { UpdateAssetDto } from './dto/update-asset.dto';
 import type { QueryAssetDto } from './dto/query-asset.dto';
 
+type PrismaTransaction = Parameters<Parameters<PrismaService['$transaction']>[0]>[0];
+
 @Injectable()
 export class AssetService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async validateSupplier(tx: PrismaTransaction, organizationId: string, supplierId: string): Promise<void> {
+    const role = await tx.businessPartnerRole.findFirst({
+      where: {
+        businessPartnerId: supplierId,
+        organizationId,
+        type: BusinessPartnerRoleType.PURCHASE,
+        businessPartner: { deletedAt: null, isActive: true },
+      },
+      select: { id: true },
+    });
+    if (!role) throw new BadRequestException('매입 거래처로 등록되지 않은 거래처입니다.');
+  }
 
   async create(organizationId: string, dto: CreateAssetDto): Promise<{ id: string }> {
     const product = await this.prisma.product.findUnique({
@@ -19,12 +34,14 @@ export class AssetService {
 
     try {
       const asset = await this.prisma.$transaction(async (tx) => {
+        if (dto.supplierId !== undefined) await this.validateSupplier(tx, organizationId, dto.supplierId);
         const created = await tx.asset.create({
           data: {
             organizationId,
             productId: dto.productId,
             serialNumber: dto.serialNumber,
             status: dto.initialStatus,
+            supplierId: dto.supplierId,
             purchaseDate: dto.purchaseDate ? new Date(dto.purchaseDate) : undefined,
             purchasePrice: dto.purchasePrice,
             memo: dto.memo,
@@ -72,6 +89,7 @@ export class AssetService {
       where: { id_organizationId: { id, organizationId } },
       include: {
         product: { select: { id: true, name: true, manufacturer: true, modelName: true, category: true } },
+        supplier: { select: { id: true, businessProfile: { select: { name: true, businessRegistrationNo: true } } } },
       },
     });
     if (!asset || asset.deletedAt) throw new NotFoundException('자산을 찾을 수 없습니다.');
@@ -84,15 +102,23 @@ export class AssetService {
       select: { id: true, deletedAt: true },
     });
     if (!asset || asset.deletedAt) throw new NotFoundException('자산을 찾을 수 없습니다.');
+
     try {
-      await this.prisma.asset.update({
-        where: { id_organizationId: { id, organizationId } },
-        data: {
-          ...(dto.serialNumber !== undefined && { serialNumber: dto.serialNumber }),
-          ...(dto.purchaseDate !== undefined && { purchaseDate: new Date(dto.purchaseDate) }),
-          ...(dto.purchasePrice !== undefined && { purchasePrice: dto.purchasePrice }),
-          ...(dto.memo !== undefined && { memo: dto.memo }),
-        },
+      await this.prisma.$transaction(async (tx) => {
+        // null/빈 값은 "필드 비우기"이므로 거래처 검증을 건너뛴다.
+        if (dto.supplierId) await this.validateSupplier(tx, organizationId, dto.supplierId);
+        await tx.asset.update({
+          where: { id_organizationId: { id, organizationId } },
+          data: {
+            ...(dto.serialNumber !== undefined && { serialNumber: dto.serialNumber }),
+            ...(dto.supplierId !== undefined && { supplierId: dto.supplierId || null }),
+            ...(dto.purchaseDate !== undefined && {
+              purchaseDate: dto.purchaseDate ? new Date(dto.purchaseDate) : null,
+            }),
+            ...(dto.purchasePrice !== undefined && { purchasePrice: dto.purchasePrice }),
+            ...(dto.memo !== undefined && { memo: dto.memo }),
+          },
+        });
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {

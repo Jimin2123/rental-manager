@@ -12,7 +12,7 @@ export function setAuthCookies(
   rememberMe = false,
 ): void {
   const isProd = process.env['NODE_ENV'] === 'production';
-  const base = { httpOnly: true, secure: isProd, sameSite: 'strict' as const };
+  const base = { httpOnly: true, secure: isProd, sameSite: 'lax' as const };
 
   res.cookie(ACCESS_TOKEN, tokens.accessToken, { ...base, path: '/', maxAge: ACCESS_TTL_MS });
   res.cookie(REFRESH_TOKEN, tokens.refreshToken, {
@@ -32,7 +32,7 @@ export function setAccessTokenCookie(res: Response, accessToken: string): void {
   res.cookie(ACCESS_TOKEN, accessToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict' as const,
+    sameSite: 'lax' as const,
     path: '/',
     maxAge: ACCESS_TTL_MS,
   });

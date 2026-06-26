@@ -10,6 +10,7 @@ import { SessionService } from '../session/session.service';
 import { TokenService } from '../session/token.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SignupDto } from './dto/signup.dto';
 import { SwitchOrgDto } from './dto/switch-org.dto';
 import { EmailAuthService } from './email-auth.service';
 
@@ -23,27 +24,37 @@ export class EmailAuthController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async register(@Body() dto: RegisterDto) {
     await this.emailAuth.register(dto.email, dto.password);
     return { message: '가입 완료. 인증 이메일을 발송했습니다.' };
   }
 
+  @Post('signup')
+  @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
+  async signup(@Body() dto: SignupDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
+    const { tokens, organizations } = await this.emailAuth.signup(dto, meta);
+    setAuthCookies(res, tokens, false);
+    return organizations;
+  }
+
   @Post('login')
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 5 : 1000 } })
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const account = await this.emailAuth.validateCredentials(dto.email, dto.password);
     const meta = { userAgent: req.headers['user-agent'], ipAddress: req.ip };
     const tokens = await this.emailAuth.issueTokens(
       account.id,
       account.userId,
-      account.email,
+      account.email!, // 이메일/패스워드 계정은 항상 email 존재
       dto.rememberMe ?? false,
       meta,
     );
     setAuthCookies(res, tokens, dto.rememberMe ?? false);
-    return { accountId: account.id, email: account.email, emailVerifiedAt: account.emailVerifiedAt };
+    return this.emailAuth.getOrganizations(account.userId);
   }
 
   @Post('logout')

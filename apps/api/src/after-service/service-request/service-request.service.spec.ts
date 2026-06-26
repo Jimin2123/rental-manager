@@ -12,6 +12,7 @@ describe('ServiceRequestService', () => {
     customer: { findUnique: jest.Mock };
     asset: { findUnique: jest.Mock };
     maintenanceSchedule: { findUnique: jest.Mock };
+    rentalContractItem: { findFirst: jest.Mock };
     serviceRequest: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
@@ -22,6 +23,7 @@ describe('ServiceRequestService', () => {
       customer: { findUnique: jest.fn() },
       asset: { findUnique: jest.fn() },
       maintenanceSchedule: { findUnique: jest.fn() },
+      rentalContractItem: { findFirst: jest.fn().mockResolvedValue(null) },
       serviceRequest: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260624-0001') };
@@ -77,6 +79,86 @@ describe('ServiceRequestService', () => {
         }),
       );
       expect(result).toEqual({ id: 'sr-1' });
+    });
+
+    it('warrantyExpiresAt이 미래이면 isWarranty를 true로 자동 판단한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.rentalContractItem.findFirst.mockResolvedValue({
+        rentalOrderItem: { warrantyExpiresAt: new Date(Date.now() + 86400000) },
+      });
+      prisma.serviceRequest.create.mockResolvedValue({ id: 'sr-1' });
+
+      await service.create('org-1', { type: ServiceRequestType.REPAIR, customerId: 'c-1', assetId: 'a-1' });
+
+      expect(prisma.serviceRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isWarranty: true }) }),
+      );
+    });
+
+    it('warrantyExpiresAt이 과거이면 isWarranty를 false로 자동 판단한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.rentalContractItem.findFirst.mockResolvedValue({
+        rentalOrderItem: { warrantyExpiresAt: new Date(Date.now() - 86400000) },
+      });
+      prisma.serviceRequest.create.mockResolvedValue({ id: 'sr-1' });
+
+      await service.create('org-1', { type: ServiceRequestType.REPAIR, customerId: 'c-1', assetId: 'a-1' });
+
+      expect(prisma.serviceRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isWarranty: false }) }),
+      );
+    });
+
+    it('활성 계약 항목이 없으면 isWarranty를 false로 자동 판단한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.rentalContractItem.findFirst.mockResolvedValue(null);
+      prisma.serviceRequest.create.mockResolvedValue({ id: 'sr-1' });
+
+      await service.create('org-1', { type: ServiceRequestType.REPAIR, customerId: 'c-1', assetId: 'a-1' });
+
+      expect(prisma.serviceRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isWarranty: false }) }),
+      );
+    });
+
+    it('RETURNED 상태 계약 항목에 warrantyExpiresAt이 미래이면 isWarranty를 true로 판단한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.rentalContractItem.findFirst.mockResolvedValue({
+        rentalOrderItem: { warrantyExpiresAt: new Date(Date.now() + 86400000) },
+      });
+      prisma.serviceRequest.create.mockResolvedValue({ id: 'sr-1' });
+
+      await service.create('org-1', { type: ServiceRequestType.REPAIR, customerId: 'c-1', assetId: 'a-1' });
+
+      expect(prisma.serviceRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isWarranty: true }) }),
+      );
+    });
+
+    it('isWarranty를 명시적으로 전달하면 자동 판단을 무시한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1', deletedAt: null });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      // warrantyExpiresAt이 미래여도 DTO 값이 우선
+      prisma.rentalContractItem.findFirst.mockResolvedValue({
+        rentalOrderItem: { warrantyExpiresAt: new Date(Date.now() + 86400000) },
+      });
+      prisma.serviceRequest.create.mockResolvedValue({ id: 'sr-1' });
+
+      await service.create('org-1', {
+        type: ServiceRequestType.REPAIR,
+        customerId: 'c-1',
+        assetId: 'a-1',
+        isWarranty: false,
+      });
+
+      expect(prisma.serviceRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isWarranty: false }) }),
+      );
+      expect(prisma.rentalContractItem.findFirst).not.toHaveBeenCalled();
     });
   });
 

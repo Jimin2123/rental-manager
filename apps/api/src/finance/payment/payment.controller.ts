@@ -32,6 +32,6 @@ export class PaymentController {
   @Post(':id/cancel')
   @HttpCode(200)
   cancel(@Param('id') id: string, @OrgCtx() ctx: OrgContext) {
-    return this.service.cancel(ctx.organizationId, id);
+    return this.service.cancel(ctx.organizationId, id, ctx.memberId);
   }
 }

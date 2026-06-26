@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { DocumentSequenceType, InvoiceSettlementStatus, RefundReason, RefundStatus } from '@prisma/client';
+import { AuditAction, DocumentSequenceType, InvoiceSettlementStatus, RefundReason, RefundStatus } from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { RefundService } from './refund.service';
@@ -14,6 +15,7 @@ describe('RefundService', () => {
     customer: { findUnique: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
+  let auditLog: { log: jest.Mock };
 
   const mockInvoice = (overrides = {}) => ({
     id: 'inv-1',
@@ -42,12 +44,14 @@ describe('RefundService', () => {
       customer: { findUnique: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
+    auditLog = { log: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
         RefundService,
         { provide: PrismaService, useValue: prisma },
         { provide: FinanceDocumentSequenceService, useValue: docSeq },
+        { provide: AuditLogService, useValue: auditLog },
       ],
     }).compile();
 
@@ -106,6 +110,65 @@ describe('RefundService', () => {
       );
       expect(docSeq.generateNo).toHaveBeenCalledWith('org-1', DocumentSequenceType.REFUND, prisma);
     });
+
+    it('Refund 생성 시 CREATE 로그를 기록한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
+      prisma.invoice.findUnique.mockResolvedValue(mockInvoice());
+
+      await service.create('org-1', 'mem-1', {
+        customerId: 'cust-1',
+        invoiceId: 'inv-1',
+        reason: RefundReason.BILLING_ERROR,
+        amount: 50000,
+      });
+
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: AuditAction.CREATE,
+          targetType: 'Refund',
+          targetId: 'ref-1',
+          actorId: 'mem-1',
+        }),
+      );
+    });
+  });
+
+  describe('complete', () => {
+    it('존재하지 않으면 NotFoundException', async () => {
+      prisma.refund.findUnique.mockResolvedValue(null);
+      await expect(service.complete('org-1', 'ref-1', 'mem-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('PENDING이 아니면 BadRequestException', async () => {
+      prisma.refund.findUnique.mockResolvedValue({ id: 'ref-1', status: RefundStatus.COMPLETED });
+      await expect(service.complete('org-1', 'ref-1', 'mem-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('PENDING → COMPLETED 처리 및 STATUS_CHANGE 로그를 기록한다', async () => {
+      const before = { id: 'ref-1', organizationId: 'org-1', status: RefundStatus.PENDING, amount: 50000 };
+      prisma.refund.findUnique.mockResolvedValue(before);
+      prisma.refund.update.mockResolvedValue({});
+
+      await service.complete('org-1', 'ref-1', 'mem-1');
+
+      expect(prisma.refund.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: RefundStatus.COMPLETED, refundedAt: expect.any(Date) }),
+        }),
+      );
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: AuditAction.STATUS_CHANGE,
+          targetType: 'Refund',
+          targetId: 'ref-1',
+          actorId: 'mem-1',
+          before: expect.objectContaining({ status: RefundStatus.PENDING }),
+          after: expect.objectContaining({ status: RefundStatus.COMPLETED }),
+        }),
+      );
+    });
   });
 
   describe('cancel', () => {
@@ -115,7 +178,7 @@ describe('RefundService', () => {
         status: RefundStatus.COMPLETED,
         invoiceId: null,
       });
-      await expect(service.cancel('org-1', 'ref-1')).rejects.toThrow(BadRequestException);
+      await expect(service.cancel('org-1', 'ref-1', 'mem-1')).rejects.toThrow(BadRequestException);
     });
 
     it('PENDING 취소 시 Invoice 금액 원복', async () => {
@@ -133,7 +196,7 @@ describe('RefundService', () => {
         }),
       );
 
-      await service.cancel('org-1', 'ref-1');
+      await service.cancel('org-1', 'ref-1', 'mem-1');
 
       expect(prisma.invoice.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -142,6 +205,28 @@ describe('RefundService', () => {
       );
       expect(prisma.refund.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: RefundStatus.CANCELED } }),
+      );
+    });
+
+    it('PENDING 취소 시 CANCEL 로그를 기록한다', async () => {
+      prisma.refund.findUnique.mockResolvedValue({
+        id: 'ref-1',
+        status: RefundStatus.PENDING,
+        invoiceId: null,
+        amount: 50000,
+      });
+      prisma.refund.update.mockResolvedValue({});
+
+      await service.cancel('org-1', 'ref-1', 'mem-1');
+
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: AuditAction.CANCEL,
+          targetType: 'Refund',
+          targetId: 'ref-1',
+          actorId: 'mem-1',
+        }),
       );
     });
   });

@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { InvoiceSettlementStatus, InvoiceStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { AuditAction, InvoiceSettlementStatus, InvoiceStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { PaymentService } from './payment.service';
@@ -15,6 +16,7 @@ describe('PaymentService', () => {
     customer: { findUnique: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
+  let auditLog: { log: jest.Mock };
 
   const mockInvoice = (overrides = {}) => ({
     id: 'inv-1',
@@ -52,12 +54,14 @@ describe('PaymentService', () => {
       customer: { findUnique: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
+    auditLog = { log: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
         PaymentService,
         { provide: PrismaService, useValue: prisma },
         { provide: FinanceDocumentSequenceService, useValue: docSeq },
+        { provide: AuditLogService, useValue: auditLog },
       ],
     }).compile();
 
@@ -139,12 +143,12 @@ describe('PaymentService', () => {
   describe('cancel', () => {
     it('존재하지 않으면 NotFoundException', async () => {
       prisma.payment.findUnique.mockResolvedValue(null);
-      await expect(service.cancel('org-1', 'pay-1')).rejects.toThrow(NotFoundException);
+      await expect(service.cancel('org-1', 'pay-1', 'mem-1')).rejects.toThrow(NotFoundException);
     });
 
     it('이미 CANCELED면 BadRequestException', async () => {
       prisma.payment.findUnique.mockResolvedValue({ id: 'pay-1', status: PaymentStatus.CANCELED });
-      await expect(service.cancel('org-1', 'pay-1')).rejects.toThrow(BadRequestException);
+      await expect(service.cancel('org-1', 'pay-1', 'mem-1')).rejects.toThrow(BadRequestException);
     });
 
     it('COMPLETED → CANCELED, 배분 삭제, Invoice 재계산', async () => {
@@ -154,11 +158,53 @@ describe('PaymentService', () => {
         .fn()
         .mockResolvedValue(mockInvoice({ paidAmount: 50000, outstandingAmount: 60000, finalAmount: 110000 }));
 
-      await service.cancel('org-1', 'pay-1');
+      await service.cancel('org-1', 'pay-1', 'mem-1');
 
       expect(prisma.paymentAllocation.deleteMany).toHaveBeenCalled();
       expect(prisma.payment.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: PaymentStatus.CANCELED } }),
+      );
+    });
+
+    it('Payment 취소 시 CANCEL 로그를 기록한다', async () => {
+      prisma.payment.findUnique.mockResolvedValue({ id: 'pay-1', status: PaymentStatus.COMPLETED });
+      prisma.paymentAllocation.findMany.mockResolvedValue([]);
+
+      await service.cancel('org-1', 'pay-1', 'mem-1');
+
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: AuditAction.CANCEL,
+          targetType: 'Payment',
+          targetId: 'pay-1',
+          actorId: 'mem-1',
+        }),
+      );
+    });
+  });
+
+  describe('create — 감사 로그', () => {
+    it('Payment 생성 시 CREATE 로그를 기록한다', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
+      prisma.invoice.findMany.mockResolvedValue([]);
+
+      await service.create('org-1', 'mem-1', {
+        customerId: 'cust-1',
+        method: PaymentMethod.BANK_TRANSFER,
+        amount: 100000,
+        paidAt: '2026-06-23',
+      });
+
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          organizationId: 'org-1',
+          actorId: 'mem-1',
+          action: AuditAction.CREATE,
+          targetType: 'Payment',
+          targetId: 'pay-1',
+        }),
       );
     });
   });

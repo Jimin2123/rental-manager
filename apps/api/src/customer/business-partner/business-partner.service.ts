@@ -86,39 +86,56 @@ export class BusinessPartnerService {
     });
     if (!partner || partner.deletedAt) throw new NotFoundException('거래처를 찾을 수 없습니다.');
 
-    await this.prisma.$transaction(async (tx) => {
-      if (dto.businessProfile) {
-        const { address: addrDto, ...profileFields } = dto.businessProfile;
-        const profileData = Object.fromEntries(Object.entries(profileFields).filter(([, v]) => v !== undefined));
-        if (Object.keys(profileData).length) {
-          await tx.businessProfile.update({ where: { id: partner.businessProfileId }, data: profileData });
-        }
-        if (addrDto) {
-          const bp = await tx.businessProfile.findUnique({
-            where: { id: partner.businessProfileId },
-            select: { addressId: true },
-          });
-          const addrData = Object.fromEntries(Object.entries(addrDto).filter(([, v]) => v !== undefined));
-          if (Object.keys(addrData).length) {
-            await tx.address.update({ where: { id: bp!.addressId }, data: addrData });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        if (dto.businessProfile) {
+          const { address: addrDto, ...profileFields } = dto.businessProfile;
+          const profileData = Object.fromEntries(Object.entries(profileFields).filter(([, v]) => v !== undefined));
+          if (Object.keys(profileData).length) {
+            await tx.businessProfile.update({ where: { id: partner.businessProfileId }, data: profileData });
+          }
+          if (addrDto) {
+            const bp = await tx.businessProfile.findUnique({
+              where: { id: partner.businessProfileId },
+              select: { addressId: true },
+            });
+            const addrData = Object.fromEntries(Object.entries(addrDto).filter(([, v]) => v !== undefined));
+            if (Object.keys(addrData).length) {
+              await tx.address.update({ where: { id: bp!.addressId }, data: addrData });
+            }
           }
         }
-      }
-      if (dto.roles !== undefined) {
-        await tx.businessPartnerRole.deleteMany({ where: { businessPartnerId: id, organizationId } });
-        if (dto.roles.length) {
-          await tx.businessPartnerRole.createMany({
-            data: dto.roles.map((type) => ({ organizationId, businessPartnerId: id, type })),
+        if (dto.roles !== undefined) {
+          const current = await tx.businessPartnerRole.findMany({
+            where: { businessPartnerId: id, organizationId },
+            select: { id: true, type: true },
           });
+          const currentTypes = current.map((r) => r.type);
+          const toDelete = current.filter((r) => !dto.roles!.includes(r.type));
+          const toCreate = dto.roles.filter((type) => !currentTypes.includes(type));
+          if (toDelete.length) {
+            await tx.businessPartnerRole.deleteMany({ where: { id: { in: toDelete.map((r) => r.id) } } });
+          }
+          if (toCreate.length) {
+            await tx.businessPartnerRole.createMany({
+              data: toCreate.map((type) => ({ organizationId, businessPartnerId: id, type })),
+            });
+          }
         }
+        const partnerData = Object.fromEntries(
+          Object.entries({ memo: dto.memo, isActive: dto.isActive }).filter(([, v]) => v !== undefined),
+        );
+        if (Object.keys(partnerData).length) {
+          await tx.businessPartner.update({ where: { id_organizationId: { id, organizationId } }, data: partnerData });
+        }
+      });
+    } catch (e) {
+      const cause = (e as { cause?: { code?: string; originalMessage?: string } })?.cause;
+      if (cause?.code === 'P0001') {
+        throw new ConflictException(cause.originalMessage ?? '업무 규칙 위반으로 수정할 수 없습니다.');
       }
-      const partnerData = Object.fromEntries(
-        Object.entries({ memo: dto.memo, isActive: dto.isActive }).filter(([, v]) => v !== undefined),
-      );
-      if (Object.keys(partnerData).length) {
-        await tx.businessPartner.update({ where: { id_organizationId: { id, organizationId } }, data: partnerData });
-      }
-    });
+      throw e;
+    }
   }
 
   async softDelete(organizationId: string, id: string): Promise<void> {

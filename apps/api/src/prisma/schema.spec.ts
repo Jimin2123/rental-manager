@@ -41,7 +41,7 @@ describe('Prisma customer schema', () => {
     expect(individualProfileSchema).toContain('model IndividualProfile');
     expect(individualProfileSchema).toContain('addressId String?  @unique');
     expect(individualProfileSchema).toContain('customers           Customer[]');
-    expect(businessPartnerSchema).toContain('customers Customer[]');
+    expect(businessPartnerSchema).toMatch(/customers\s+Customer\[\]/);
     expect(businessPartnerSchema).toContain('@@unique([id, organizationId])');
     expect(businessPartnerContactSchema).toContain(
       'businessPartner   BusinessPartner @relation(fields: [businessPartnerId, organizationId], references: [id, organizationId], onDelete: Restrict)',
@@ -67,7 +67,9 @@ describe('Prisma customer schema', () => {
     expect(enumSchema).toContain('PURCHASE');
 
     expect(organizationSchema).toContain('businessPartnerRoles');
-    expect(businessPartnerSchema).toContain('roles     BusinessPartnerRole[]');
+    expect(businessPartnerSchema).toMatch(/roles\s+BusinessPartnerRole\[\]/);
+    expect(businessPartnerSchema).toContain('purchasedAssets');
+    expect(businessPartnerSchema).toContain('@relation("SupplierAssets")');
 
     expect(businessPartnerRoleSchema).toContain('model BusinessPartnerRole');
     expect(businessPartnerRoleSchema).toContain('type BusinessPartnerRoleType');
@@ -273,8 +275,9 @@ describe('Prisma customer schema', () => {
       'rentalOrder   RentalOrder @relation(fields: [rentalOrderId, organizationId], references: [id, organizationId], onDelete: Restrict)',
     );
     // DRAFT가 기본값 — ACTIVE 직접 활성화 전까지 장비 미점유
-    expect(rentalContractSchema).toContain('status    RentalContractStatus @default(DRAFT)');
-    expect(rentalContractSchema).toContain('isRenewal Boolean');
+    expect(rentalContractSchema).toContain('status      RentalContractStatus @default(DRAFT)');
+    expect(rentalContractSchema).toContain('isRenewal   Boolean');
+    expect(rentalContractSchema).toContain('autoExpire  Boolean              @default(true)');
     expect(rentalContractSchema).toContain('startDate DateTime');
     expect(rentalContractSchema).toContain('endDate   DateTime');
     expect(rentalContractSchema).toContain('contractMonths Int');
@@ -748,7 +751,7 @@ describe('Prisma customer schema', () => {
       expect(accountSchema).toContain(
         'user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)',
       );
-      expect(accountSchema).toContain('email        String  @unique');
+      expect(accountSchema).toContain('email        String? @unique');
       expect(accountSchema).toContain('passwordHash String?');
       expect(accountSchema).toContain('isActive');
       expect(accountSchema).toContain('Boolean   @default(true)');

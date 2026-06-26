@@ -8,13 +8,24 @@ import type { OrgContext } from '../common/guards/organization.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { OrgCtx } from '../common/decorators/org-context.decorator';
 import { OrganizationService } from './organization.service';
+import { BrnVerifyService } from './brn-verify.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { VerifyBrnDto } from './dto/verify-brn.dto';
 
 @ApiTags('organizations')
 @Controller('organizations')
 export class OrganizationController {
-  constructor(private readonly orgService: OrganizationService) {}
+  constructor(
+    private readonly orgService: OrganizationService,
+    private readonly brnVerifyService: BrnVerifyService,
+  ) {}
+
+  @Post('brn/verify')
+  @HttpCode(200)
+  async verifyBrn(@Body() dto: VerifyBrnDto) {
+    return this.brnVerifyService.verify(dto.businessRegistrationNo);
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)

@@ -11,6 +11,7 @@ describe('AssetService', () => {
     product: { findUnique: jest.Mock };
     asset: { create: jest.Mock; findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
     assetEvent: { create: jest.Mock };
+    businessPartnerRole: { findFirst: jest.Mock };
   };
 
   beforeEach(async () => {
@@ -19,6 +20,7 @@ describe('AssetService', () => {
       product: { findUnique: jest.fn() },
       asset: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
       assetEvent: { create: jest.fn() },
+      businessPartnerRole: { findFirst: jest.fn() },
     };
     const module = await Test.createTestingModule({
       providers: [AssetService, { provide: PrismaService, useValue: prisma }],
@@ -91,6 +93,32 @@ describe('AssetService', () => {
       await expect(
         service.create('org-1', { productId: 'p-1', initialStatus: 'AVAILABLE', serialNumber: 'SN-DUPE' }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('throws BadRequestException when supplierId has no PURCHASE role', async () => {
+      prisma.product.findUnique.mockResolvedValue({ id: 'p-1', deletedAt: null });
+      prisma.businessPartnerRole.findFirst.mockResolvedValue(null);
+      await expect(
+        service.create('org-1', { productId: 'p-1', initialStatus: 'AVAILABLE', supplierId: 'bp-1' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('creates asset with supplierId when supplier has PURCHASE role', async () => {
+      prisma.product.findUnique.mockResolvedValue({ id: 'p-1', deletedAt: null });
+      prisma.businessPartnerRole.findFirst.mockResolvedValue({ id: 'role-1' });
+      prisma.asset.create.mockResolvedValue({ id: 'asset-1' });
+      prisma.assetEvent.create.mockResolvedValue({});
+
+      await service.create('org-1', { productId: 'p-1', initialStatus: 'AVAILABLE', supplierId: 'bp-1' });
+
+      expect(prisma.businessPartnerRole.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ businessPartnerId: 'bp-1', organizationId: 'org-1', type: 'PURCHASE' }),
+        }),
+      );
+      expect(prisma.asset.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ supplierId: 'bp-1' }) }),
+      );
     });
   });
 
@@ -166,6 +194,47 @@ describe('AssetService', () => {
       });
       prisma.asset.update.mockRejectedValue(p2002);
       await expect(service.update('org-1', 'a-1', { serialNumber: 'SN-DUPE' })).rejects.toThrow(ConflictException);
+    });
+
+    it('throws BadRequestException when updating supplierId with no PURCHASE role', async () => {
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.businessPartnerRole.findFirst.mockResolvedValue(null);
+      await expect(service.update('org-1', 'a-1', { supplierId: 'bp-1' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates supplierId when supplier has PURCHASE role', async () => {
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.businessPartnerRole.findFirst.mockResolvedValue({ id: 'role-1' });
+      prisma.asset.update.mockResolvedValue({});
+
+      await service.update('org-1', 'a-1', { supplierId: 'bp-1' });
+
+      expect(prisma.asset.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ supplierId: 'bp-1' }) }),
+      );
+    });
+
+    it('clears supplierId/purchaseDate with null without validating supplier', async () => {
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.asset.update.mockResolvedValue({});
+
+      await service.update('org-1', 'a-1', { supplierId: null, purchaseDate: null });
+
+      expect(prisma.businessPartnerRole.findFirst).not.toHaveBeenCalled();
+      expect(prisma.asset.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ supplierId: null, purchaseDate: null }) }),
+      );
+    });
+
+    it('clears serialNumber/memo when explicitly set to null', async () => {
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.asset.update.mockResolvedValue({});
+
+      await service.update('org-1', 'a-1', { serialNumber: null, memo: null });
+
+      expect(prisma.asset.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ serialNumber: null, memo: null }) }),
+      );
     });
   });
 

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProductModule } from '../product/product.module';
 import { OrganizationModule } from '../organization/organization.module';
+import { CommonModule } from '../common/common.module';
 import { DocumentSequenceService } from './common/document-sequence.service';
 import { QuotationService } from './quotation/quotation.service';
 import { QuotationController } from './quotation/quotation.controller';
@@ -12,9 +13,10 @@ import { RentalOrderService } from './rental-order/rental-order.service';
 import { RentalOrderController } from './rental-order/rental-order.controller';
 import { RentalContractService } from './rental-contract/rental-contract.service';
 import { RentalContractController } from './rental-contract/rental-contract.controller';
+import { QuotationExpiryCron } from './cron/quotation-expiry.cron';
 
 @Module({
-  imports: [OrganizationModule, ProductModule],
+  imports: [OrganizationModule, ProductModule, CommonModule],
   providers: [
     DocumentSequenceService,
     QuotationService,
@@ -22,6 +24,7 @@ import { RentalContractController } from './rental-contract/rental-contract.cont
     SaleOrderService,
     RentalOrderService,
     RentalContractService,
+    QuotationExpiryCron,
   ],
   controllers: [
     QuotationController,

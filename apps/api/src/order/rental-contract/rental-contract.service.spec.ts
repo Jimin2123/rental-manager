@@ -1,6 +1,13 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { AssetStatus, BillingTiming, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
+import {
+  AuditAction,
+  AssetStatus,
+  BillingTiming,
+  RentalContractItemStatus,
+  RentalContractStatus,
+} from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
 import { RentalContractService } from './rental-contract.service';
@@ -28,6 +35,7 @@ describe('RentalContractService', () => {
     assetEvent: { create: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
+  let auditLog: { log: jest.Mock };
 
   const mockContract = (overrides = {}) => ({
     id: 'rc-1',
@@ -90,12 +98,14 @@ describe('RentalContractService', () => {
       assetEvent: { create: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
+    auditLog = { log: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
         RentalContractService,
         { provide: PrismaService, useValue: prisma },
         { provide: DocumentSequenceService, useValue: docSeq },
+        { provide: AuditLogService, useValue: auditLog },
       ],
     }).compile();
     service = module.get(RentalContractService);
@@ -152,12 +162,17 @@ describe('RentalContractService', () => {
   });
 
   describe('update', () => {
-    it('throws BadRequestException when not DRAFT', async () => {
+    it('날짜·기간 필드는 DRAFT가 아닌 경우 BadRequestException을 던진다', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ACTIVE }));
       await expect(service.update('org-1', 'rc-1', { contractMonths: 24 })).rejects.toThrow(BadRequestException);
     });
 
-    it('updates DRAFT contract', async () => {
+    it('ENDED 계약은 autoExpire 변경도 불가하다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ENDED }));
+      await expect(service.update('org-1', 'rc-1', { autoExpire: false })).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates DRAFT contract fields', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract());
       prisma.rentalContract.update.mockResolvedValue({});
 
@@ -167,21 +182,93 @@ describe('RentalContractService', () => {
         expect.objectContaining({ data: expect.objectContaining({ contractMonths: 24 }) }),
       );
     });
+
+    it('ACTIVE 계약에서 autoExpire를 false로 변경할 수 있다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ACTIVE }));
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.update('org-1', 'rc-1', { autoExpire: false });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ autoExpire: false }) }),
+      );
+    });
+  });
+
+  describe('extend', () => {
+    it('ACTIVE가 아닌 계약에서 BadRequestException을 던진다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.DRAFT }));
+      await expect(service.extend('org-1', 'rc-1', { endDate: '2028-06-30', contractMonths: 24 })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('새 endDate가 현재 endDate보다 이전이면 BadRequestException을 던진다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({ status: RentalContractStatus.ACTIVE, endDate: new Date('2027-06-30') }),
+      );
+      await expect(service.extend('org-1', 'rc-1', { endDate: '2026-12-31', contractMonths: 18 })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('ACTIVE 계약의 endDate와 contractMonths를 연장하고 autoExpire를 재활성화한다', async () => {
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({ status: RentalContractStatus.ACTIVE, endDate: new Date('2027-06-30') }),
+      );
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.extend('org-1', 'rc-1', { endDate: '2028-06-30', contractMonths: 24 });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            endDate: new Date('2028-06-30'),
+            contractMonths: 24,
+            autoExpire: true,
+          }),
+        }),
+      );
+    });
+
+    it('contractMonths 미입력 시 startDate~endDate 개월 차로 자동 계산한다', async () => {
+      // startDate: 2026-07-01, newEndDate: 2028-06-30 → (2028-2026)*12 + (5-6) = 23개월
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({
+          status: RentalContractStatus.ACTIVE,
+          startDate: new Date('2026-07-01'),
+          endDate: new Date('2027-06-30'),
+        }),
+      );
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.extend('org-1', 'rc-1', { endDate: '2028-06-30' });
+
+      expect(prisma.rentalContract.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            endDate: new Date('2028-06-30'),
+            contractMonths: 23,
+            autoExpire: true,
+          }),
+        }),
+      );
+    });
   });
 
   describe('updateStatus', () => {
     it('throws BadRequestException on invalid transition (ENDED → ACTIVE)', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ status: RentalContractStatus.ENDED }));
-      await expect(service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE })).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE }, 'mem-1'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when activating with no pending items', async () => {
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ items: [] }));
-      await expect(service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE })).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE }, 'mem-1'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('activates contract: items PENDING→ACTIVE, asset AVAILABLE→RENTED', async () => {
@@ -193,7 +280,7 @@ describe('RentalContractService', () => {
       prisma.rentalContractItem.update.mockResolvedValue({});
       prisma.rentalContract.update.mockResolvedValue({});
 
-      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE });
+      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE }, 'mem-1');
 
       expect(prisma.rentalContractItem.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: RentalContractItemStatus.ACTIVE }) }),
@@ -217,7 +304,7 @@ describe('RentalContractService', () => {
       prisma.rentalContractItem.update.mockResolvedValue({});
       prisma.rentalContract.update.mockResolvedValue({});
 
-      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ENDED });
+      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ENDED }, 'mem-1');
 
       expect(prisma.rentalContractItem.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: RentalContractItemStatus.RETURNED }) }),
@@ -233,12 +320,60 @@ describe('RentalContractService', () => {
       prisma.rentalContractItem.updateMany.mockResolvedValue({});
       prisma.rentalContract.update.mockResolvedValue({});
 
-      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.CANCELED });
+      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.CANCELED }, 'mem-1');
 
       expect(prisma.rentalContractItem.updateMany).toHaveBeenCalled();
       expect(prisma.asset.update).not.toHaveBeenCalled();
       expect(prisma.rentalContract.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: RentalContractStatus.CANCELED } }),
+      );
+    });
+
+    it('DRAFT → ACTIVE 전환 시 STATUS_CHANGE 로그를 기록한다', async () => {
+      const pendingItem = mockItem();
+      prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ items: [pendingItem] }));
+      prisma.asset.findUnique.mockResolvedValue({ status: AssetStatus.AVAILABLE });
+      prisma.asset.update.mockResolvedValue({});
+      prisma.assetEvent.create.mockResolvedValue({});
+      prisma.rentalContractItem.update.mockResolvedValue({});
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ACTIVE }, 'mem-1');
+
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          organizationId: 'org-1',
+          actorId: 'mem-1',
+          action: AuditAction.STATUS_CHANGE,
+          targetType: 'RentalContract',
+          targetId: 'rc-1',
+          before: expect.objectContaining({ status: RentalContractStatus.DRAFT }),
+          after: expect.objectContaining({ status: RentalContractStatus.ACTIVE }),
+        }),
+      );
+    });
+
+    it('ACTIVE → CANCELED 전환 시 CANCEL 로그를 기록한다', async () => {
+      const activeItem = mockItem({ status: RentalContractItemStatus.ACTIVE });
+      prisma.rentalContract.findUnique.mockResolvedValue(
+        mockContract({ status: RentalContractStatus.ACTIVE, items: [activeItem] }),
+      );
+      prisma.asset.findUnique.mockResolvedValue({ status: AssetStatus.RENTED });
+      prisma.asset.update.mockResolvedValue({});
+      prisma.assetEvent.create.mockResolvedValue({});
+      prisma.rentalContractItem.updateMany.mockResolvedValue({});
+      prisma.rentalContract.update.mockResolvedValue({});
+
+      await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.CANCELED }, 'mem-1');
+
+      expect(auditLog.log).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: AuditAction.CANCEL,
+          targetType: 'RentalContract',
+          targetId: 'rc-1',
+        }),
       );
     });
   });

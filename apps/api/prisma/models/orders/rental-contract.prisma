@@ -9,8 +9,9 @@ model RentalContract {
 
   contractNo String
 
-  status    RentalContractStatus @default(DRAFT)
-  isRenewal Boolean              @default(false)
+  status      RentalContractStatus @default(DRAFT)
+  isRenewal   Boolean              @default(false)
+  autoExpire  Boolean              @default(true) // false면 만료 크론 자동 종료 제외
 
   startDate DateTime
   endDate   DateTime

@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  AuditAction,
   DocumentSequenceType,
   InvoiceSettlementStatus,
   InvoiceStatus,
   PaymentProvider,
   PaymentStatus,
 } from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
 import { computeSettlementStatus } from '../common/settlement.util';
@@ -19,6 +21,7 @@ export class PaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docSeq: FinanceDocumentSequenceService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async create(organizationId: string, memberId: string, dto: CreatePaymentDto) {
@@ -42,10 +45,18 @@ export class PaymentService {
           externalRef: dto.externalRef,
           memo: dto.memo,
         },
-        select: { id: true },
       });
 
       await this.allocateFifo(tx, organizationId, payment.id, dto.customerId, dto.amount);
+
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.CREATE,
+        targetType: 'Payment',
+        targetId: payment.id,
+        after: payment,
+      });
 
       return { id: payment.id };
     });
@@ -122,13 +133,12 @@ export class PaymentService {
     return payment;
   }
 
-  async cancel(organizationId: string, id: string) {
-    const payment = await this.prisma.payment.findUnique({
+  async cancel(organizationId: string, id: string, memberId: string) {
+    const before = await this.prisma.payment.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { status: true },
     });
-    if (!payment) throw new NotFoundException('수납 내역을 찾을 수 없습니다.');
-    if (payment.status === PaymentStatus.CANCELED) throw new BadRequestException('이미 취소된 수납입니다.');
+    if (!before) throw new NotFoundException('수납 내역을 찾을 수 없습니다.');
+    if (before.status === PaymentStatus.CANCELED) throw new BadRequestException('이미 취소된 수납입니다.');
 
     await this.prisma.$transaction(async (tx) => {
       const allocations = await tx.paymentAllocation.findMany({
@@ -161,6 +171,16 @@ export class PaymentService {
       await tx.payment.update({
         where: { id_organizationId: { id, organizationId } },
         data: { status: PaymentStatus.CANCELED },
+      });
+
+      await this.auditLog.log(tx, {
+        organizationId,
+        actorId: memberId,
+        action: AuditAction.CANCEL,
+        targetType: 'Payment',
+        targetId: id,
+        before,
+        after: { ...before, status: PaymentStatus.CANCELED },
       });
     });
   }

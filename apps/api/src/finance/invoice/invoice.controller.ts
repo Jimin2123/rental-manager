@@ -40,13 +40,13 @@ export class InvoiceController {
   @Post(':id/issue')
   @HttpCode(200)
   issue(@Param('id') id: string, @OrgCtx() ctx: OrgContext) {
-    return this.service.issue(ctx.organizationId, id);
+    return this.service.issue(ctx.organizationId, id, ctx.memberId);
   }
 
   @Post(':id/cancel')
   @HttpCode(200)
   cancel(@Param('id') id: string, @OrgCtx() ctx: OrgContext) {
-    return this.service.cancel(ctx.organizationId, id);
+    return this.service.cancel(ctx.organizationId, id, ctx.memberId);
   }
 
   @Post(':id/items')

@@ -4,6 +4,7 @@ import { MailModule } from '../mail/mail.module';
 import { OrganizationGuard } from '../common/guards/organization.guard';
 import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
+import { BrnVerifyService } from './brn-verify.service';
 import { MemberController } from './member/member.controller';
 import { MemberService } from './member/member.service';
 import { InvitationController } from './invitation/invitation.controller';
@@ -11,7 +12,7 @@ import { InvitationService } from './invitation/invitation.service';
 
 @Module({
   imports: [AuthModule, MailModule],
-  providers: [OrganizationService, MemberService, InvitationService, OrganizationGuard],
+  providers: [OrganizationService, BrnVerifyService, MemberService, InvitationService, OrganizationGuard],
   controllers: [OrganizationController, MemberController, InvitationController],
   exports: [OrganizationGuard],
 })

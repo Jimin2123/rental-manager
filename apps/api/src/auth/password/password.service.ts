@@ -32,9 +32,9 @@ export class PasswordService {
 
     await this.tokenStore.save({ token: hashed, type: 'PASSWORD_RESET', accountId: account.id, expiresAt });
 
-    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
-    const resetUrl = `${appUrl}/auth/password/reset?token=${rawToken}`;
-    await this.mailService.sendPasswordReset(account.email, resetUrl);
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:5173');
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    await this.mailService.sendPasswordReset(account.email!, resetUrl);
   }
 
   async resetPassword(rawToken: string, newPassword: string): Promise<void> {

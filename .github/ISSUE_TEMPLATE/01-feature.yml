@@ -1,39 +1,39 @@
-name: Feature
-description: Plan a new backward-compatible feature
+name: 기능 (Feature)
+description: 하위 호환되는 새 기능을 기획합니다
 title: 'feat: '
 labels: ['type: feature', 'flow: feature']
 body:
   - type: markdown
     attributes:
       value: |
-        Use this for new product or developer-facing behavior. Start from `develop` with `git flow feature start <issue-number>-<slug>`.
+        새 기능 작업용 템플릿입니다.
+        `develop`에서 `feature/<scope>/<description>` 브랜치를 생성해 진행하세요.
 
   - type: input
     id: summary
     attributes:
-      label: Feature Summary
-      description: Describe the feature in one sentence.
-      placeholder: 'Add rental product creation API'
+      label: 요약
+      description: 기능을 한 문장으로 설명하세요.
+      placeholder: '렌탈 상품 생성 API 추가'
     validations:
       required: true
 
   - type: textarea
     id: background
     attributes:
-      label: Background / Purpose
-      description: Explain the problem this feature solves.
+      label: 배경 / 목적
+      description: 이 기능이 해결하는 문제를 설명하세요.
       placeholder: |
-        Admins need to create rental products without direct database edits.
+        관리자가 DB를 직접 수정하지 않고 렌탈 상품을 생성할 수 있어야 합니다.
     validations:
       required: true
 
   - type: textarea
     id: requirements
     attributes:
-      label: Requirements
-      description: List the required behavior as a checklist.
+      label: 요구사항
+      description: 필요한 동작을 체크리스트로 작성하세요.
       value: |
-        - [ ]
         - [ ]
         - [ ]
     validations:
@@ -42,18 +42,18 @@ body:
   - type: textarea
     id: acceptance
     attributes:
-      label: Acceptance Criteria
+      label: 완료 기준 (Acceptance Criteria)
       value: |
-        - [ ] Happy path works.
-        - [ ] Error cases are handled.
-        - [ ] Tests or documented manual checks are included.
+        - [ ] 정상 흐름이 동작한다
+        - [ ] 예외 케이스가 처리된다
+        - [ ] 테스트 또는 문서화된 수동 검증이 포함된다
     validations:
       required: true
 
   - type: dropdown
     id: area
     attributes:
-      label: Area
+      label: 영향 영역 (Area)
       options:
         - web
         - api
@@ -66,45 +66,35 @@ body:
   - type: textarea
     id: api_db_changes
     attributes:
-      label: API / Data Changes
-      description: List endpoint, DTO, entity, schema, or data contract changes.
+      label: API / 데이터 변경
+      description: 엔드포인트, DTO, 모델/스키마, 마이그레이션 변경을 적으세요.
       placeholder: |
         API:
         - POST /rental-products
 
-        Data:
-        - rental_products table
+        데이터:
+        - prisma/models/product/rental-product.prisma (신규 모델)
+        - 마이그레이션 1건
 
   - type: textarea
-    id: test_plan
+    id: validation
     attributes:
-      label: Validation Plan
+      label: 검증 계획
+      description: '`apps/api` 또는 `apps/web` 디렉터리에서 실행합니다.'
       value: |
-        - [ ] npm run lint
-        - [ ] npm run build
-        - [ ] npm run test -w api
-        - [ ] Manual UI/API check
+        - [ ] pnpm lint
+        - [ ] pnpm build
+        - [ ] pnpm test
+        - [ ] 수동 UI/API 확인
 
   - type: dropdown
     id: semver
     attributes:
-      label: SemVer Impact
+      label: SemVer 영향
       options:
-        - MINOR - backward-compatible feature
-        - MAJOR - breaking change
-        - PATCH - internal only
-        - Unknown
+        - 'MINOR — 하위 호환 새 기능'
+        - 'MAJOR — 하위 호환 불가 변경'
+        - 'PATCH — 내부 변경만'
+        - '미정'
     validations:
       required: true
-
-  - type: checkboxes
-    id: git_flow
-    attributes:
-      label: Git Flow Checklist
-      options:
-        - label: 'Branch from `develop`.'
-          required: true
-        - label: 'Use `git flow feature start <issue-number>-<slug>`.'
-          required: true
-        - label: 'Open the PR back to `develop`.'
-          required: true

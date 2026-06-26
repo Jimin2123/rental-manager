@@ -14,11 +14,12 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductModule } from './product/product.module';
 import { OrderModule } from './order/order.module';
 import { AfterServiceModule } from './after-service/after-service.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: process.env['NODE_ENV'] === 'production' ? 20 : 1000 }]),
     ScheduleModule.forRoot(),
     PrismaModule,
     MailModule,
@@ -29,6 +30,7 @@ import { AfterServiceModule } from './after-service/after-service.module';
     OrderModule,
     FinanceModule,
     AfterServiceModule,
+    CommonModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

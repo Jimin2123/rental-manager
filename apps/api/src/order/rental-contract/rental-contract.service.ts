@@ -1,9 +1,17 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AssetEventSourceType, AssetStatus, RentalContractItemStatus, RentalContractStatus } from '@prisma/client';
+import {
+  AuditAction,
+  AssetEventSourceType,
+  AssetStatus,
+  RentalContractItemStatus,
+  RentalContractStatus,
+} from '@prisma/client';
+import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
 import { CreateRentalContractDto } from './dto/create-rental-contract.dto';
 import { CreateRentalContractItemDto } from './dto/create-rental-contract-item.dto';
+import { ExtendRentalContractDto } from './dto/extend-rental-contract.dto';
 import { ReplaceRentalContractItemDto } from './dto/replace-rental-contract-item.dto';
 import { ReturnRentalContractItemDto } from './dto/return-rental-contract-item.dto';
 import { UpdateRentalContractDto } from './dto/update-rental-contract.dto';
@@ -24,6 +32,7 @@ export class RentalContractService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docSeq: DocumentSequenceService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async create(organizationId: string, dto: CreateRentalContractDto) {
@@ -84,8 +93,21 @@ export class RentalContractService {
       select: { status: true },
     });
     if (!contract) throw new NotFoundException('계약을 찾을 수 없습니다.');
-    if (contract.status !== RentalContractStatus.DRAFT)
-      throw new BadRequestException('DRAFT 상태의 계약만 수정할 수 있습니다.');
+
+    const isTerminal =
+      contract.status === RentalContractStatus.ENDED || contract.status === RentalContractStatus.CANCELED;
+    if (isTerminal) throw new BadRequestException('종료되거나 취소된 계약은 수정할 수 없습니다.');
+
+    const hasDraftOnlyFields =
+      dto.startDate !== undefined ||
+      dto.endDate !== undefined ||
+      dto.contractMonths !== undefined ||
+      dto.billingDay !== undefined ||
+      dto.paymentDueDay !== undefined ||
+      dto.billingTiming !== undefined;
+
+    if (hasDraftOnlyFields && contract.status !== RentalContractStatus.DRAFT)
+      throw new BadRequestException('날짜·기간·청구 설정은 DRAFT 상태의 계약만 수정할 수 있습니다.');
 
     await this.prisma.rentalContract.update({
       where: { id_organizationId: { id, organizationId } },
@@ -96,11 +118,38 @@ export class RentalContractService {
         ...(dto.billingDay !== undefined && { billingDay: dto.billingDay }),
         ...(dto.paymentDueDay !== undefined && { paymentDueDay: dto.paymentDueDay }),
         ...(dto.billingTiming !== undefined && { billingTiming: dto.billingTiming }),
+        ...(dto.autoExpire !== undefined && { autoExpire: dto.autoExpire }),
       },
     });
   }
 
-  async updateStatus(organizationId: string, id: string, dto: UpdateRentalContractStatusDto) {
+  async extend(organizationId: string, id: string, dto: ExtendRentalContractDto): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const contract = await tx.rentalContract.findUnique({
+        where: { id_organizationId: { id, organizationId } },
+        select: { status: true, endDate: true, startDate: true },
+      });
+      if (!contract) throw new NotFoundException('계약을 찾을 수 없습니다.');
+      if (contract.status !== RentalContractStatus.ACTIVE)
+        throw new BadRequestException('ACTIVE 상태의 계약만 기간 연장할 수 있습니다.');
+
+      const newEndDate = new Date(dto.endDate);
+      if (newEndDate <= contract.endDate)
+        throw new BadRequestException('연장 종료일은 현재 종료일보다 이후여야 합니다.');
+
+      const contractMonths =
+        dto.contractMonths ??
+        (newEndDate.getUTCFullYear() - contract.startDate.getUTCFullYear()) * 12 +
+          (newEndDate.getUTCMonth() - contract.startDate.getUTCMonth());
+
+      await tx.rentalContract.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: { endDate: newEndDate, contractMonths, autoExpire: true },
+      });
+    });
+  }
+
+  async updateStatus(organizationId: string, id: string, dto: UpdateRentalContractStatusDto, memberId: string | null) {
     const contract = await this.prisma.rentalContract.findUnique({
       where: { id_organizationId: { id, organizationId } },
       include: { items: true },
@@ -111,8 +160,10 @@ export class RentalContractService {
     if (!allowed.includes(dto.status))
       throw new BadRequestException(`${contract.status} 상태에서 ${dto.status}로 전환할 수 없습니다.`);
 
+    const { items, ...beforeSnapshot } = contract;
+
     if (dto.status === RentalContractStatus.ACTIVE) {
-      const pendingItems = contract.items.filter((i) => i.status === RentalContractItemStatus.PENDING);
+      const pendingItems = items.filter((i) => i.status === RentalContractItemStatus.PENDING);
       if (pendingItems.length === 0) throw new BadRequestException('계약 활성화를 위한 장비 항목이 없습니다.');
 
       await this.prisma.$transaction(async (tx) => {
@@ -128,9 +179,18 @@ export class RentalContractService {
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.ACTIVE },
         });
+        await this.auditLog.log(tx, {
+          organizationId,
+          actorId: memberId,
+          action: AuditAction.STATUS_CHANGE,
+          targetType: 'RentalContract',
+          targetId: id,
+          before: beforeSnapshot,
+          after: { ...beforeSnapshot, status: dto.status },
+        });
       });
     } else if (dto.status === RentalContractStatus.ENDED) {
-      const activeItems = contract.items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
+      const activeItems = items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
 
       await this.prisma.$transaction(async (tx) => {
         const now = new Date();
@@ -145,9 +205,18 @@ export class RentalContractService {
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.ENDED },
         });
+        await this.auditLog.log(tx, {
+          organizationId,
+          actorId: memberId,
+          action: AuditAction.STATUS_CHANGE,
+          targetType: 'RentalContract',
+          targetId: id,
+          before: beforeSnapshot,
+          after: { ...beforeSnapshot, status: dto.status },
+        });
       });
     } else if (dto.status === RentalContractStatus.CANCELED) {
-      const activeItems = contract.items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
+      const activeItems = items.filter((i) => i.status === RentalContractItemStatus.ACTIVE);
 
       await this.prisma.$transaction(async (tx) => {
         // ACTIVE 아이템의 Asset 반환
@@ -166,6 +235,15 @@ export class RentalContractService {
         await tx.rentalContract.update({
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.CANCELED },
+        });
+        await this.auditLog.log(tx, {
+          organizationId,
+          actorId: memberId,
+          action: AuditAction.CANCEL,
+          targetType: 'RentalContract',
+          targetId: id,
+          before: beforeSnapshot,
+          after: { ...beforeSnapshot, status: dto.status },
         });
       });
     }

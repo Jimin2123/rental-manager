@@ -1,39 +1,29 @@
-name: Bugfix
-description: Fix a defect found before production release
+name: 버그 수정 (Bugfix)
+description: 버그를 보고하고 수정합니다 (운영 긴급 hotfix 포함)
 title: 'fix: '
-labels: ['type: bug', 'flow: bugfix']
+labels: ['type: bug']
 body:
   - type: markdown
     attributes:
       value: |
-        Use this for bugs found in development, QA, or a release branch. Production emergencies belong in Hotfix.
+        버그 수정용 템플릿입니다.
+        - 일반 버그: `develop`에서 `bugfix/<scope>/<description>` 브랜치로 진행하세요.
+        - 운영 긴급(hotfix): 심각도를 `긴급`으로 선택하고 `main`에서 `hotfix/<description>` 브랜치로 진행하세요.
 
   - type: input
     id: summary
     attributes:
-      label: Bug Summary
-      placeholder: 'rentalPrice is not saved when creating a product'
+      label: 요약
+      description: 버그를 한 문장으로 설명하세요.
+      placeholder: '렌탈 상품 목록에서 삭제된 항목이 노출됨'
     validations:
       required: true
 
   - type: textarea
-    id: current_behavior
+    id: steps
     attributes:
-      label: Current Behavior
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected_behavior
-    attributes:
-      label: Expected Behavior
-    validations:
-      required: true
-
-  - type: textarea
-    id: reproduce
-    attributes:
-      label: Steps to Reproduce
+      label: 재현 절차
+      description: 버그를 재현하는 단계를 순서대로 작성하세요.
       value: |
         1.
         2.
@@ -41,65 +31,66 @@ body:
     validations:
       required: true
 
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 결과
+      description: 정상적으로 동작했다면 어떻게 되어야 하나요?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 결과
+      description: 실제로 어떤 일이 일어났나요? (에러 메시지/로그 포함)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영향 영역 (Area)
+      options:
+        - web
+        - api
+        - full-stack
+        - tooling
+        - docs
+    validations:
+      required: true
+
   - type: dropdown
     id: severity
     attributes:
-      label: Severity
+      label: 심각도 (Priority)
+      description: 운영 환경(main)에 영향을 주는 긴급 버그면 `긴급`을 선택하세요.
       options:
-        - Critical
-        - High
-        - Medium
-        - Low
-    validations:
-      required: true
-
-  - type: dropdown
-    id: target_branch
-    attributes:
-      label: Target Branch
-      description: Select the branch line where the fix should start.
-      options:
-        - develop
-        - release/*
+        - '일반 — develop에서 bugfix 브랜치로 처리'
+        - '긴급 — main 운영 hotfix'
     validations:
       required: true
 
   - type: textarea
-    id: cause
+    id: validation
     attributes:
-      label: Suspected Cause
-      placeholder: 'DTO validation, service mapping, entity column, or unknown.'
-
-  - type: textarea
-    id: fix_plan
-    attributes:
-      label: Fix Plan
+      label: 검증 계획
+      description: '`apps/api` 또는 `apps/web` 디렉터리에서 실행합니다.'
       value: |
-        - [ ] Identify root cause.
-        - [ ] Add or update regression coverage.
-        - [ ] Apply minimal fix.
-        - [ ] Verify target branch behavior.
+        - [ ] 재현 케이스를 덮는 테스트 추가
+        - [ ] pnpm lint
+        - [ ] pnpm build
+        - [ ] pnpm test
+        - [ ] 수동 UI/API 확인
 
   - type: dropdown
     id: semver
     attributes:
-      label: SemVer Impact
+      label: SemVer 영향
       options:
-        - PATCH - backward-compatible bug fix
-        - MINOR - behavior changes while remaining compatible
-        - MAJOR - breaking change
-        - Unknown
+        - 'PATCH — 버그 수정'
+        - 'MINOR — 하위 호환 동작 변경 동반'
+        - 'MAJOR — 하위 호환 불가 변경 동반'
+        - '미정'
     validations:
       required: true
-
-  - type: checkboxes
-    id: git_flow
-    attributes:
-      label: Git Flow Checklist
-      options:
-        - label: 'Confirm whether the fix starts from `develop` or `release/*`.'
-          required: true
-        - label: 'Use `git flow bugfix start <issue-number>-<slug>` when available, or the matching `bugfix/` branch convention.'
-          required: true
-        - label: 'Open the PR back to the selected target branch.'
-          required: true

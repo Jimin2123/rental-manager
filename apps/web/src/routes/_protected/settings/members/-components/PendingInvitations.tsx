@@ -1,11 +1,18 @@
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { PendingInvitation } from '../-types';
 import { ROLE_LABEL } from '../-types';
 import { fetchInvitations, invalidateInvitations, invitationKeys } from '../-api';
 import { api } from '@/lib/api';
+
+const STATUS_LABEL: Record<PendingInvitation['status'], string> = {
+  PENDING: '대기',
+  DECLINED: '거절됨',
+  EXPIRED: '만료됨',
+};
 
 export function PendingInvitations({ orgId }: { orgId: string }) {
   const queryClient = useQueryClient();
@@ -46,7 +53,16 @@ export function PendingInvitations({ orgId }: { orgId: string }) {
           {invitations.map((inv) => (
             <li key={inv.id} className="flex items-center justify-between py-3 text-sm">
               <div>
-                <p className="font-medium">{inv.email}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{inv.email}</p>
+                  <Badge
+                    variant={
+                      inv.status === 'DECLINED' ? 'destructive' : inv.status === 'EXPIRED' ? 'outline' : 'secondary'
+                    }
+                  >
+                    {STATUS_LABEL[inv.status]}
+                  </Badge>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {ROLE_LABEL[inv.role]} · 만료 {new Date(inv.expiresAt).toLocaleDateString('ko-KR')}
                 </p>

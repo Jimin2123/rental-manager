@@ -22,6 +22,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, MoreHorizontal } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
   Product,
@@ -609,6 +617,7 @@ function AssetPanel({
 }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<StatusTransition | null>(null);
   const [statusNote, setStatusNote] = useState('');
@@ -689,52 +698,73 @@ function AssetPanel({
 
   return (
     <div className="p-4 space-y-4">
-      {/* 액션 버튼 */}
-      <div className="flex flex-wrap gap-2">
-        {transitions.map((t) => (
-          <Button
-            key={t.toStatus}
-            size="sm"
-            variant={t.variant}
-            onClick={() => {
-              setPendingTransition(t);
-              setStatusOpen(true);
-            }}
-          >
-            {t.label}
-          </Button>
-        ))}
-        {!isEditing && (
-          <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-            수정
-          </Button>
-        )}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="destructive">
-              삭제
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>자산 삭제</DialogTitle>
-              <DialogDescription>이 자산을 삭제하시겠습니까? 되돌릴 수 없습니다.</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">취소</Button>
-              </DialogClose>
-              <Button
-                variant="destructive"
-                disabled={deleteMutation.isPending}
-                onClick={() => void deleteMutation.mutate()}
-              >
-                {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+      {/* 액션 바 */}
+      <div className="flex items-center gap-2">
+        {transitions.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline">
+                상태 변경 <ChevronDown className="ml-1 h-3 w-3" />
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {transitions.map((t) => (
+                <DropdownMenuItem
+                  key={t.toStatus}
+                  className={t.variant === 'destructive' ? 'text-destructive focus:text-destructive' : ''}
+                  onSelect={() => {
+                    setPendingTransition(t);
+                    setStatusOpen(true);
+                  }}
+                >
+                  {t.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setIsEditing(true)}>수정</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => setDeleteOpen(true)}
+              >
+                삭제
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* 자산 삭제 Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>자산 삭제</DialogTitle>
+            <DialogDescription>이 자산을 삭제하시겠습니까? 되돌릴 수 없습니다.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">취소</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => void deleteMutation.mutate()}
+            >
+              {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 상태 변경 메모 Dialog */}
       <Dialog

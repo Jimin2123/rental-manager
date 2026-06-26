@@ -97,7 +97,7 @@ function ProductInfoCard({ product, onDeleted }: { product: Product; onDeleted: 
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
+    values: {
       name: product.name,
       manufacturer: product.manufacturer ?? '',
       modelName: product.modelName ?? '',
@@ -119,13 +119,6 @@ function ProductInfoCard({ product, onDeleted }: { product: Product; onDeleted: 
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('제품 정보가 수정되었습니다.');
       setIsEditing(false);
-      form.reset({
-        name: product.name,
-        manufacturer: product.manufacturer ?? '',
-        modelName: product.modelName ?? '',
-        category: product.category ?? '',
-        memo: product.memo ?? '',
-      });
     },
     onError: () => toast.error('수정 중 오류가 발생했습니다.'),
   });
@@ -362,7 +355,13 @@ function AssetTable({ productId }: { productId: string }) {
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">자산 목록 ({assets.length})</h2>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <Dialog
+          open={addOpen}
+          onOpenChange={(open) => {
+            setAddOpen(open);
+            if (!open) addForm.reset({ initialStatus: 'AVAILABLE' });
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="sm" variant="outline">
               + 자산 추가

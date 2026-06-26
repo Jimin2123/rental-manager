@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { api } from '@/lib/api';
 import type { BusinessPartnerListItem, RoleType } from './-types';
 import { ROLE_LABEL } from './-types';
+import { partnerKeys, fetchPartners } from './-api';
 
 export const Route = createFileRoute('/_protected/business-partners/')({
   component: BusinessPartnersPage,
@@ -20,17 +20,10 @@ function BusinessPartnersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
 
+  const filters = { q: search || undefined, role: roleFilter === 'ALL' ? undefined : roleFilter };
   const { data = [], isLoading } = useQuery<BusinessPartnerListItem[]>({
-    queryKey: ['business-partners', 'list', { search, roleFilter }],
-    queryFn: () =>
-      api
-        .get<BusinessPartnerListItem[]>('/business-partners', {
-          params: {
-            ...(search && { q: search }),
-            ...(roleFilter !== 'ALL' && { role: roleFilter }),
-          },
-        })
-        .then((r) => r.data),
+    queryKey: partnerKeys.list(filters),
+    queryFn: () => fetchPartners(filters),
   });
 
   return (

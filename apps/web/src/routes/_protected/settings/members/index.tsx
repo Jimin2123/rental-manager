@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useAuthStore } from '@/store/auth.store';
 import { SettingsNav } from '../-nav';
+import { MemberTable } from './-components/MemberTable';
 
 export const Route = createFileRoute('/_protected/settings/members/')({
   component: MembersPage,
@@ -18,7 +19,7 @@ function MembersPage() {
         <p className="text-sm text-muted-foreground">직원 관리는 관리자만 접근할 수 있습니다.</p>
       ) : (
         <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">직원 관리 (구현 예정)</p>
+          <MemberTable orgId={org.id} />
         </div>
       )}
     </div>

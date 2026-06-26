@@ -22,12 +22,40 @@ export const ASSET_STATUS_VARIANT: Record<AssetStatus, 'default' | 'secondary' |
   UNAVAILABLE: 'outline',
 };
 
+// 수동으로 전환 가능한 상태 규칙
+export type StatusTransition = {
+  toStatus: AssetStatus;
+  label: string;
+  variant: 'default' | 'destructive' | 'outline';
+};
+
+export const MANUAL_STATUS_TRANSITIONS: Partial<Record<AssetStatus, StatusTransition[]>> = {
+  INCOMING: [{ toStatus: 'AVAILABLE', label: '입고 완료', variant: 'default' }],
+  AVAILABLE: [
+    { toStatus: 'REPAIR', label: '수리 접수', variant: 'outline' },
+    { toStatus: 'LOST', label: '분실 신고', variant: 'destructive' },
+    { toStatus: 'UNAVAILABLE', label: '사용 중단', variant: 'outline' },
+  ],
+  REPAIR: [{ toStatus: 'AVAILABLE', label: '수리 완료', variant: 'default' }],
+  LOST: [{ toStatus: 'AVAILABLE', label: '발견', variant: 'default' }],
+  UNAVAILABLE: [{ toStatus: 'AVAILABLE', label: '사용 재개', variant: 'default' }],
+};
+
+export type AssetStats = {
+  total: number;
+  byStatus: Partial<Record<AssetStatus, number>>;
+};
+
 export type Product = {
   id: string;
   name: string;
   manufacturer: string | null;
   modelName: string | null;
   category: string | null;
+  memo: string | null;
+  isActive: boolean;
+  createdAt: string;
+  assetStats: AssetStats;
 };
 
 export type AssetListItem = {
@@ -35,7 +63,7 @@ export type AssetListItem = {
   serialNumber: string | null;
   status: AssetStatus;
   purchaseDate: string | null;
-  product: Pick<Product, 'name' | 'category'>;
+  product: { id: string; name: string; manufacturer: string | null; modelName: string | null; category: string | null };
 };
 
 export type AssetDetail = {
@@ -45,7 +73,6 @@ export type AssetDetail = {
   purchaseDate: string | null;
   purchasePrice: number | null;
   memo: string | null;
-  product: Product;
   supplier: { id: string; businessProfile: { name: string } } | null;
 };
 
@@ -68,3 +95,5 @@ export type MeterReading = {
   readingMethod: string;
   note: string | null;
 };
+
+export type Supplier = { id: string; businessProfile: { name: string } };

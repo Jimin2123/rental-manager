@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { to: '/invoices', label: '청구서', icon: '🧾' },
   { to: '/payments', label: '수납', icon: '💳' },
   { to: '/refunds', label: '환불', icon: '↩' },
-  { to: '/assets', label: '자산', icon: '📦' },
+  { to: '/products', label: '제품', icon: '📦' },
   { to: '/business-partners', label: '거래처', icon: '🏢' },
   { to: '/customers', label: '고객', icon: '👤' },
 ] as const;

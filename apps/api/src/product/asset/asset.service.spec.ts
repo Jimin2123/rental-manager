@@ -213,6 +213,29 @@ describe('AssetService', () => {
         expect.objectContaining({ data: expect.objectContaining({ supplierId: 'bp-1' }) }),
       );
     });
+
+    it('clears supplierId/purchaseDate with null without validating supplier', async () => {
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.asset.update.mockResolvedValue({});
+
+      await service.update('org-1', 'a-1', { supplierId: null, purchaseDate: null });
+
+      expect(prisma.businessPartnerRole.findFirst).not.toHaveBeenCalled();
+      expect(prisma.asset.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ supplierId: null, purchaseDate: null }) }),
+      );
+    });
+
+    it('clears serialNumber/memo when explicitly set to null', async () => {
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', deletedAt: null });
+      prisma.asset.update.mockResolvedValue({});
+
+      await service.update('org-1', 'a-1', { serialNumber: null, memo: null });
+
+      expect(prisma.asset.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ serialNumber: null, memo: null }) }),
+      );
+    });
   });
 
   describe('changeStatus', () => {

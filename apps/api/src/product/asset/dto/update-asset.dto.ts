@@ -3,23 +3,23 @@ import { IsInt, IsISO8601, IsOptional, IsString, MinLength, Min } from 'class-va
 export class UpdateAssetDto {
   @IsOptional()
   @IsString()
-  serialNumber?: string;
+  serialNumber?: string | null;
 
   @IsOptional()
   @IsISO8601()
-  purchaseDate?: string;
+  purchaseDate?: string | null;
 
   @IsOptional()
   @IsInt()
   @Min(0)
-  purchasePrice?: number;
+  purchasePrice?: number | null;
 
   @IsOptional()
   @IsString()
   @MinLength(1)
-  supplierId?: string;
+  supplierId?: string | null;
 
   @IsOptional()
   @IsString()
-  memo?: string;
+  memo?: string | null;
 }

@@ -25,12 +25,18 @@ test('/setup 미인증 상태 접근 시 /login으로 리다이렉트된다', as
 });
 
 test('/setup 조직 있는 유저 접근 시 /로 리다이렉트된다', async ({ page }) => {
+  // 복귀 사용자: 세션 마커가 있어야 부트스트랩이 /organizations/me를 호출한다
+  await page.addInitScript(() => localStorage.setItem('rm_has_session', '1'));
   await page.route('**/organizations/me', (route) => route.fulfill({ status: 200, body: JSON.stringify(MOCK_ORGS) }));
+  await page.route('**/auth/switch-org', (route) => route.fulfill({ status: 200, body: '{}' }));
   await page.goto('/setup');
   await expect(page).toHaveURL('/');
 });
 
 test('/setup 페이지가 정상 렌더링된다 (인증됨, 조직 없음)', async ({ page }) => {
+  // 모든 라우트/initScript는 goto 전에 등록해야 적용된다(특히 카카오 주소 mock).
+  // 복귀 사용자: 세션 마커가 있어야 부트스트랩이 /organizations/me를 호출한다
+  await page.addInitScript(() => localStorage.setItem('rm_has_session', '1'));
   let setupVisited = false;
   await page.route('**/organizations/me', async (route) => {
     if (setupVisited) {
@@ -39,12 +45,6 @@ test('/setup 페이지가 정상 렌더링된다 (인증됨, 조직 없음)', as
       await route.fulfill({ status: 200, body: JSON.stringify([]) });
     }
   });
-
-  await page.goto('/setup');
-  await expect(page.getByRole('heading', { name: '조직 정보 입력' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '시작하기' })).toBeVisible();
-
-  // 폼 제출 후 대시보드로 이동 확인
   await page.route('**/organizations/brn/verify', (route) =>
     route.fulfill({ status: 200, body: JSON.stringify({ valid: true, status: '계속사업자' }) }),
   );
@@ -74,6 +74,10 @@ test('/setup 페이지가 정상 렌더링된다 (인증됨, 조직 없음)', as
       buildingName: '',
     },
   );
+
+  await page.goto('/setup');
+  await expect(page.getByRole('heading', { name: '조직 정보 입력' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '시작하기' })).toBeVisible();
 
   await page.getByPlaceholder('홍길동').first().fill('홍길동');
   await page.getByPlaceholder('(주)렌탈회사').fill('테스트회사');

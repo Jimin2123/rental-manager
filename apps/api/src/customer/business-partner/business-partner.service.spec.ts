@@ -11,7 +11,7 @@ describe('BusinessPartnerService', () => {
     address: { create: jest.Mock; update: jest.Mock };
     businessProfile: { create: jest.Mock; update: jest.Mock; findUnique: jest.Mock };
     businessPartner: { create: jest.Mock; findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
-    businessPartnerRole: { createMany: jest.Mock; deleteMany: jest.Mock };
+    businessPartnerRole: { createMany: jest.Mock; deleteMany: jest.Mock; findMany: jest.Mock };
     businessPartnerContact: {
       createMany: jest.Mock;
       create: jest.Mock;
@@ -27,7 +27,7 @@ describe('BusinessPartnerService', () => {
       address: { create: jest.fn(), update: jest.fn() },
       businessProfile: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
       businessPartner: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
-      businessPartnerRole: { createMany: jest.fn(), deleteMany: jest.fn() },
+      businessPartnerRole: { createMany: jest.fn(), deleteMany: jest.fn(), findMany: jest.fn() },
       businessPartnerContact: {
         createMany: jest.fn(),
         create: jest.fn(),
@@ -115,15 +115,25 @@ describe('BusinessPartnerService', () => {
 
     it('replaces roles when roles array provided', async () => {
       prisma.businessPartner.findUnique.mockResolvedValue({ id: 'p-1', businessProfileId: 'bp-1', deletedAt: null });
+      // 서비스는 현재 역할을 조회해(diff) 빠진 것만 삭제하고 새 것만 생성한다.
+      prisma.businessPartnerRole.findMany.mockResolvedValue([{ id: 'role-sale', type: 'SALE' }]);
       prisma.businessPartnerRole.deleteMany.mockResolvedValue({});
       prisma.businessPartnerRole.createMany.mockResolvedValue({});
 
       await service.update('org-1', 'p-1', { roles: ['PURCHASE'] });
 
+      // SALE → 빠졌으니 id로 삭제
       expect(prisma.businessPartnerRole.deleteMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { businessPartnerId: 'p-1', organizationId: 'org-1' } }),
+        expect.objectContaining({ where: { id: { in: ['role-sale'] } } }),
       );
-      expect(prisma.businessPartnerRole.createMany).toHaveBeenCalled();
+      // PURCHASE → 새로 생성
+      expect(prisma.businessPartnerRole.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.arrayContaining([
+            expect.objectContaining({ organizationId: 'org-1', businessPartnerId: 'p-1', type: 'PURCHASE' }),
+          ]),
+        }),
+      );
     });
   });
 

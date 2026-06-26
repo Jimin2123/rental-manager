@@ -70,16 +70,14 @@ function AlreadyMemberScreen({ org }: { org: Organization }) {
       <div className="w-full max-w-md px-4">
         <div className="rounded-lg border bg-card p-8 text-center shadow-sm">
           <h1 className="mb-2 text-xl font-bold text-card-foreground">이미 가입된 조직입니다</h1>
-          <p className="mb-4 text-sm text-muted-foreground">
-            현재 계정은 이미 이 조직의 멤버이므로 초대를 수락할 필요가 없습니다.
-          </p>
+          <p className="mb-4 text-sm text-muted-foreground">현재 계정은 이미 이 조직의 멤버입니다</p>
           <div className="mb-6 space-y-3 rounded-lg border bg-muted/30 p-4 text-left">
             <div>
               <p className="mb-1 text-xs font-medium text-muted-foreground">현재 로그인된 계정</p>
               <p className="text-sm font-semibold text-foreground">{me?.email ?? '—'}</p>
             </div>
             <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">현재 로그인된 조직</p>
+              <p className="mb-1 text-xs font-medium text-muted-foreground">합류할 조직</p>
               <p className="text-base font-semibold text-foreground">{org.name}</p>
               <p className="text-xs text-muted-foreground">역할: {ROLE_LABEL[org.role]}</p>
             </div>

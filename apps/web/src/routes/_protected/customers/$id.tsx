@@ -6,6 +6,7 @@ import type { CustomerDetail } from './-types';
 import { customerKeys, fetchCustomer, invalidateCustomer } from './-api';
 import { CustomerDetailView } from './-components/CustomerDetailView';
 import { CustomerEditForm } from './-components/CustomerEditForm';
+import { AssignmentSection } from './-components/AssignmentSection';
 
 export const Route = createFileRoute('/_protected/customers/$id')({
   component: CustomerDetailPage,
@@ -30,8 +31,8 @@ function CustomerDetailPage() {
   const title = customer.individualProfile?.name ?? customer.businessPartner?.businessProfile.name ?? '고객';
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-center gap-4">
+    <div className="mx-auto max-w-2xl space-y-4">
+      <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" onClick={() => void navigate({ to: '/customers' })}>
           ← 목록
         </Button>
@@ -58,6 +59,9 @@ function CustomerDetailPage() {
           }}
         />
       )}
+
+      {/* 담당자 배정 — 개인 고객만 (법인은 거래처에서 관리) */}
+      {customer.type === 'INDIVIDUAL' && <AssignmentSection customerId={customer.id} />}
     </div>
   );
 }

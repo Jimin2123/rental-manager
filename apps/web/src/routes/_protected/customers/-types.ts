@@ -57,3 +57,16 @@ export type CustomerDetail = {
     roles: { id: string; type: 'SALES' | 'PURCHASE' }[];
   } | null;
 };
+
+// 담당자 배정 — 백엔드 assignment.list include와 1:1.
+// endedAt이 null이면 현재 배정, 값이 있으면 종료(이력)된 배정이다.
+export type Assignment = {
+  id: string;
+  role: string | null;
+  isPrimary: boolean;
+  startedAt: string;
+  endedAt: string | null;
+  memo: string | null;
+  organizationMember: { id: string; name: string; role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'STAFF' };
+  customerContact: { id: string; name: string; department: string | null } | null;
+};

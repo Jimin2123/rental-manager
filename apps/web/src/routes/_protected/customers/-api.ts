@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { CustomerListItem, CustomerDetail } from './-types';
+import type { CustomerListItem, CustomerDetail, Assignment } from './-types';
 
 export type CustomerListFilters = { q?: string; isActive?: boolean };
 
@@ -30,3 +30,11 @@ export function invalidateCustomer(qc: QueryClient, id: string): void {
   void qc.invalidateQueries({ queryKey: customerKeys.detail(id) });
   void qc.invalidateQueries({ queryKey: customerKeys.lists() });
 }
+
+// ─── 담당자 배정 ──────────────────────────────────────────────────
+export const assignmentKeys = {
+  list: (customerId: string) => ['customers', customerId, 'assignments'] as const,
+};
+
+export const fetchAssignments = (customerId: string) =>
+  api.get<Assignment[]>(`/customers/${customerId}/assignments`).then((r) => r.data);

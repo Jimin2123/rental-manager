@@ -15,7 +15,13 @@ import { ROLE_LABEL } from '../../settings/members/-types';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('ko-KR');
 
-export function AssignmentSection({ customerId }: { customerId: string }) {
+export function AssignmentSection({
+  customerId,
+  individualProfileId,
+}: {
+  customerId: string;
+  individualProfileId: string;
+}) {
   const queryClient = useQueryClient();
   const orgId = useAuthStore((s) => s.currentOrganization?.id);
 
@@ -48,6 +54,8 @@ export function AssignmentSection({ customerId }: { customerId: string }) {
     mutationFn: () =>
       api.post(`/customers/${customerId}/assignments`, {
         organizationMemberId: memberId,
+        // 개인 고객 배정은 해당 고객의 개인 프로필을 가리켜야 한다(DB 가드).
+        individualProfileId,
         role: role || undefined,
         isPrimary,
       }),

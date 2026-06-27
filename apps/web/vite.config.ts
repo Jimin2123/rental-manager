@@ -31,6 +31,7 @@ export default defineConfig({
       '/assets': apiProxy(),
       '/business-partners': apiProxy(),
       '/products': apiProxy(),
+      '/customers': apiProxy(),
     },
   },
 });

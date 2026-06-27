@@ -61,7 +61,9 @@ function CustomerDetailPage() {
       )}
 
       {/* 담당자 배정 — 개인 고객만 (법인은 거래처에서 관리) */}
-      {customer.type === 'INDIVIDUAL' && <AssignmentSection customerId={customer.id} />}
+      {customer.type === 'INDIVIDUAL' && customer.individualProfile && (
+        <AssignmentSection customerId={customer.id} individualProfileId={customer.individualProfile.id} />
+      )}
     </div>
   );
 }

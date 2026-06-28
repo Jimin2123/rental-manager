@@ -159,6 +159,58 @@ describe('RentalContractService', () => {
       );
       expect(result).toEqual({ id: 'rc-1' });
     });
+
+    it('throws BadRequestException when endDate is not after startDate', async () => {
+      prisma.rentalOrder.findUnique.mockResolvedValue({ id: 'ro-1' });
+      prisma.rentalContract.findUnique.mockResolvedValue(null);
+      await expect(
+        service.create('org-1', {
+          rentalOrderId: 'ro-1',
+          startDate: '2027-06-30',
+          endDate: '2026-07-01',
+          contractMonths: 12,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('creates contract items atomically in the same transaction', async () => {
+      prisma.rentalOrder.findUnique.mockResolvedValue({ id: 'ro-1' });
+      prisma.rentalContract.findUnique.mockResolvedValue(null);
+      prisma.rentalContract.create.mockResolvedValue({ id: 'rc-1' });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', status: AssetStatus.AVAILABLE, deletedAt: null });
+      prisma.rentalContractItem.create.mockResolvedValue({ id: 'rci-1' });
+
+      await service.create('org-1', {
+        rentalOrderId: 'ro-1',
+        startDate: '2026-07-01',
+        endDate: '2027-06-30',
+        contractMonths: 12,
+        items: [{ assetId: 'a-1', monthlyRentalPrice: 40000 }],
+      });
+
+      expect(prisma.rentalContractItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ rentalContractId: 'rc-1', assetId: 'a-1', monthlyRentalPrice: 40000 }),
+        }),
+      );
+    });
+
+    it('rejects contract creation when an item asset is not AVAILABLE', async () => {
+      prisma.rentalOrder.findUnique.mockResolvedValue({ id: 'ro-1' });
+      prisma.rentalContract.findUnique.mockResolvedValue(null);
+      prisma.rentalContract.create.mockResolvedValue({ id: 'rc-1' });
+      prisma.asset.findUnique.mockResolvedValue({ id: 'a-1', status: AssetStatus.RENTED, deletedAt: null });
+
+      await expect(
+        service.create('org-1', {
+          rentalOrderId: 'ro-1',
+          startDate: '2026-07-01',
+          endDate: '2027-06-30',
+          contractMonths: 12,
+          items: [{ assetId: 'a-1', monthlyRentalPrice: 40000 }],
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('update', () => {

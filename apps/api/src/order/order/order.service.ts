@@ -131,7 +131,12 @@ export class OrderService {
         },
         manager: { select: { id: true, name: true } },
         saleOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
-        rentalOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
+        rentalOrder: {
+          include: {
+            items: { include: { product: { select: { name: true } } } },
+            contract: { select: { id: true, status: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

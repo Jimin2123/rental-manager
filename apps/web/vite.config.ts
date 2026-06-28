@@ -33,6 +33,7 @@ export default defineConfig({
       '/products': apiProxy(),
       '/customers': apiProxy(),
       '/orders': apiProxy(),
+      '/quotations': apiProxy(),
     },
   },
 });

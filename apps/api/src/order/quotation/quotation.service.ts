@@ -85,7 +85,16 @@ export class QuotationService {
         ...(query.status && { status: query.status }),
         ...(query.customerId && { customerId: query.customerId }),
       },
-      include: { customer: { select: { id: true } }, items: true },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+        items: { include: { product: { select: { name: true } } } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -93,7 +102,16 @@ export class QuotationService {
   async findOne(organizationId: string, id: string) {
     const q = await this.prisma.quotation.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      include: { customer: { select: { id: true } }, items: true },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+        items: { include: { product: { select: { name: true } } } },
+      },
     });
     if (!q) throw new NotFoundException('견적을 찾을 수 없습니다.');
     return q;

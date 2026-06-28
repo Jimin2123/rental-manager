@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import type { QuotationType } from '../-types';
 import type { ItemRow } from './payload';
 import { emptyItemRow } from './payload';
-import { fetchProductOptions, fetchAssetOptions } from '../../orders/-api';
-import type { ProductOption, AssetOption } from '../../orders/-api';
+import { fetchProductOptions, fetchAssetOptions } from '@/lib/options-api';
+import type { ProductOption, AssetOption } from '@/lib/options-api';
 
 type Props = {
   type: QuotationType;

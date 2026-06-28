@@ -21,8 +21,8 @@ import {
   quotationTotal,
 } from '../-types';
 import { quotationKeys, invalidateQuotation } from '../-api';
-import { fetchProductOptions, fetchAssetOptions } from '../../orders/-api';
-import type { ProductOption, AssetOption } from '../../orders/-api';
+import { fetchProductOptions, fetchAssetOptions } from '@/lib/options-api';
+import type { ProductOption, AssetOption } from '@/lib/options-api';
 import { emptyItemRow, itemRowToBody, type ItemRow } from './payload';
 
 // ISO 날짜 → date input 값(YYYY-MM-DD).

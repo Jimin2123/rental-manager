@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
 import { DetailRow } from '@/components/ui/detail-row';
-import { fetchProductOptions, fetchAssetOptions } from '../../orders/-api';
-import type { ProductOption, AssetOption } from '../../orders/-api';
+import { fetchProductOptions, fetchAssetOptions } from '@/lib/options-api';
+import type { ProductOption, AssetOption } from '@/lib/options-api';
 import type { ContractDetail, ContractStatus } from '../-types';
 import {
   CONTRACT_STATUS_LABEL,

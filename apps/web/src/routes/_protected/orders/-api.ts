@@ -30,20 +30,3 @@ export function invalidateOrder(qc: QueryClient, id: string): void {
   void qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
   void qc.invalidateQueries({ queryKey: orderKeys.lists() });
 }
-
-// ─── 품목 입력용 옵션 ─────────────────────────────────────────────
-export type ProductOption = { id: string; name: string };
-export type AssetOption = { id: string; serialNumber: string };
-
-export const fetchProductOptions = () =>
-  api
-    .get<Array<{ id: string; name: string }>>('/products')
-    .then((r) => r.data.map((p) => ({ id: p.id, name: p.name })));
-
-// 제품의 가용(AVAILABLE) 자산만.
-export const fetchAssetOptions = (productId: string) =>
-  api
-    .get<Array<{ id: string; serialNumber: string }>>('/assets', {
-      params: { productId, status: 'AVAILABLE' },
-    })
-    .then((r) => r.data.map((a) => ({ id: a.id, serialNumber: a.serialNumber })));

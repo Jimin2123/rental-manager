@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CustomerType } from '@prisma/client';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BusinessPartnerRoleType, CustomerType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateCustomerDto } from './dto/create-customer.dto';
 import type { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -10,8 +10,8 @@ export class CustomerService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(organizationId: string, dto: CreateCustomerDto): Promise<{ id: string }> {
-    const customer = await this.prisma.$transaction(async (tx) => {
-      if (dto.type === CustomerType.INDIVIDUAL) {
+    if (dto.type === CustomerType.INDIVIDUAL) {
+      const customer = await this.prisma.$transaction(async (tx) => {
         let addressId: string | undefined;
         if (dto.individualProfile!.address) {
           const addr = await tx.address.create({ data: dto.individualProfile!.address });
@@ -28,38 +28,30 @@ export class CustomerService {
         return tx.customer.create({
           data: { organizationId, type: CustomerType.INDIVIDUAL, individualProfileId: profile.id, memo: dto.memo },
         });
-      } else {
-        const bp = dto.businessPartner!;
-        const addr = await tx.address.create({ data: bp.businessProfile.address });
-        const businessProfile = await tx.businessProfile.create({
-          data: {
-            name: bp.businessProfile.name,
-            businessRegistrationNo: bp.businessProfile.businessRegistrationNo,
-            representativeName: bp.businessProfile.representativeName,
-            businessType: bp.businessProfile.businessType,
-            businessItem: bp.businessProfile.businessItem,
-            email: bp.businessProfile.email,
-            phone: bp.businessProfile.phone,
-            addressId: addr.id,
-          },
-        });
-        const partner = await tx.businessPartner.create({
-          data: { organizationId, businessProfileId: businessProfile.id, memo: bp.memo },
-        });
-        if (bp.roles?.length) {
-          await tx.businessPartnerRole.createMany({
-            data: bp.roles.map((type) => ({ organizationId, businessPartnerId: partner.id, type })),
-          });
-        }
-        if (bp.contacts?.length) {
-          await tx.businessPartnerContact.createMany({
-            data: bp.contacts.map((c) => ({ ...c, organizationId, businessPartnerId: partner.id })),
-          });
-        }
-        return tx.customer.create({
-          data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: partner.id, memo: dto.memo },
-        });
-      }
+      });
+      return { id: customer.id };
+    }
+
+    // 법인 고객: 기존 거래처를 연결한다(새 거래처를 만들지 않음).
+    const businessPartnerId = dto.businessPartnerId!;
+    const partner = await this.prisma.businessPartner.findUnique({
+      where: { id_organizationId: { id: businessPartnerId, organizationId } },
+      select: { id: true, deletedAt: true, roles: { select: { type: true } } },
+    });
+    if (!partner || partner.deletedAt) throw new NotFoundException('거래처를 찾을 수 없습니다.');
+    // 고객 = 매출 대상. 매입 전용 거래처(공급자)는 고객으로 등록할 수 없다.
+    if (!partner.roles.some((r) => r.type === BusinessPartnerRoleType.SALES)) {
+      throw new BadRequestException('매출 거래처만 고객으로 등록할 수 있습니다.');
+    }
+
+    const existing = await this.prisma.customer.findFirst({
+      where: { organizationId, businessPartnerId, deletedAt: null },
+      select: { id: true },
+    });
+    if (existing) throw new ConflictException('이미 고객으로 등록된 거래처입니다.');
+
+    const customer = await this.prisma.customer.create({
+      data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId, memo: dto.memo },
     });
     return { id: customer.id };
   }

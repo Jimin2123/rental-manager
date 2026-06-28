@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CustomerService } from './customer.service';
@@ -9,11 +9,17 @@ describe('CustomerService', () => {
     $transaction: jest.Mock;
     address: { create: jest.Mock; update: jest.Mock };
     businessProfile: { create: jest.Mock };
-    businessPartner: { create: jest.Mock };
+    businessPartner: { create: jest.Mock; findUnique: jest.Mock };
     businessPartnerRole: { createMany: jest.Mock };
     businessPartnerContact: { createMany: jest.Mock };
     individualProfile: { create: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
-    customer: { create: jest.Mock; findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock };
+    customer: {
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      findFirst: jest.Mock;
+      findMany: jest.Mock;
+      update: jest.Mock;
+    };
   };
 
   beforeEach(async () => {
@@ -21,11 +27,17 @@ describe('CustomerService', () => {
       $transaction: jest.fn().mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
       address: { create: jest.fn(), update: jest.fn() },
       businessProfile: { create: jest.fn() },
-      businessPartner: { create: jest.fn() },
+      businessPartner: { create: jest.fn(), findUnique: jest.fn() },
       businessPartnerRole: { createMany: jest.fn() },
       businessPartnerContact: { createMany: jest.fn() },
       individualProfile: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-      customer: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+      customer: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+      },
     };
     const module = await Test.createTestingModule({
       providers: [CustomerService, { provide: PrismaService, useValue: prisma }],
@@ -80,37 +92,63 @@ describe('CustomerService', () => {
   });
 
   describe('create BUSINESS', () => {
-    it('creates BusinessProfile, BusinessPartner, roles, contacts, and Customer in transaction', async () => {
-      prisma.address.create.mockResolvedValue({ id: 'addr-1' });
-      prisma.businessProfile.create.mockResolvedValue({ id: 'bp-1' });
-      prisma.businessPartner.create.mockResolvedValue({ id: 'partner-1' });
-      prisma.businessPartnerRole.createMany.mockResolvedValue({ count: 1 });
+    it('links existing BusinessPartner without creating a new one', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        deletedAt: null,
+        roles: [{ type: 'SALES' }],
+      });
+      prisma.customer.findFirst.mockResolvedValue(null);
       prisma.customer.create.mockResolvedValue({ id: 'cust-1' });
 
-      const result = await service.create('org-1', {
-        type: 'BUSINESS',
-        businessPartner: {
-          roles: ['SALES'],
-          businessProfile: {
-            name: '(주)ABC',
-            businessRegistrationNo: '000-00-00000',
-            representativeName: '홍길동',
-            address: { zonecode: '12345', address: '서울시' },
-          },
-        },
-      });
+      const result = await service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'partner-1' });
 
-      expect(prisma.businessPartner.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ organizationId: 'org-1', businessProfileId: 'bp-1' }),
-        }),
-      );
+      expect(prisma.businessPartner.create).not.toHaveBeenCalled();
       expect(prisma.customer.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ type: 'BUSINESS', businessPartnerId: 'partner-1' }),
         }),
       );
       expect(result).toEqual({ id: 'cust-1' });
+    });
+
+    it('throws NotFoundException when partner missing or soft-deleted', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue(null);
+      await expect(service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'nope' })).rejects.toThrow(
+        NotFoundException,
+      );
+
+      prisma.businessPartner.findUnique.mockResolvedValue({ id: 'partner-1', deletedAt: new Date() });
+      await expect(service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'partner-1' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws BadRequestException when partner has no SALES role (매입 전용)', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        deletedAt: null,
+        roles: [{ type: 'PURCHASE' }],
+      });
+
+      await expect(service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'partner-1' })).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.customer.create).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when partner already linked to an active customer', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        deletedAt: null,
+        roles: [{ type: 'SALES' }],
+      });
+      prisma.customer.findFirst.mockResolvedValue({ id: 'existing-cust' });
+
+      await expect(service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'partner-1' })).rejects.toThrow(
+        ConflictException,
+      );
+      expect(prisma.customer.create).not.toHaveBeenCalled();
     });
   });
 

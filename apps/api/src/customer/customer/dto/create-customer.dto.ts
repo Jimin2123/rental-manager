@@ -1,7 +1,7 @@
 import { IsDefined, IsEmail, IsEnum, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CustomerType } from '@prisma/client';
-import { CreateAddressDto, CreateBusinessPartnerDto } from '../../business-partner/dto/create-business-partner.dto';
+import { CreateAddressDto } from '../../business-partner/dto/create-business-partner.dto';
 
 export class CreateIndividualProfileDto {
   @IsString() name: string;
@@ -20,9 +20,9 @@ export class CreateCustomerDto {
   @Type(() => CreateIndividualProfileDto)
   individualProfile?: CreateIndividualProfileDto;
 
+  // 법인 고객은 기존 거래처를 연결한다(새 거래처를 만들지 않음).
   @ValidateIf((o: CreateCustomerDto) => o.type === CustomerType.BUSINESS)
   @IsDefined()
-  @ValidateNested()
-  @Type(() => CreateBusinessPartnerDto)
-  businessPartner?: CreateBusinessPartnerDto;
+  @IsString()
+  businessPartnerId?: string;
 }

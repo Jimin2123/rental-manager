@@ -172,7 +172,12 @@ describe('OrderService', () => {
             }),
             manager: { select: { id: true, name: true } },
             saleOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
-            rentalOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
+            rentalOrder: {
+              include: {
+                items: { include: { product: { select: { name: true } } } },
+                contract: { select: { id: true, status: true } },
+              },
+            },
           }),
         }),
       );
@@ -191,6 +196,23 @@ describe('OrderService', () => {
       expect(prisma.order.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
           include: expect.objectContaining({ manager: { select: { id: true, name: true } } }),
+        }),
+      );
+    });
+
+    it('includes rentalOrder.contract 역참조', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'o-1' });
+      await service.findOne('org-1', 'o-1');
+      expect(prisma.order.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            rentalOrder: {
+              include: {
+                items: { include: { product: { select: { name: true } } } },
+                contract: { select: { id: true, status: true } },
+              },
+            },
+          }),
         }),
       );
     });

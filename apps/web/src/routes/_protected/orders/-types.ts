@@ -50,6 +50,7 @@ export type RentalItem = {
   productId: string;
   product: { name: string };
   serialNumber: string | null;
+  assetId: string | null;
   monthlyRentalPrice: number;
   depositAmount: number | null;
   installationLocation: string | null;
@@ -65,7 +66,7 @@ export type OrderListItem = {
   customer: CustomerRef;
   manager: ManagerRef;
   saleOrder: { items: SaleItem[] } | null;
-  rentalOrder: { items: RentalItem[] } | null;
+  rentalOrder: { id: string; items: RentalItem[]; contract: { id: string; status: string } | null } | null;
 };
 
 export type OrderDetail = OrderListItem & { memo: string | null };

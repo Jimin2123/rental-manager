@@ -12,6 +12,9 @@ import { useAuthStore } from '@/store/auth.store';
 import type { OrderDetail, OrderStatus } from '../-types';
 import { ORDER_TYPE_LABEL, ORDER_STATUS_LABEL, ORDER_TRANSITIONS, customerNameOf, orderTotal } from '../-types';
 import { orderKeys, invalidateOrder } from '../-api';
+import { contractKeys } from '../../contracts/-api';
+import { buildCreateContractBody, emptyContractForm, isContractSubmittable } from '../../contracts/-components/payload';
+import type { ContractFormState } from '../../contracts/-components/payload';
 
 export function OrderDetailView({ order }: { order: OrderDetail }) {
   const navigate = useNavigate();
@@ -20,6 +23,8 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
   const canDelete = order.status === 'REGISTERED' && (role === 'OWNER' || role === 'ADMIN');
 
   const [memo, setMemo] = useState(order.memo ?? '');
+  const [showContractForm, setShowContractForm] = useState(false);
+  const existingContract = order.type === 'RENTAL' ? (order.rentalOrder?.contract ?? null) : null;
 
   const statusMutation = useMutation({
     mutationFn: (status: OrderStatus) => api.patch(`/orders/${order.id}/status`, { status }),
@@ -59,6 +64,13 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
 
   return (
     <div className="space-y-6">
+      {showContractForm && order.type === 'RENTAL' && order.rentalOrder && (
+        <ContractCreateCard
+          rentalOrderId={order.rentalOrder.id}
+          rentalItems={order.rentalOrder.items}
+          onClose={() => setShowContractForm(false)}
+        />
+      )}
       {/* 헤더 카드 */}
       <div className="rounded-lg border bg-card p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -67,16 +79,32 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
             <Badge variant={order.type === 'SALE' ? 'default' : 'secondary'}>{ORDER_TYPE_LABEL[order.type]}</Badge>
             <Badge variant="outline">{ORDER_STATUS_LABEL[order.status]}</Badge>
           </div>
-          {canDelete && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate()}
-            >
-              삭제
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {order.type === 'RENTAL' && existingContract && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void navigate({ to: '/contracts/$id', params: { id: existingContract.id } })}
+              >
+                계약 보기
+              </Button>
+            )}
+            {order.type === 'RENTAL' && !existingContract && (
+              <Button size="sm" onClick={() => setShowContractForm((v) => !v)}>
+                계약 생성
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate()}
+              >
+                삭제
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -174,6 +202,125 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex gap-2">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function ContractCreateCard({
+  rentalOrderId,
+  rentalItems,
+  onClose,
+}: {
+  rentalOrderId: string;
+  rentalItems: { id: string; assetId: string | null; monthlyRentalPrice: number }[];
+  onClose: () => void;
+}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<ContractFormState>(emptyContractForm());
+  const patch = (p: Partial<ContractFormState>) => setForm((s) => ({ ...s, ...p }));
+  const copyable = rentalItems.filter((i) => i.assetId);
+
+  const mutation = useMutation({
+    // 계약 + 자산 지정 항목을 한 번의 요청으로 생성한다(백엔드 트랜잭션, 부분 실패 시 전체 롤백).
+    mutationFn: async () => {
+      const items = copyable.map((it) => ({
+        assetId: it.assetId as string,
+        rentalOrderItemId: it.id,
+        monthlyRentalPrice: it.monthlyRentalPrice,
+      }));
+      const res = await api.post<{ id: string }>(
+        '/rental-contracts',
+        buildCreateContractBody(rentalOrderId, form, items),
+      );
+      return res.data.id;
+    },
+    onSuccess: (contractId) => {
+      void queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast.success('계약이 생성되었습니다.');
+      void navigate({ to: '/contracts/$id', params: { id: contractId } });
+    },
+    onError: (err) => {
+      const s = (err as AxiosError).response?.status;
+      if (s === 409) toast.error('이미 이 주문에 연결된 계약이 있습니다.');
+      else if (s === 400) toast.error('계약 정보를 확인해주세요. (날짜·자산 상태)');
+      else toast.error('계약 생성 중 오류가 발생했습니다.');
+    },
+  });
+
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">계약 생성</h3>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          닫기
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <LabeledInput label="시작일" type="date" value={form.startDate} onChange={(v) => patch({ startDate: v })} />
+        <LabeledInput label="종료일" type="date" value={form.endDate} onChange={(v) => patch({ endDate: v })} />
+        <LabeledInput
+          label="계약개월"
+          type="number"
+          value={String(form.contractMonths)}
+          onChange={(v) => patch({ contractMonths: Number(v) })}
+        />
+        <div className="space-y-1">
+          <p className="text-xs font-medium">선/후불</p>
+          <select
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
+            value={form.billingTiming}
+            onChange={(e) => patch({ billingTiming: e.target.value as ContractFormState['billingTiming'] })}
+          >
+            <option value="PREPAID">선불</option>
+            <option value="POSTPAID">후불</option>
+          </select>
+        </div>
+        <LabeledInput
+          label="청구일(1-31)"
+          type="number"
+          value={form.billingDay}
+          onChange={(v) => patch({ billingDay: v })}
+        />
+        <LabeledInput
+          label="납부기한일(1-31)"
+          type="number"
+          value={form.paymentDueDay}
+          onChange={(v) => patch({ paymentDueDay: v })}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        자산이 지정된 주문 항목 {copyable.length}건이 계약 항목으로 복사됩니다.
+      </p>
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          disabled={!isContractSubmittable(form) || mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? '생성 중...' : '생성'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function LabeledInput({
+  label,
+  type,
+  value,
+  onChange,
+}: {
+  label: string;
+  type: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-medium">{label}</p>
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

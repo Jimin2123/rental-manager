@@ -3,6 +3,7 @@ import {
   AuditAction,
   AssetEventSourceType,
   AssetStatus,
+  Prisma,
   RentalContractItemStatus,
   RentalContractStatus,
 } from '@prisma/client';
@@ -46,9 +47,12 @@ export class RentalContractService {
     });
     if (existing) throw new ConflictException('이미 이 주문에 연결된 계약이 존재합니다.');
 
+    if (new Date(dto.endDate) <= new Date(dto.startDate))
+      throw new BadRequestException('종료일은 시작일보다 이후여야 합니다.');
+
     const contract = await this.prisma.$transaction(async (tx) => {
       const contractNo = await this.docSeq.generateNo(organizationId, 'RENTAL_CONTRACT', tx);
-      return tx.rentalContract.create({
+      const created = await tx.rentalContract.create({
         data: {
           organizationId,
           rentalOrderId: dto.rentalOrderId,
@@ -62,16 +66,85 @@ export class RentalContractService {
         },
         select: { id: true },
       });
+
+      // 항목을 같은 트랜잭션으로 생성 — 자산 검증 실패 시 계약까지 전체 롤백된다.
+      for (const item of dto.items ?? []) {
+        await this.assertAssetAvailable(tx, organizationId, item.assetId);
+        await tx.rentalContractItem.create({
+          data: this.buildContractItemData(organizationId, created.id, item),
+          select: { id: true },
+        });
+      }
+
+      return created;
     });
 
     return { id: contract.id };
+  }
+
+  // 자산이 존재하고 AVAILABLE 상태인지 검증한다. (계약 생성/항목 추가 공용)
+  private async assertAssetAvailable(
+    client: Prisma.TransactionClient,
+    organizationId: string,
+    assetId: string,
+  ): Promise<void> {
+    const asset = await client.asset.findUnique({
+      where: { id_organizationId: { id: assetId, organizationId } },
+      select: { id: true, status: true, deletedAt: true },
+    });
+    if (!asset || asset.deletedAt) throw new NotFoundException('자산을 찾을 수 없습니다.');
+    if (asset.status !== AssetStatus.AVAILABLE)
+      throw new BadRequestException('AVAILABLE 상태의 자산만 계약에 추가할 수 있습니다.');
+  }
+
+  // 계약 항목 생성 data 매핑. (계약 생성/항목 추가 공용)
+  private buildContractItemData(
+    organizationId: string,
+    contractId: string,
+    dto: CreateRentalContractItemDto,
+  ): Prisma.RentalContractItemUncheckedCreateInput {
+    return {
+      organizationId,
+      rentalContractId: contractId,
+      assetId: dto.assetId,
+      rentalOrderItemId: dto.rentalOrderItemId,
+      monthlyRentalPrice: dto.monthlyRentalPrice,
+      billingType: dto.billingType,
+      freeBlackCount: dto.freeBlackCount,
+      blackUnitPrice: dto.blackUnitPrice,
+      freeColorCount: dto.freeColorCount,
+      colorUnitPrice: dto.colorUnitPrice,
+      installationZonecode: dto.installationZonecode,
+      installationAddress: dto.installationAddress,
+      installationAddressDetail: dto.installationAddressDetail,
+      memo: dto.memo,
+    };
   }
 
   findAll(organizationId: string) {
     return this.prisma.rentalContract.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
-      include: { rentalOrder: { include: { order: true } } },
+      include: {
+        rentalOrder: {
+          include: {
+            order: {
+              include: {
+                customer: {
+                  select: {
+                    id: true,
+                    individualProfile: { select: { name: true } },
+                    businessPartner: { select: { businessProfile: { select: { name: true } } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        items: {
+          include: { asset: { select: { id: true, serialNumber: true, product: { select: { name: true } } } } },
+        },
+      },
     });
   }
 
@@ -79,8 +152,25 @@ export class RentalContractService {
     const contract = await this.prisma.rentalContract.findUnique({
       where: { id_organizationId: { id, organizationId } },
       include: {
-        rentalOrder: { include: { order: true, items: true } },
-        items: { include: { asset: true } },
+        rentalOrder: {
+          include: {
+            order: {
+              include: {
+                customer: {
+                  select: {
+                    id: true,
+                    individualProfile: { select: { name: true } },
+                    businessPartner: { select: { businessProfile: { select: { name: true } } } },
+                  },
+                },
+              },
+            },
+            items: true,
+          },
+        },
+        items: {
+          include: { asset: { select: { id: true, serialNumber: true, product: { select: { name: true } } } } },
+        },
       },
     });
     if (!contract) throw new NotFoundException('계약을 찾을 수 없습니다.');
@@ -258,31 +348,10 @@ export class RentalContractService {
     if (contract.status !== RentalContractStatus.DRAFT)
       throw new BadRequestException('DRAFT 상태의 계약에만 항목을 추가할 수 있습니다.');
 
-    const asset = await this.prisma.asset.findUnique({
-      where: { id_organizationId: { id: dto.assetId, organizationId } },
-      select: { id: true, status: true, deletedAt: true },
-    });
-    if (!asset || asset.deletedAt) throw new NotFoundException('자산을 찾을 수 없습니다.');
-    if (asset.status !== AssetStatus.AVAILABLE)
-      throw new BadRequestException('AVAILABLE 상태의 자산만 계약에 추가할 수 있습니다.');
+    await this.assertAssetAvailable(this.prisma, organizationId, dto.assetId);
 
     const item = await this.prisma.rentalContractItem.create({
-      data: {
-        organizationId,
-        rentalContractId: contractId,
-        assetId: dto.assetId,
-        rentalOrderItemId: dto.rentalOrderItemId,
-        monthlyRentalPrice: dto.monthlyRentalPrice,
-        billingType: dto.billingType,
-        freeBlackCount: dto.freeBlackCount,
-        blackUnitPrice: dto.blackUnitPrice,
-        freeColorCount: dto.freeColorCount,
-        colorUnitPrice: dto.colorUnitPrice,
-        installationZonecode: dto.installationZonecode,
-        installationAddress: dto.installationAddress,
-        installationAddressDetail: dto.installationAddressDetail,
-        memo: dto.memo,
-      },
+      data: this.buildContractItemData(organizationId, contractId, dto),
       select: { id: true },
     });
 

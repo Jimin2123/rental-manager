@@ -1,5 +1,7 @@
 import { BillingTiming } from '@prisma/client';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CreateRentalContractItemDto } from './create-rental-contract-item.dto';
 
 export class CreateRentalContractDto {
   @IsString()
@@ -30,4 +32,11 @@ export class CreateRentalContractDto {
   @IsEnum(BillingTiming)
   @IsOptional()
   billingTiming?: BillingTiming;
+
+  // 생성과 동시에 계약 항목을 같은 트랜잭션으로 추가 (주문 항목 자동 복사용)
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateRentalContractItemDto)
+  items?: CreateRentalContractItemDto[];
 }

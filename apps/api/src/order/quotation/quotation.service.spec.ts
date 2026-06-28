@@ -297,4 +297,39 @@ describe('QuotationService', () => {
       );
     });
   });
+
+  describe('findAll', () => {
+    it('includes customer/product 표시명', async () => {
+      prisma.quotation.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      expect(prisma.quotation.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            customer: expect.objectContaining({
+              select: expect.objectContaining({
+                id: true,
+                individualProfile: { select: { name: true } },
+                businessPartner: { select: { businessProfile: { select: { name: true } } } },
+              }),
+            }),
+            items: { include: { product: { select: { name: true } } } },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('findOne include', () => {
+    it('includes customer/product 표시명', async () => {
+      prisma.quotation.findUnique.mockResolvedValue({ id: 'q-1' });
+      await service.findOne('org-1', 'q-1');
+      expect(prisma.quotation.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            items: { include: { product: { select: { name: true } } } },
+          }),
+        }),
+      );
+    });
+  });
 });

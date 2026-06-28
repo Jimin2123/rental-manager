@@ -1,0 +1,150 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { InvoiceListItem, InvoiceStatus, InvoiceType, InvoiceSettlementStatus } from './-types';
+import { INVOICE_STATUS_LABEL, INVOICE_TYPE_LABEL, INVOICE_SETTLEMENT_LABEL, customerNameOf } from './-types';
+import type { InvoiceFilters } from './-api';
+import { invoiceKeys, fetchInvoices } from './-api';
+
+export const Route = createFileRoute('/_protected/invoices/')({
+  component: InvoicesPage,
+});
+
+type TypeFilter = 'ALL' | InvoiceType;
+type StatusFilter = 'ALL' | InvoiceStatus;
+type SettlementFilter = 'ALL' | InvoiceSettlementStatus;
+
+function InvoicesPage() {
+  const navigate = useNavigate();
+  const [type, setType] = useState<TypeFilter>('ALL');
+  const [status, setStatus] = useState<StatusFilter>('ALL');
+  const [settlement, setSettlement] = useState<SettlementFilter>('ALL');
+
+  const filters: InvoiceFilters = {
+    ...(type !== 'ALL' && { type }),
+    ...(status !== 'ALL' && { status }),
+    ...(settlement !== 'ALL' && { settlementStatus: settlement }),
+  };
+
+  const { data = [], isLoading } = useQuery<InvoiceListItem[]>({
+    queryKey: invoiceKeys.list(filters),
+    queryFn: () => fetchInvoices(filters),
+  });
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-foreground">청구서</h1>
+      </div>
+
+      <div className="mb-4 space-y-2">
+        <FilterRow<TypeFilter>
+          label="타입"
+          options={['ALL', 'SALE', 'RENTAL_MONTHLY', 'SERVICE_FEE', 'MANUAL']}
+          value={type}
+          onChange={setType}
+          labelOf={(v) => (v === 'ALL' ? '전체' : INVOICE_TYPE_LABEL[v])}
+        />
+        <FilterRow<StatusFilter>
+          label="상태"
+          options={['ALL', 'DRAFT', 'ISSUED', 'CANCELED']}
+          value={status}
+          onChange={setStatus}
+          labelOf={(v) => (v === 'ALL' ? '전체' : INVOICE_STATUS_LABEL[v])}
+        />
+        <FilterRow<SettlementFilter>
+          label="수납"
+          options={['ALL', 'UNPAID', 'PARTIALLY_PAID', 'PAID', 'OVERPAID']}
+          value={settlement}
+          onChange={setSettlement}
+          labelOf={(v) => (v === 'ALL' ? '전체' : INVOICE_SETTLEMENT_LABEL[v])}
+        />
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>청구번호</TableHead>
+              <TableHead>타입</TableHead>
+              <TableHead>고객</TableHead>
+              <TableHead>청구월</TableHead>
+              <TableHead>상태</TableHead>
+              <TableHead>수납</TableHead>
+              <TableHead className="text-right">최종금액</TableHead>
+              <TableHead className="text-right">미수금</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                  불러오는 중...
+                </TableCell>
+              </TableRow>
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                  청구서가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((inv) => (
+                <TableRow
+                  key={inv.id}
+                  className="cursor-pointer"
+                  onClick={() => void navigate({ to: '/invoices/$id', params: { id: inv.id } })}
+                >
+                  <TableCell className="font-medium">{inv.invoiceNo}</TableCell>
+                  <TableCell>{INVOICE_TYPE_LABEL[inv.type]}</TableCell>
+                  <TableCell>{customerNameOf(inv.customer)}</TableCell>
+                  <TableCell>{inv.billingMonth ?? '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant={inv.status === 'ISSUED' ? 'default' : 'secondary'}>
+                      {INVOICE_STATUS_LABEL[inv.status]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={inv.settlementStatus === 'PAID' ? 'default' : 'secondary'}>
+                      {INVOICE_SETTLEMENT_LABEL[inv.settlementStatus]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">{inv.finalAmount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{inv.outstandingAmount.toLocaleString('ko-KR')}원</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+function FilterRow<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  labelOf,
+}: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+  labelOf: (v: T) => string;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
+      {options.map((o) => (
+        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
+          {labelOf(o)}
+        </Button>
+      ))}
+    </div>
+  );
+}

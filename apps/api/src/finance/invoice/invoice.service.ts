@@ -92,6 +92,15 @@ export class InvoiceService {
         ...(dto.billingMonth && { billingMonth: dto.billingMonth }),
         ...(dto.customerId && { customerId: dto.customerId }),
       },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -101,7 +110,18 @@ export class InvoiceService {
   async findOne(organizationId: string, id: string) {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      include: { items: true, adjustments: true, allocations: { include: { payment: true } } },
+      include: {
+        items: true,
+        adjustments: true,
+        allocations: { include: { payment: true } },
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
     });
     if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');
     return invoice;

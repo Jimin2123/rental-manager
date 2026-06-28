@@ -230,4 +230,32 @@ describe('RefundService', () => {
       );
     });
   });
+
+  describe('findAll', () => {
+    it('고객 표시명을 include 한다', async () => {
+      prisma.refund.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.refund.findMany.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('연결 수납/청구서와 고객 표시명을 include 한다', async () => {
+      prisma.refund.findUnique.mockResolvedValue({ id: 'ref-1' });
+      await service.findOne('org-1', 'ref-1');
+      const arg = prisma.refund.findUnique.mock.calls[0][0];
+      expect(arg.include.payment).toEqual({ select: { id: true, paymentNo: true } });
+      expect(arg.include.invoice).toEqual({ select: { id: true, invoiceNo: true } });
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
 });

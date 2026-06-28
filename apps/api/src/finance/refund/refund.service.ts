@@ -110,6 +110,15 @@ export class RefundService {
         ...(dto.status && { status: dto.status }),
         ...(dto.reason && { reason: dto.reason }),
       },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -119,6 +128,17 @@ export class RefundService {
   async findOne(organizationId: string, id: string) {
     const refund = await this.prisma.refund.findUnique({
       where: { id_organizationId: { id, organizationId } },
+      include: {
+        payment: { select: { id: true, paymentNo: true } },
+        invoice: { select: { id: true, invoiceNo: true } },
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
     });
     if (!refund) throw new NotFoundException('환불 내역을 찾을 수 없습니다.');
     return refund;

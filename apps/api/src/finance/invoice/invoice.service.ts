@@ -121,6 +121,7 @@ export class InvoiceService {
             businessPartner: { select: { businessProfile: { select: { name: true } } } },
           },
         },
+        taxInvoice: { select: { id: true, taxInvoiceNo: true, status: true } },
       },
     });
     if (!invoice) throw new NotFoundException('청구서를 찾을 수 없습니다.');

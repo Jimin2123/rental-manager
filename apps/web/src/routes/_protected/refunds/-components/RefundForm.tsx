@@ -36,10 +36,10 @@ export function RefundForm() {
     queryFn: () => fetchCustomers({}),
   });
 
-  // 고객 선택 시 그 고객의 수납만 조회.
+  // 고객 선택 시 그 고객의 완료된 수납만 조회 (환불 원천은 완료 수납이어야 함).
   const { data: payments = [] } = useQuery<PaymentListItem[]>({
-    queryKey: paymentKeys.list({ customerId }),
-    queryFn: () => fetchPayments({ customerId }),
+    queryKey: paymentKeys.list({ customerId, status: 'COMPLETED' }),
+    queryFn: () => fetchPayments({ customerId, status: 'COMPLETED' }),
     enabled: customerId !== '',
   });
 

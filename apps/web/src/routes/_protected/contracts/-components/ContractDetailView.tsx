@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
 import { DetailRow } from '@/components/ui/detail-row';
-import { ProductSelect, AssetSelect } from '@/components/ui/option-select';
+import { ProductSelect, AssetSelect } from '@/components/option-select';
 import type { ContractDetail, ContractStatus } from '../-types';
 import {
   CONTRACT_STATUS_LABEL,
@@ -172,7 +172,7 @@ function AddContractItemForm({ contractId }: { contractId: string }) {
     <div className="border-t p-3">
       <p className="mb-2 text-xs font-medium text-muted-foreground">항목 추가</p>
       <div className="flex flex-wrap items-end gap-2">
-        <div className="w-48">
+        <div className="w-full max-w-48">
           <ProductSelect
             value={productId}
             onChange={(v) => {
@@ -181,8 +181,8 @@ function AddContractItemForm({ contractId }: { contractId: string }) {
             }}
           />
         </div>
-        <div className="w-44">
-          <AssetSelect productId={productId} value={assetId} onChange={(v) => setAssetId(v)} />
+        <div className="w-full max-w-44">
+          <AssetSelect productId={productId} value={assetId} onChange={(v) => setAssetId(v)} placeholder="자산 선택" />
         </div>
         <Input
           className="w-32"

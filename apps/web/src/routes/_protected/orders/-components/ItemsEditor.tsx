@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ProductSelect, AssetSelect } from '@/components/ui/option-select';
+import { ProductSelect, AssetSelect } from '@/components/option-select';
 import type { OrderType } from '../-types';
 import type { ItemRow } from './payload';
 import { emptyItemRow } from './payload';

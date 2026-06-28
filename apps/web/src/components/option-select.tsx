@@ -24,14 +24,17 @@ export function ProductSelect({ value, onChange }: { value: string; onChange: (p
 }
 
 // 가용 자산 native select — productId 선택 시에만 조회. onChange로 선택 asset도 전달.
+// placeholder: 빈 옵션 라벨. 자산이 선택사항인 곳은 '선택 안 함'(기본), 필수인 곳은 '자산 선택'.
 export function AssetSelect({
   productId,
   value,
   onChange,
+  placeholder = '선택 안 함',
 }: {
   productId: string;
   value: string;
   onChange: (assetId: string, asset?: AssetOption) => void;
+  placeholder?: string;
 }) {
   const { data: assets = [] } = useQuery<AssetOption[]>({
     queryKey: ['assets', 'available', productId],
@@ -50,7 +53,7 @@ export function AssetSelect({
         )
       }
     >
-      <option value="">선택 안 함</option>
+      <option value="">{placeholder}</option>
       {assets.map((a) => (
         <option key={a.id} value={a.id}>
           {a.serialNumber}

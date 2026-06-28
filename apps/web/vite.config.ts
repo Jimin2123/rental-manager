@@ -32,6 +32,7 @@ export default defineConfig({
       '/business-partners': apiProxy(),
       '/products': apiProxy(),
       '/customers': apiProxy(),
+      '/orders': apiProxy(),
     },
   },
 });

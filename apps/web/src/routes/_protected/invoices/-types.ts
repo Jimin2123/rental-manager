@@ -1,4 +1,5 @@
 import type { CustomerRef } from '@/lib/customer';
+import type { TaxInvoiceStatus } from '../tax-invoices/-types';
 
 export type { CustomerRef };
 export { customerNameOf } from '@/lib/customer';
@@ -135,4 +136,5 @@ export type InvoiceDetail = InvoiceListItem & {
   items: InvoiceItem[];
   adjustments: InvoiceAdjustment[];
   allocations: InvoiceAllocation[];
+  taxInvoice: { id: string; taxInvoiceNo: string; status: TaxInvoiceStatus } | null;
 };

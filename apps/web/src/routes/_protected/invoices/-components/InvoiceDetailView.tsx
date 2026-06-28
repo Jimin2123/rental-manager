@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { type AxiosError } from 'axios';
+import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
@@ -23,6 +26,7 @@ const date = (s: string | null) => (s ? new Date(s).toLocaleDateString('ko-KR') 
 
 export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const canIssue = invoice.status === 'DRAFT';
   // 취소는 ISSUED + 수납액 0일 때만 (백엔드 제약 미러).
   const canCancel = invoice.status === 'ISSUED' && invoice.paidAmount === 0;
@@ -48,6 +52,26 @@ export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
     onError: (err) => {
       const s = (err as AxiosError).response?.status;
       toast.error(s === 400 ? '취소할 수 없는 상태이거나 수납 내역이 있습니다.' : '취소 중 오류가 발생했습니다.');
+    },
+  });
+
+  // 세금계산서: 발행된(ISSUED) 사업자 고객 청구서이며 아직 미발행일 때만 발행 가능.
+  const isBusinessCustomer = invoice.customer.businessPartner !== null;
+  const canIssueTax = invoice.status === 'ISSUED' && isBusinessCustomer && invoice.taxInvoice === null;
+  const [taxIssueDate, setTaxIssueDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const issueTaxMutation = useMutation({
+    mutationFn: () => api.post<{ id: string }>('/tax-invoices', { invoiceId: invoice.id, issueDate: taxIssueDate }),
+    onSuccess: (res) => {
+      invalidateInvoice(queryClient, invoice.id);
+      toast.success('세금계산서를 발행했습니다.');
+      void navigate({ to: '/tax-invoices/$id', params: { id: res.data.id } });
+    },
+    onError: (err) => {
+      const s = (err as AxiosError).response?.status;
+      if (s === 409) toast.error('이미 세금계산서가 발행된 청구서입니다.');
+      else if (s === 400) toast.error('세금계산서를 발행할 수 없는 청구서입니다.');
+      else toast.error('세금계산서 발행 중 오류가 발생했습니다.');
     },
   });
 
@@ -179,6 +203,39 @@ export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
           </Table>
         </Section>
       )}
+
+      {/* 세금계산서 */}
+      <Section title="세금계산서">
+        {invoice.taxInvoice ? (
+          <div className="p-3 text-sm">
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => void navigate({ to: '/tax-invoices/$id', params: { id: invoice.taxInvoice!.id } })}
+            >
+              {invoice.taxInvoice.taxInvoiceNo}
+            </button>
+          </div>
+        ) : canIssueTax ? (
+          <div className="flex items-end gap-2 p-3">
+            <Input
+              type="date"
+              className="w-44"
+              value={taxIssueDate}
+              onChange={(e) => setTaxIssueDate(e.target.value)}
+            />
+            <Button size="sm" disabled={issueTaxMutation.isPending} onClick={() => issueTaxMutation.mutate()}>
+              세금계산서 발행
+            </Button>
+          </div>
+        ) : (
+          <p className="p-3 text-sm text-muted-foreground">
+            {invoice.status !== 'ISSUED'
+              ? '발행된 청구서에만 세금계산서를 발행할 수 있습니다.'
+              : '사업자 고객에게만 세금계산서를 발행할 수 있습니다.'}
+          </p>
+        )}
+      </Section>
     </div>
   );
 }

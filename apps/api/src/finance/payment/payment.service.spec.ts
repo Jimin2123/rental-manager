@@ -208,4 +208,31 @@ describe('PaymentService', () => {
       );
     });
   });
+
+  describe('findAll', () => {
+    it('고객 표시명을 include 한다', async () => {
+      prisma.payment.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.payment.findMany.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('배분(invoice)과 고객 표시명을 include 한다', async () => {
+      prisma.payment.findUnique.mockResolvedValue({ id: 'pay-1' });
+      await service.findOne('org-1', 'pay-1');
+      const arg = prisma.payment.findUnique.mock.calls[0][0];
+      expect(arg.include.allocations).toEqual({ include: { invoice: true } });
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
 });

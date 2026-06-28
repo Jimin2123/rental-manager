@@ -58,17 +58,11 @@ describe('Email Auth (e2e)', () => {
 
   describe('POST /auth/login — validation', () => {
     it('returns 400 when password is empty string', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email: 'any@test.com', password: '' })
-        .expect(400);
+      await request(app.getHttpServer()).post('/auth/login').send({ email: 'any@test.com', password: '' }).expect(400);
     });
 
     it('returns 400 when password field is missing', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email: 'any@test.com' })
-        .expect(400);
+      await request(app.getHttpServer()).post('/auth/login').send({ email: 'any@test.com' }).expect(400);
     });
 
     it('returns 400 when email is invalid format', async () => {
@@ -79,10 +73,7 @@ describe('Email Auth (e2e)', () => {
     });
 
     it('returns 400 when email field is missing', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ password: TEST_PASSWORD })
-        .expect(400);
+      await request(app.getHttpServer()).post('/auth/login').send({ password: TEST_PASSWORD }).expect(400);
     });
   });
 

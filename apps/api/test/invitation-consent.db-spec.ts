@@ -31,7 +31,12 @@ const runMigrations = (databaseUrl: string): void => {
   } catch (error) {
     const execError = error as { message?: string; stdout?: string; stderr?: string };
     throw new Error(
-      ['Failed to apply Prisma migrations for invitation-consent DB test.', execError.message, execError.stdout, execError.stderr]
+      [
+        'Failed to apply Prisma migrations for invitation-consent DB test.',
+        execError.message,
+        execError.stdout,
+        execError.stderr,
+      ]
         .filter(Boolean)
         .join('\n'),
     );
@@ -108,10 +113,11 @@ describe('InvitationService DB integration', () => {
        VALUES ($1, 'Test Org', $2, 'Admin', $3, $4)`,
       [businessProfileId, `biz-${randomUUID()}`, addressId, now],
     );
-    await client.query(
-      `INSERT INTO "Organization" ("id", "businessProfileId", "updatedAt") VALUES ($1, $2, $3)`,
-      [organizationId, businessProfileId, now],
-    );
+    await client.query(`INSERT INTO "Organization" ("id", "businessProfileId", "updatedAt") VALUES ($1, $2, $3)`, [
+      organizationId,
+      businessProfileId,
+      now,
+    ]);
     await client.query(`INSERT INTO "User" ("id", "updatedAt") VALUES ($1, $2)`, [adminUserId, now]);
     await client.query(
       `INSERT INTO "OrganizationMember" ("id", "userId", "organizationId", "role", "name", "isActive", "updatedAt")
@@ -136,15 +142,17 @@ describe('InvitationService DB integration', () => {
   });
 
   // 테스트별 초대 시드 헬퍼
-  const seedInvitation = async (options: {
-    email?: string;
-    rawToken?: string;
-    expiresAt?: Date;
-    declinedAt?: Date;
-    acceptedAt?: Date;
-    orgId?: string;
-    memberId?: string;
-  } = {}): Promise<{ invId: string; rawToken: string; email: string }> => {
+  const seedInvitation = async (
+    options: {
+      email?: string;
+      rawToken?: string;
+      expiresAt?: Date;
+      declinedAt?: Date;
+      acceptedAt?: Date;
+      orgId?: string;
+      memberId?: string;
+    } = {},
+  ): Promise<{ invId: string; rawToken: string; email: string }> => {
     const rawToken = options.rawToken ?? randomUUID();
     const token = tokenService.hashToken(rawToken);
     const email = options.email ?? `invite-${randomUUID()}@example.com`;
@@ -160,16 +168,16 @@ describe('InvitationService DB integration', () => {
     );
 
     if (options.declinedAt) {
-      await client.query(
-        `UPDATE "OrganizationInvitation" SET "declinedAt" = $1 WHERE "id" = $2`,
-        [options.declinedAt, invId],
-      );
+      await client.query(`UPDATE "OrganizationInvitation" SET "declinedAt" = $1 WHERE "id" = $2`, [
+        options.declinedAt,
+        invId,
+      ]);
     }
     if (options.acceptedAt) {
-      await client.query(
-        `UPDATE "OrganizationInvitation" SET "acceptedAt" = $1 WHERE "id" = $2`,
-        [options.acceptedAt, invId],
-      );
+      await client.query(`UPDATE "OrganizationInvitation" SET "acceptedAt" = $1 WHERE "id" = $2`, [
+        options.acceptedAt,
+        invId,
+      ]);
     }
 
     return { invId, rawToken, email };
@@ -267,10 +275,11 @@ describe('InvitationService DB integration', () => {
          VALUES ($1, 'ListOrg', $2, 'Rep2', $3, $4)`,
         [bpId, `biz-${randomUUID()}`, addrId, now],
       );
-      await client.query(
-        `INSERT INTO "Organization" ("id", "businessProfileId", "updatedAt") VALUES ($1, $2, $3)`,
-        [orgId, bpId, now],
-      );
+      await client.query(`INSERT INTO "Organization" ("id", "businessProfileId", "updatedAt") VALUES ($1, $2, $3)`, [
+        orgId,
+        bpId,
+        now,
+      ]);
       await client.query(`INSERT INTO "User" ("id", "updatedAt") VALUES ($1, $2)`, [adminUid, now]);
       await client.query(
         `INSERT INTO "OrganizationMember" ("id", "userId", "organizationId", "role", "name", "isActive", "updatedAt")

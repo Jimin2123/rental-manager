@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { type AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { DetailRow } from '@/components/ui/detail-row';
 import { useAuthStore } from '@/store/auth.store';
 import type { QuotationDetail, QuotationStatus } from '../-types';
 import {
@@ -20,8 +21,7 @@ import {
   quotationTotal,
 } from '../-types';
 import { quotationKeys, invalidateQuotation } from '../-api';
-import { fetchProductOptions, fetchAssetOptions } from '../../orders/-api';
-import type { ProductOption, AssetOption } from '../../orders/-api';
+import { ProductSelect, AssetSelect } from '@/components/option-select';
 import { emptyItemRow, itemRowToBody, type ItemRow } from './payload';
 
 // ISO 날짜 → date input 값(YYYY-MM-DD).
@@ -139,8 +139,8 @@ export function QuotationDetailView({ quotation }: { quotation: QuotationDetail 
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <Row label="고객" value={customerNameOf(quotation.customer)} />
-          <Row label="합계" value={`${quotationTotal(quotation).toLocaleString('ko-KR')}원`} />
+          <DetailRow label="고객" value={customerNameOf(quotation.customer)} />
+          <DetailRow label="합계" value={`${quotationTotal(quotation).toLocaleString('ko-KR')}원`} />
         </div>
 
         {nextStatuses.length > 0 && (
@@ -285,16 +285,6 @@ function AddItemForm({ quotation }: { quotation: QuotationDetail }) {
   const [row, setRow] = useState<ItemRow>(emptyItemRow());
   const patch = (p: Partial<ItemRow>) => setRow((r) => ({ ...r, ...p }));
 
-  const { data: products = [] } = useQuery<ProductOption[]>({
-    queryKey: ['products', 'options'],
-    queryFn: fetchProductOptions,
-  });
-  const { data: assets = [] } = useQuery<AssetOption[]>({
-    queryKey: ['assets', 'available', row.productId],
-    queryFn: () => fetchAssetOptions(row.productId),
-    enabled: row.productId !== '',
-  });
-
   const mutation = useMutation({
     mutationFn: () => api.post(`/quotations/${quotation.id}/items`, itemRowToBody(quotation.type, row)),
     onSuccess: () => {
@@ -305,38 +295,21 @@ function AddItemForm({ quotation }: { quotation: QuotationDetail }) {
     onError: () => toast.error('품목 추가 중 오류가 발생했습니다.'),
   });
 
-  const cellClass =
-    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
-
   return (
     <div className="border-t p-3">
       <p className="mb-2 text-xs font-medium text-muted-foreground">품목 추가</p>
       <div className="flex flex-wrap items-end gap-2">
-        <select
-          className={cellClass + ' max-w-48'}
-          value={row.productId}
-          onChange={(e) => patch({ productId: e.target.value, assetId: '' })}
-        >
-          <option value="">제품 선택</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className={cellClass + ' max-w-40'}
-          value={row.assetId}
-          disabled={row.productId === ''}
-          onChange={(e) => patch({ assetId: e.target.value })}
-        >
-          <option value="">자산 선택 안 함</option>
-          {assets.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.serialNumber}
-            </option>
-          ))}
-        </select>
+        <div className="w-full max-w-48">
+          <ProductSelect value={row.productId} onChange={(v) => patch({ productId: v, assetId: '' })} />
+        </div>
+        <div className="w-full max-w-40">
+          <AssetSelect
+            productId={row.productId}
+            value={row.assetId}
+            onChange={(assetId) => patch({ assetId })}
+            placeholder="자산 선택 안 함"
+          />
+        </div>
         {quotation.type === 'SALE' ? (
           <>
             <Input
@@ -380,15 +353,6 @@ function AddItemForm({ quotation }: { quotation: QuotationDetail }) {
           추가
         </Button>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
     </div>
   );
 }

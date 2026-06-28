@@ -24,11 +24,8 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   CANCELED: [],
 };
 
-export type CustomerRef = {
-  id: string;
-  individualProfile: { name: string } | null;
-  businessPartner: { businessProfile: { name: string } } | null;
-};
+import type { CustomerRef } from '@/lib/customer';
+export type { CustomerRef };
 
 export type ManagerRef = { id: string; name: string } | null;
 
@@ -71,10 +68,7 @@ export type OrderListItem = {
 
 export type OrderDetail = OrderListItem & { memo: string | null };
 
-// 고객 표시명: 개인=프로필명, 법인=상호명.
-export function customerNameOf(c: CustomerRef): string {
-  return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '-';
-}
+export { customerNameOf } from '@/lib/customer';
 
 // 합계: 판매=품목 totalAmount 합, 렌탈=월 렌탈료 합.
 export function orderTotal(o: Pick<OrderListItem, 'saleOrder' | 'rentalOrder'>): number {

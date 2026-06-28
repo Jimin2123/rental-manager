@@ -24,11 +24,8 @@ export const CONTRACT_TRANSITIONS: Record<ContractStatus, ContractStatus[]> = {
   CANCELED: [],
 };
 
-export type CustomerRef = {
-  id: string;
-  individualProfile: { name: string } | null;
-  businessPartner: { businessProfile: { name: string } } | null;
-};
+import type { CustomerRef } from '@/lib/customer';
+export type { CustomerRef };
 
 export type ContractItem = {
   id: string;
@@ -55,9 +52,7 @@ export type ContractDetail = ContractListItem & {
   billingTiming: 'PREPAID' | 'POSTPAID';
 };
 
-export function customerNameOf(c: CustomerRef): string {
-  return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '-';
-}
+export { customerNameOf } from '@/lib/customer';
 
 // 월 렌탈료 합계 — 취소/회수 제외하고 합산.
 export function contractMonthlyTotal(items: ContractItem[]): number {

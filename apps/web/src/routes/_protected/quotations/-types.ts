@@ -29,11 +29,8 @@ export const LOCKED_STATUSES: QuotationStatus[] = ['ACCEPTED', 'REJECTED', 'EXPI
 // 주문 전환 가능 상태.
 export const CONVERTIBLE_STATUSES: QuotationStatus[] = ['SENT', 'ACCEPTED'];
 
-export type CustomerRef = {
-  id: string;
-  individualProfile: { name: string } | null;
-  businessPartner: { businessProfile: { name: string } } | null;
-};
+import type { CustomerRef } from '@/lib/customer';
+export type { CustomerRef };
 
 export type QuotationItem = {
   id: string;
@@ -66,10 +63,7 @@ export type QuotationListItem = {
 
 export type QuotationDetail = QuotationListItem & { memo: string | null };
 
-// 고객 표시명: 개인=프로필명, 법인=상호명.
-export function customerNameOf(c: CustomerRef): string {
-  return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '-';
-}
+export { customerNameOf } from '@/lib/customer';
 
 // 합계: 판매=품목 totalAmount 합, 렌탈=월 렌탈료 합.
 export function quotationTotal(q: Pick<QuotationListItem, 'type' | 'items'>): number {

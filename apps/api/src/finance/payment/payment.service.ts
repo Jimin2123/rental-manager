@@ -118,6 +118,15 @@ export class PaymentService {
         ...(dto.method && { method: dto.method }),
         ...(dto.status && { status: dto.status }),
       },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
       orderBy: { paidAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -127,7 +136,16 @@ export class PaymentService {
   async findOne(organizationId: string, id: string) {
     const payment = await this.prisma.payment.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      include: { allocations: { include: { invoice: true } } },
+      include: {
+        allocations: { include: { invoice: true } },
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
     });
     if (!payment) throw new NotFoundException('수납 내역을 찾을 수 없습니다.');
     return payment;

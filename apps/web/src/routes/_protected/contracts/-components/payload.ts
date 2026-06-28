@@ -7,6 +7,12 @@ export type ContractFormState = {
   billingTiming: 'PREPAID' | 'POSTPAID';
 };
 
+export type ContractItemInput = {
+  assetId: string;
+  rentalOrderItemId?: string;
+  monthlyRentalPrice: number;
+};
+
 export type CreateContractBody = {
   rentalOrderId: string;
   startDate: string;
@@ -15,6 +21,7 @@ export type CreateContractBody = {
   billingDay?: number;
   paymentDueDay?: number;
   billingTiming?: 'PREPAID' | 'POSTPAID';
+  items?: ContractItemInput[];
 };
 
 export function emptyContractForm(): ContractFormState {
@@ -28,7 +35,11 @@ export function emptyContractForm(): ContractFormState {
   };
 }
 
-export function buildCreateContractBody(rentalOrderId: string, s: ContractFormState): CreateContractBody {
+export function buildCreateContractBody(
+  rentalOrderId: string,
+  s: ContractFormState,
+  items: ContractItemInput[] = [],
+): CreateContractBody {
   return {
     rentalOrderId,
     startDate: new Date(s.startDate).toISOString(),
@@ -37,6 +48,7 @@ export function buildCreateContractBody(rentalOrderId: string, s: ContractFormSt
     ...(s.billingDay && { billingDay: Number(s.billingDay) }),
     ...(s.paymentDueDay && { paymentDueDay: Number(s.paymentDueDay) }),
     billingTiming: s.billingTiming,
+    ...(items.length > 0 && { items }),
   };
 }
 

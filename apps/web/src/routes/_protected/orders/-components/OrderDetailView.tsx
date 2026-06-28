@@ -222,18 +222,18 @@ function ContractCreateCard({
   const copyable = rentalItems.filter((i) => i.assetId);
 
   const mutation = useMutation({
+    // 계약 + 자산 지정 항목을 한 번의 요청으로 생성한다(백엔드 트랜잭션, 부분 실패 시 전체 롤백).
     mutationFn: async () => {
-      const res = await api.post<{ id: string }>('/rental-contracts', buildCreateContractBody(rentalOrderId, form));
-      const contractId = res.data.id;
-      // 자산이 지정된 주문 항목을 계약 항목으로 자동 복사.
-      for (const it of copyable) {
-        await api.post(`/rental-contracts/${contractId}/items`, {
-          assetId: it.assetId,
-          rentalOrderItemId: it.id,
-          monthlyRentalPrice: it.monthlyRentalPrice,
-        });
-      }
-      return contractId;
+      const items = copyable.map((it) => ({
+        assetId: it.assetId as string,
+        rentalOrderItemId: it.id,
+        monthlyRentalPrice: it.monthlyRentalPrice,
+      }));
+      const res = await api.post<{ id: string }>(
+        '/rental-contracts',
+        buildCreateContractBody(rentalOrderId, form, items),
+      );
+      return res.data.id;
     },
     onSuccess: (contractId) => {
       void queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
@@ -243,7 +243,9 @@ function ContractCreateCard({
     },
     onError: (err) => {
       const s = (err as AxiosError).response?.status;
-      toast.error(s === 409 ? '이미 이 주문에 연결된 계약이 있습니다.' : '계약 생성 중 오류가 발생했습니다.');
+      if (s === 409) toast.error('이미 이 주문에 연결된 계약이 있습니다.');
+      else if (s === 400) toast.error('계약 정보를 확인해주세요. (날짜·자산 상태)');
+      else toast.error('계약 생성 중 오류가 발생했습니다.');
     },
   });
 

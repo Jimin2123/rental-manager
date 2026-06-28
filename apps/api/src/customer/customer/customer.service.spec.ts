@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CustomerService } from './customer.service';
@@ -93,7 +93,11 @@ describe('CustomerService', () => {
 
   describe('create BUSINESS', () => {
     it('links existing BusinessPartner without creating a new one', async () => {
-      prisma.businessPartner.findUnique.mockResolvedValue({ id: 'partner-1', deletedAt: null });
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        deletedAt: null,
+        roles: [{ type: 'SALES' }],
+      });
       prisma.customer.findFirst.mockResolvedValue(null);
       prisma.customer.create.mockResolvedValue({ id: 'cust-1' });
 
@@ -120,8 +124,25 @@ describe('CustomerService', () => {
       );
     });
 
+    it('throws BadRequestException when partner has no SALES role (매입 전용)', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        deletedAt: null,
+        roles: [{ type: 'PURCHASE' }],
+      });
+
+      await expect(service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'partner-1' })).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.customer.create).not.toHaveBeenCalled();
+    });
+
     it('throws ConflictException when partner already linked to an active customer', async () => {
-      prisma.businessPartner.findUnique.mockResolvedValue({ id: 'partner-1', deletedAt: null });
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        deletedAt: null,
+        roles: [{ type: 'SALES' }],
+      });
       prisma.customer.findFirst.mockResolvedValue({ id: 'existing-cust' });
 
       await expect(service.create('org-1', { type: 'BUSINESS', businessPartnerId: 'partner-1' })).rejects.toThrow(

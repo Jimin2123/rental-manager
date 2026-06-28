@@ -1,5 +1,5 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CustomerType } from '@prisma/client';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BusinessPartnerRoleType, CustomerType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateCustomerDto } from './dto/create-customer.dto';
 import type { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -36,9 +36,13 @@ export class CustomerService {
     const businessPartnerId = dto.businessPartnerId!;
     const partner = await this.prisma.businessPartner.findUnique({
       where: { id_organizationId: { id: businessPartnerId, organizationId } },
-      select: { id: true, deletedAt: true },
+      select: { id: true, deletedAt: true, roles: { select: { type: true } } },
     });
     if (!partner || partner.deletedAt) throw new NotFoundException('거래처를 찾을 수 없습니다.');
+    // 고객 = 매출 대상. 매입 전용 거래처(공급자)는 고객으로 등록할 수 없다.
+    if (!partner.roles.some((r) => r.type === BusinessPartnerRoleType.SALES)) {
+      throw new BadRequestException('매출 거래처만 고객으로 등록할 수 있습니다.');
+    }
 
     const existing = await this.prisma.customer.findFirst({
       where: { organizationId, businessPartnerId, deletedAt: null },

@@ -17,9 +17,10 @@ export function BusinessForm() {
   const [businessPartnerId, setBusinessPartnerId] = useState('');
   const [memo, setMemo] = useState('');
 
+  // 고객 = 매출 대상. 매입 전용 거래처(공급자)는 제외하고 매출 거래처만 연결 대상으로 보여준다.
   const { data: partners = [] } = useQuery<BusinessPartnerListItem[]>({
-    queryKey: partnerKeys.list({}),
-    queryFn: () => fetchPartners({}),
+    queryKey: partnerKeys.list({ role: 'SALES' }),
+    queryFn: () => fetchPartners({ role: 'SALES' }),
   });
 
   const mutation = useMutation({
@@ -68,7 +69,9 @@ export function BusinessForm() {
             ))}
           </select>
           {partners.length === 0 && (
-            <p className="text-xs text-muted-foreground">등록된 거래처가 없습니다. 먼저 거래처를 등록하세요.</p>
+            <p className="text-xs text-muted-foreground">
+              등록된 매출 거래처가 없습니다. 거래처를 매출 역할로 먼저 등록하세요.
+            </p>
           )}
         </div>
       </div>

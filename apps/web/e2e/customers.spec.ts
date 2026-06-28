@@ -138,3 +138,33 @@ test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) =>
   await page.getByRole('button', { name: '등록', exact: true }).click();
   await expect(page.getByText('이미 고객으로 등록된 거래처입니다.')).toBeVisible({ timeout: 10000 });
 });
+
+test('법인 고객 - 매입 전용 거래처는 선택 목록에 없다', async ({ page }) => {
+  await login(page);
+  await mockKakaoPostcode(page);
+  await page.route('**/organizations/brn/verify', (route) =>
+    route.fulfill({ status: 200, body: JSON.stringify({ valid: true, status: '계속사업자' }) }),
+  );
+
+  const suffix = String(Date.now()).slice(-5);
+  const supplier = `매입전용${suffix}`;
+  const brn = `77700${suffix}`;
+
+  // 매입 전용 거래처 등록
+  await page.goto('/business-partners/new');
+  await page.getByLabel('매입 거래처').check();
+  await page.getByPlaceholder('(주)거래처명').fill(supplier);
+  await page.getByPlaceholder('123-45-67890').fill(brn);
+  await page.getByRole('button', { name: '조회' }).click();
+  await expect(page.getByText('✓ 계속사업자')).toBeVisible();
+  await page.getByPlaceholder('홍길동').fill('대표자');
+  await page.getByRole('button', { name: '주소 검색' }).click();
+  await page.getByRole('button', { name: '등록' }).click();
+  await page.waitForURL(/\/business-partners\/[0-9a-f-]{8,}/);
+
+  // 법인 고객 등록 화면 — 드롭다운에 매입 전용 거래처는 없어야 한다
+  await page.goto('/customers/new');
+  await page.getByRole('button', { name: '법인', exact: true }).click();
+  await expect(page.locator('select')).toBeVisible();
+  await expect(page.locator('select option', { hasText: supplier })).toHaveCount(0);
+});

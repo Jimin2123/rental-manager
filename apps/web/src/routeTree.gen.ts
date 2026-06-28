@@ -19,6 +19,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-pass
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
+import { Route as ProtectedTaxInvoicesIndexRouteImport } from './routes/_protected/tax-invoices/index'
 import { Route as ProtectedRefundsIndexRouteImport } from './routes/_protected/refunds/index'
 import { Route as ProtectedQuotationsIndexRouteImport } from './routes/_protected/quotations/index'
 import { Route as ProtectedProductsIndexRouteImport } from './routes/_protected/products/index'
@@ -28,6 +29,7 @@ import { Route as ProtectedInvoicesIndexRouteImport } from './routes/_protected/
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
 import { Route as ProtectedContractsIndexRouteImport } from './routes/_protected/contracts/index'
 import { Route as ProtectedBusinessPartnersIndexRouteImport } from './routes/_protected/business-partners/index'
+import { Route as ProtectedTaxInvoicesIdRouteImport } from './routes/_protected/tax-invoices/$id'
 import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
 import { Route as ProtectedRefundsNewRouteImport } from './routes/_protected/refunds/new'
 import { Route as ProtectedRefundsIdRouteImport } from './routes/_protected/refunds/$id'
@@ -95,6 +97,12 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const ProtectedTaxInvoicesIndexRoute =
+  ProtectedTaxInvoicesIndexRouteImport.update({
+    id: '/tax-invoices/',
+    path: '/tax-invoices/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedRefundsIndexRoute = ProtectedRefundsIndexRouteImport.update({
   id: '/refunds/',
   path: '/refunds/',
@@ -142,6 +150,11 @@ const ProtectedBusinessPartnersIndexRoute =
     path: '/business-partners/',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedTaxInvoicesIdRoute = ProtectedTaxInvoicesIdRouteImport.update({
+  id: '/tax-invoices/$id',
+  path: '/tax-invoices/$id',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedSettingsAccountRoute =
   ProtectedSettingsAccountRouteImport.update({
     id: '/settings/account',
@@ -263,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/refunds/$id': typeof ProtectedRefundsIdRoute
   '/refunds/new': typeof ProtectedRefundsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
+  '/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
   '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/contracts/': typeof ProtectedContractsIndexRoute
   '/customers/': typeof ProtectedCustomersIndexRoute
@@ -272,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/products/': typeof ProtectedProductsIndexRoute
   '/quotations/': typeof ProtectedQuotationsIndexRoute
   '/refunds/': typeof ProtectedRefundsIndexRoute
+  '/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
   '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -300,6 +315,7 @@ export interface FileRoutesByTo {
   '/refunds/$id': typeof ProtectedRefundsIdRoute
   '/refunds/new': typeof ProtectedRefundsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
+  '/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
   '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
   '/contracts': typeof ProtectedContractsIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
@@ -309,6 +325,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProtectedProductsIndexRoute
   '/quotations': typeof ProtectedQuotationsIndexRoute
   '/refunds': typeof ProtectedRefundsIndexRoute
+  '/tax-invoices': typeof ProtectedTaxInvoicesIndexRoute
   '/settings/members': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesById {
@@ -340,6 +357,7 @@ export interface FileRoutesById {
   '/_protected/refunds/$id': typeof ProtectedRefundsIdRoute
   '/_protected/refunds/new': typeof ProtectedRefundsNewRoute
   '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
+  '/_protected/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
   '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/_protected/contracts/': typeof ProtectedContractsIndexRoute
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
@@ -349,6 +367,7 @@ export interface FileRoutesById {
   '/_protected/products/': typeof ProtectedProductsIndexRoute
   '/_protected/quotations/': typeof ProtectedQuotationsIndexRoute
   '/_protected/refunds/': typeof ProtectedRefundsIndexRoute
+  '/_protected/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
   '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRouteTypes {
@@ -379,6 +398,7 @@ export interface FileRouteTypes {
     | '/refunds/$id'
     | '/refunds/new'
     | '/settings/account'
+    | '/tax-invoices/$id'
     | '/business-partners/'
     | '/contracts/'
     | '/customers/'
@@ -388,6 +408,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/quotations/'
     | '/refunds/'
+    | '/tax-invoices/'
     | '/settings/members/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -416,6 +437,7 @@ export interface FileRouteTypes {
     | '/refunds/$id'
     | '/refunds/new'
     | '/settings/account'
+    | '/tax-invoices/$id'
     | '/business-partners'
     | '/contracts'
     | '/customers'
@@ -425,6 +447,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quotations'
     | '/refunds'
+    | '/tax-invoices'
     | '/settings/members'
   id:
     | '__root__'
@@ -455,6 +478,7 @@ export interface FileRouteTypes {
     | '/_protected/refunds/$id'
     | '/_protected/refunds/new'
     | '/_protected/settings/account'
+    | '/_protected/tax-invoices/$id'
     | '/_protected/business-partners/'
     | '/_protected/contracts/'
     | '/_protected/customers/'
@@ -464,6 +488,7 @@ export interface FileRouteTypes {
     | '/_protected/products/'
     | '/_protected/quotations/'
     | '/_protected/refunds/'
+    | '/_protected/tax-invoices/'
     | '/_protected/settings/members/'
   fileRoutesById: FileRoutesById
 }
@@ -546,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_protected/tax-invoices/': {
+      id: '/_protected/tax-invoices/'
+      path: '/tax-invoices'
+      fullPath: '/tax-invoices/'
+      preLoaderRoute: typeof ProtectedTaxInvoicesIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/refunds/': {
       id: '/_protected/refunds/'
       path: '/refunds'
@@ -607,6 +639,13 @@ declare module '@tanstack/react-router' {
       path: '/business-partners'
       fullPath: '/business-partners/'
       preLoaderRoute: typeof ProtectedBusinessPartnersIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/tax-invoices/$id': {
+      id: '/_protected/tax-invoices/$id'
+      path: '/tax-invoices/$id'
+      fullPath: '/tax-invoices/$id'
+      preLoaderRoute: typeof ProtectedTaxInvoicesIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/settings/account': {
@@ -775,6 +814,7 @@ interface ProtectedRouteChildren {
   ProtectedRefundsIdRoute: typeof ProtectedRefundsIdRoute
   ProtectedRefundsNewRoute: typeof ProtectedRefundsNewRoute
   ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
+  ProtectedTaxInvoicesIdRoute: typeof ProtectedTaxInvoicesIdRoute
   ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
   ProtectedContractsIndexRoute: typeof ProtectedContractsIndexRoute
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
@@ -784,6 +824,7 @@ interface ProtectedRouteChildren {
   ProtectedProductsIndexRoute: typeof ProtectedProductsIndexRoute
   ProtectedQuotationsIndexRoute: typeof ProtectedQuotationsIndexRoute
   ProtectedRefundsIndexRoute: typeof ProtectedRefundsIndexRoute
+  ProtectedTaxInvoicesIndexRoute: typeof ProtectedTaxInvoicesIndexRoute
   ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
 }
 
@@ -806,6 +847,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedRefundsIdRoute: ProtectedRefundsIdRoute,
   ProtectedRefundsNewRoute: ProtectedRefundsNewRoute,
   ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
+  ProtectedTaxInvoicesIdRoute: ProtectedTaxInvoicesIdRoute,
   ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
   ProtectedContractsIndexRoute: ProtectedContractsIndexRoute,
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
@@ -815,6 +857,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedProductsIndexRoute: ProtectedProductsIndexRoute,
   ProtectedQuotationsIndexRoute: ProtectedQuotationsIndexRoute,
   ProtectedRefundsIndexRoute: ProtectedRefundsIndexRoute,
+  ProtectedTaxInvoicesIndexRoute: ProtectedTaxInvoicesIndexRoute,
   ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,
 }
 

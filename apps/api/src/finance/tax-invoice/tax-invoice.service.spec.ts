@@ -109,4 +109,32 @@ describe('TaxInvoiceService', () => {
       await expect(service.cancel('org-1', 'ti-1')).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('findAll', () => {
+    it('고객 표시명을 include 한다', async () => {
+      prisma.taxInvoice.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.taxInvoice.findMany.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('청구서/수정본과 고객 표시명을 include 한다', async () => {
+      prisma.taxInvoice.findUnique.mockResolvedValue({ id: 'tax-1' });
+      await service.findOne('org-1', 'tax-1');
+      const arg = prisma.taxInvoice.findUnique.mock.calls[0][0];
+      expect(arg.include.invoice).toEqual({ select: { id: true, invoiceNo: true } });
+      expect(arg.include.amendments).toEqual({ select: { id: true, taxInvoiceNo: true, status: true } });
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
 });

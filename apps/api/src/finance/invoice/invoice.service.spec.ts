@@ -407,6 +407,13 @@ describe('InvoiceService', () => {
       expect(arg.include.allocations).toEqual({ include: { payment: true } });
     });
 
+    it('세금계산서(taxInvoice)를 include 한다', async () => {
+      prisma.invoice.findUnique.mockResolvedValue(mockInvoice());
+      await service.findOne('org-1', 'inv-1');
+      const arg = prisma.invoice.findUnique.mock.calls[0][0];
+      expect(arg.include.taxInvoice).toEqual({ select: { id: true, taxInvoiceNo: true, status: true } });
+    });
+
     it('존재하지 않으면 NotFoundException', async () => {
       prisma.invoice.findUnique.mockResolvedValue(null);
       await expect(service.findOne('org-1', 'nope')).rejects.toBeInstanceOf(NotFoundException);

@@ -24,11 +24,14 @@ import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
 import { Route as ProtectedProductsIndexRouteImport } from './routes/_protected/products/index'
+import { Route as ProtectedOrdersIndexRouteImport } from './routes/_protected/orders/index'
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
 import { Route as ProtectedBusinessPartnersIndexRouteImport } from './routes/_protected/business-partners/index'
 import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
 import { Route as ProtectedProductsNewRouteImport } from './routes/_protected/products/new'
 import { Route as ProtectedProductsIdRouteImport } from './routes/_protected/products/$id'
+import { Route as ProtectedOrdersNewRouteImport } from './routes/_protected/orders/new'
+import { Route as ProtectedOrdersIdRouteImport } from './routes/_protected/orders/$id'
 import { Route as ProtectedCustomersNewRouteImport } from './routes/_protected/customers/new'
 import { Route as ProtectedCustomersIdRouteImport } from './routes/_protected/customers/$id'
 import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
@@ -108,6 +111,11 @@ const ProtectedProductsIndexRoute = ProtectedProductsIndexRouteImport.update({
   path: '/products/',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedOrdersIndexRoute = ProtectedOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedCustomersIndexRoute = ProtectedCustomersIndexRouteImport.update({
   id: '/customers/',
   path: '/customers/',
@@ -133,6 +141,16 @@ const ProtectedProductsNewRoute = ProtectedProductsNewRouteImport.update({
 const ProtectedProductsIdRoute = ProtectedProductsIdRouteImport.update({
   id: '/products/$id',
   path: '/products/$id',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedOrdersNewRoute = ProtectedOrdersNewRouteImport.update({
+  id: '/orders/new',
+  path: '/orders/new',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedOrdersIdRoute = ProtectedOrdersIdRouteImport.update({
+  id: '/orders/$id',
+  path: '/orders/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedCustomersNewRoute = ProtectedCustomersNewRouteImport.update({
@@ -181,11 +199,14 @@ export interface FileRoutesByFullPath {
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/customers/$id': typeof ProtectedCustomersIdRoute
   '/customers/new': typeof ProtectedCustomersNewRoute
+  '/orders/$id': typeof ProtectedOrdersIdRoute
+  '/orders/new': typeof ProtectedOrdersNewRoute
   '/products/$id': typeof ProtectedProductsIdRoute
   '/products/new': typeof ProtectedProductsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/customers/': typeof ProtectedCustomersIndexRoute
+  '/orders/': typeof ProtectedOrdersIndexRoute
   '/products/': typeof ProtectedProductsIndexRoute
   '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
@@ -206,11 +227,14 @@ export interface FileRoutesByTo {
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/customers/$id': typeof ProtectedCustomersIdRoute
   '/customers/new': typeof ProtectedCustomersNewRoute
+  '/orders/$id': typeof ProtectedOrdersIdRoute
+  '/orders/new': typeof ProtectedOrdersNewRoute
   '/products/$id': typeof ProtectedProductsIdRoute
   '/products/new': typeof ProtectedProductsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
+  '/orders': typeof ProtectedOrdersIndexRoute
   '/products': typeof ProtectedProductsIndexRoute
   '/settings/members': typeof ProtectedSettingsMembersIndexRoute
 }
@@ -234,11 +258,14 @@ export interface FileRoutesById {
   '/_protected/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
   '/_protected/customers/$id': typeof ProtectedCustomersIdRoute
   '/_protected/customers/new': typeof ProtectedCustomersNewRoute
+  '/_protected/orders/$id': typeof ProtectedOrdersIdRoute
+  '/_protected/orders/new': typeof ProtectedOrdersNewRoute
   '/_protected/products/$id': typeof ProtectedProductsIdRoute
   '/_protected/products/new': typeof ProtectedProductsNewRoute
   '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
   '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
+  '/_protected/orders/': typeof ProtectedOrdersIndexRoute
   '/_protected/products/': typeof ProtectedProductsIndexRoute
   '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
@@ -261,11 +288,14 @@ export interface FileRouteTypes {
     | '/business-partners/new'
     | '/customers/$id'
     | '/customers/new'
+    | '/orders/$id'
+    | '/orders/new'
     | '/products/$id'
     | '/products/new'
     | '/settings/account'
     | '/business-partners/'
     | '/customers/'
+    | '/orders/'
     | '/products/'
     | '/settings/members/'
   fileRoutesByTo: FileRoutesByTo
@@ -286,11 +316,14 @@ export interface FileRouteTypes {
     | '/business-partners/new'
     | '/customers/$id'
     | '/customers/new'
+    | '/orders/$id'
+    | '/orders/new'
     | '/products/$id'
     | '/products/new'
     | '/settings/account'
     | '/business-partners'
     | '/customers'
+    | '/orders'
     | '/products'
     | '/settings/members'
   id:
@@ -313,11 +346,14 @@ export interface FileRouteTypes {
     | '/_protected/business-partners/new'
     | '/_protected/customers/$id'
     | '/_protected/customers/new'
+    | '/_protected/orders/$id'
+    | '/_protected/orders/new'
     | '/_protected/products/$id'
     | '/_protected/products/new'
     | '/_protected/settings/account'
     | '/_protected/business-partners/'
     | '/_protected/customers/'
+    | '/_protected/orders/'
     | '/_protected/products/'
     | '/_protected/settings/members/'
   fileRoutesById: FileRoutesById
@@ -436,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedProductsIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/orders/': {
+      id: '/_protected/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof ProtectedOrdersIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/customers/': {
       id: '/_protected/customers/'
       path: '/customers'
@@ -469,6 +512,20 @@ declare module '@tanstack/react-router' {
       path: '/products/$id'
       fullPath: '/products/$id'
       preLoaderRoute: typeof ProtectedProductsIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/orders/new': {
+      id: '/_protected/orders/new'
+      path: '/orders/new'
+      fullPath: '/orders/new'
+      preLoaderRoute: typeof ProtectedOrdersNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/orders/$id': {
+      id: '/_protected/orders/$id'
+      path: '/orders/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof ProtectedOrdersIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/customers/new': {
@@ -537,11 +594,14 @@ interface ProtectedRouteChildren {
   ProtectedBusinessPartnersNewRoute: typeof ProtectedBusinessPartnersNewRoute
   ProtectedCustomersIdRoute: typeof ProtectedCustomersIdRoute
   ProtectedCustomersNewRoute: typeof ProtectedCustomersNewRoute
+  ProtectedOrdersIdRoute: typeof ProtectedOrdersIdRoute
+  ProtectedOrdersNewRoute: typeof ProtectedOrdersNewRoute
   ProtectedProductsIdRoute: typeof ProtectedProductsIdRoute
   ProtectedProductsNewRoute: typeof ProtectedProductsNewRoute
   ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
   ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
+  ProtectedOrdersIndexRoute: typeof ProtectedOrdersIndexRoute
   ProtectedProductsIndexRoute: typeof ProtectedProductsIndexRoute
   ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
 }
@@ -556,11 +616,14 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedBusinessPartnersNewRoute: ProtectedBusinessPartnersNewRoute,
   ProtectedCustomersIdRoute: ProtectedCustomersIdRoute,
   ProtectedCustomersNewRoute: ProtectedCustomersNewRoute,
+  ProtectedOrdersIdRoute: ProtectedOrdersIdRoute,
+  ProtectedOrdersNewRoute: ProtectedOrdersNewRoute,
   ProtectedProductsIdRoute: ProtectedProductsIdRoute,
   ProtectedProductsNewRoute: ProtectedProductsNewRoute,
   ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
   ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
+  ProtectedOrdersIndexRoute: ProtectedOrdersIndexRoute,
   ProtectedProductsIndexRoute: ProtectedProductsIndexRoute,
   ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,
 }

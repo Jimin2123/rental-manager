@@ -77,6 +77,15 @@ export class TaxInvoiceService {
             }
           : {}),
       },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
       orderBy: { issueDate: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -86,7 +95,17 @@ export class TaxInvoiceService {
   async findOne(organizationId: string, id: string) {
     const taxInvoice = await this.prisma.taxInvoice.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      include: { invoice: true, amendments: true },
+      include: {
+        invoice: { select: { id: true, invoiceNo: true } },
+        amendments: { select: { id: true, taxInvoiceNo: true, status: true } },
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+      },
     });
     if (!taxInvoice) throw new NotFoundException('세금계산서를 찾을 수 없습니다.');
     return taxInvoice;

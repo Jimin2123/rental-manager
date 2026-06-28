@@ -133,7 +133,10 @@ describe('AuditLog DB integration', () => {
     it('actorId가 null이면 시스템 행위자로 삽입에 성공한다', async () => {
       const id = randomUUID();
       await insertAuditLog({ id, actorId: null });
-      const { rows } = await client.query(`SELECT "actorId" FROM "AuditLog" WHERE "id" = $1`, [id]);
+      const { rows } = await client.query<{ actorId: string | null }>(
+        `SELECT "actorId" FROM "AuditLog" WHERE "id" = $1`,
+        [id],
+      );
       expect(rows[0].actorId).toBeNull();
     });
 
@@ -146,7 +149,10 @@ describe('AuditLog DB integration', () => {
       const before = { status: 'DRAFT', amount: 10000 };
       const after = { status: 'ISSUED', amount: 10000 };
       await insertAuditLog({ id, before: JSON.stringify(before), after: JSON.stringify(after) });
-      const { rows } = await client.query(`SELECT "before","after" FROM "AuditLog" WHERE "id" = $1`, [id]);
+      const { rows } = await client.query<{ before: Record<string, unknown>; after: Record<string, unknown> }>(
+        `SELECT "before","after" FROM "AuditLog" WHERE "id" = $1`,
+        [id],
+      );
       expect(rows[0].before).toMatchObject(before);
       expect(rows[0].after).toMatchObject(after);
     });

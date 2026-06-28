@@ -215,7 +215,9 @@ describe('SocialAuthService', () => {
 
     it('transfers org membership when target user is not in that org', async () => {
       prisma.accountIdentity.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
-      prisma.organizationMember.findMany.mockResolvedValue([{ id: 'mem-1', organizationId: 'org-1', userId: SOURCE.userId }]);
+      prisma.organizationMember.findMany.mockResolvedValue([
+        { id: 'mem-1', organizationId: 'org-1', userId: SOURCE.userId },
+      ]);
       prisma.organizationMember.findUnique.mockResolvedValue(null); // no conflict
       prisma.refreshToken.updateMany.mockResolvedValue({ count: 0 });
       prisma.account.update.mockResolvedValue({});
@@ -230,7 +232,9 @@ describe('SocialAuthService', () => {
 
     it('skips org membership when target user is already in that org', async () => {
       prisma.accountIdentity.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
-      prisma.organizationMember.findMany.mockResolvedValue([{ id: 'mem-1', organizationId: 'org-1', userId: SOURCE.userId }]);
+      prisma.organizationMember.findMany.mockResolvedValue([
+        { id: 'mem-1', organizationId: 'org-1', userId: SOURCE.userId },
+      ]);
       prisma.organizationMember.findUnique.mockResolvedValue({ id: 'existing-mem' }); // conflict
       prisma.refreshToken.updateMany.mockResolvedValue({ count: 0 });
       prisma.account.update.mockResolvedValue({});
@@ -251,7 +255,10 @@ describe('SocialAuthService', () => {
       await service.mergeAccounts(SOURCE.id, TARGET.id);
 
       expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { accountId: SOURCE.id }, data: expect.objectContaining({ revokedAt: expect.any(Date) }) }),
+        expect.objectContaining({
+          where: { accountId: SOURCE.id },
+          data: expect.objectContaining({ revokedAt: expect.any(Date) }),
+        }),
       );
       expect(prisma.account.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -259,9 +266,7 @@ describe('SocialAuthService', () => {
           data: expect.objectContaining({ isActive: false, deletedAt: expect.any(Date) }),
         }),
       );
-      expect(prisma.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: SOURCE.userId } }),
-      );
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: SOURCE.userId } }));
     });
   });
 
@@ -410,7 +415,9 @@ describe('SocialAuthService', () => {
         },
       ]);
       const result = await service.getOrganizations('user-1');
-      expect(result).toEqual([{ id: 'org-1', name: '테스트회사', businessRegistrationNo: '1234567890', role: 'OWNER' }]);
+      expect(result).toEqual([
+        { id: 'org-1', name: '테스트회사', businessRegistrationNo: '1234567890', role: 'OWNER' },
+      ]);
     });
   });
 

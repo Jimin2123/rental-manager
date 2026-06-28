@@ -41,9 +41,12 @@ describe('Social Auth (e2e)', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(GoogleProvider).useValue(mockProviderValue)
-      .overrideProvider(KakaoProvider).useValue(mockProviderValue)
-      .overrideProvider(NaverProvider).useValue(mockProviderValue)
+      .overrideProvider(GoogleProvider)
+      .useValue(mockProviderValue)
+      .overrideProvider(KakaoProvider)
+      .useValue(mockProviderValue)
+      .overrideProvider(NaverProvider)
+      .useValue(mockProviderValue)
       .compile();
 
     app = module.createNestApplication();
@@ -95,7 +98,12 @@ describe('Social Auth (e2e)', () => {
     it('returns linked identities for an account', async () => {
       const { account } = await createTestUser(prisma, 'identities-linked');
       await prisma.accountIdentity.create({
-        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-linked', providerEmail: `linked${TEST_DOMAIN}` },
+        data: {
+          accountId: account.id,
+          provider: 'GOOGLE',
+          providerId: 'gid-linked',
+          providerEmail: `linked${TEST_DOMAIN}`,
+        },
       });
       const jwt = tokenService.generateAccessToken({ sub: account.id, userId: account.userId, email: account.email });
 
@@ -162,7 +170,12 @@ describe('Social Auth (e2e)', () => {
       const { account: target } = await createTestUser(prisma, 'merge-tgt');
 
       await prisma.accountIdentity.create({
-        data: { accountId: source.id, provider: 'GOOGLE', providerId: 'gid-to-merge', providerEmail: `src${TEST_DOMAIN}` },
+        data: {
+          accountId: source.id,
+          provider: 'GOOGLE',
+          providerId: 'gid-to-merge',
+          providerEmail: `src${TEST_DOMAIN}`,
+        },
       });
 
       const jwt = tokenService.generateAccessToken({ sub: target.id, userId: target.userId, email: target.email });
@@ -178,7 +191,7 @@ describe('Social Auth (e2e)', () => {
         .set('Cookie', [`access_token=${jwt}`])
         .send({ token: mergeToken })
         .expect(200)
-        .expect((res) => expect(res.body.message).toBeDefined());
+        .expect((res) => expect((res.body as { message?: unknown }).message).toBeDefined());
 
       // identity가 target으로 이동됐는지 확인
       const identity = await prisma.accountIdentity.findFirst({ where: { providerId: 'gid-to-merge' } });
@@ -204,11 +217,20 @@ describe('Social Auth (e2e)', () => {
 
       // source 계정에 Google identity 등록
       await prisma.accountIdentity.create({
-        data: { accountId: source.id, provider: 'GOOGLE', providerId: 'gid-conflict', providerEmail: `conflict-src${TEST_DOMAIN}` },
+        data: {
+          accountId: source.id,
+          provider: 'GOOGLE',
+          providerId: 'gid-conflict',
+          providerEmail: `conflict-src${TEST_DOMAIN}`,
+        },
       });
 
       // Google OAuth가 같은 providerId를 반환하도록 모킹
-      mockExchangeCode.mockResolvedValue({ providerId: 'gid-conflict', providerEmail: `conflict-src${TEST_DOMAIN}`, providerData: {} });
+      mockExchangeCode.mockResolvedValue({
+        providerId: 'gid-conflict',
+        providerEmail: `conflict-src${TEST_DOMAIN}`,
+        providerData: {},
+      });
 
       const state = 'test-csrf-state';
       const res = await request(app.getHttpServer())
@@ -223,7 +245,11 @@ describe('Social Auth (e2e)', () => {
     it('redirects to ?success=linked when social identity is new', async () => {
       const { account: target } = await createTestUser(prisma, 'cb-success-tgt');
 
-      mockExchangeCode.mockResolvedValue({ providerId: 'gid-new-link', providerEmail: `new-link${TEST_DOMAIN}`, providerData: {} });
+      mockExchangeCode.mockResolvedValue({
+        providerId: 'gid-new-link',
+        providerEmail: `new-link${TEST_DOMAIN}`,
+        providerData: {},
+      });
 
       const state = 'test-csrf-success';
       const res = await request(app.getHttpServer())
@@ -258,10 +284,19 @@ describe('Social Auth (e2e)', () => {
     it('redirects to / when logging in with a known social identity', async () => {
       const { account } = await createTestUser(prisma, 'cb-login-known');
       await prisma.accountIdentity.create({
-        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-login-known', providerEmail: `cb-login-known${TEST_DOMAIN}` },
+        data: {
+          accountId: account.id,
+          provider: 'GOOGLE',
+          providerId: 'gid-login-known',
+          providerEmail: `cb-login-known${TEST_DOMAIN}`,
+        },
       });
 
-      mockExchangeCode.mockResolvedValue({ providerId: 'gid-login-known', providerEmail: `cb-login-known${TEST_DOMAIN}`, providerData: {} });
+      mockExchangeCode.mockResolvedValue({
+        providerId: 'gid-login-known',
+        providerEmail: `cb-login-known${TEST_DOMAIN}`,
+        providerData: {},
+      });
 
       const state = 'test-login-known-state';
       const res = await request(app.getHttpServer())
@@ -332,7 +367,12 @@ describe('Social Auth (e2e)', () => {
     it('returns 409 when it is the only auth method (no password, one identity)', async () => {
       const { account } = await createTestUser(prisma, 'unlink-only-method');
       await prisma.accountIdentity.create({
-        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-only', providerEmail: `unlink-only-method${TEST_DOMAIN}` },
+        data: {
+          accountId: account.id,
+          provider: 'GOOGLE',
+          providerId: 'gid-only',
+          providerEmail: `unlink-only-method${TEST_DOMAIN}`,
+        },
       });
       // account has no passwordHash (createTestUser sets it null)
       const jwt = tokenService.generateAccessToken({ sub: account.id, userId: account.userId, email: account.email });
@@ -346,10 +386,20 @@ describe('Social Auth (e2e)', () => {
     it('returns 200 and removes identity when account has multiple identities', async () => {
       const { account } = await createTestUser(prisma, 'unlink-multi');
       await prisma.accountIdentity.create({
-        data: { accountId: account.id, provider: 'GOOGLE', providerId: 'gid-multi-g', providerEmail: `unlink-multi${TEST_DOMAIN}` },
+        data: {
+          accountId: account.id,
+          provider: 'GOOGLE',
+          providerId: 'gid-multi-g',
+          providerEmail: `unlink-multi${TEST_DOMAIN}`,
+        },
       });
       await prisma.accountIdentity.create({
-        data: { accountId: account.id, provider: 'KAKAO', providerId: 'kid-multi-k', providerEmail: `unlink-multi-k${TEST_DOMAIN}` },
+        data: {
+          accountId: account.id,
+          provider: 'KAKAO',
+          providerId: 'kid-multi-k',
+          providerEmail: `unlink-multi-k${TEST_DOMAIN}`,
+        },
       });
       const jwt = tokenService.generateAccessToken({ sub: account.id, userId: account.userId, email: account.email });
 

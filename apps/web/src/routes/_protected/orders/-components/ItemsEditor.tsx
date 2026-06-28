@@ -1,11 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ProductSelect, AssetSelect } from '@/components/ui/option-select';
 import type { OrderType } from '../-types';
 import type { ItemRow } from './payload';
 import { emptyItemRow } from './payload';
-import { fetchProductOptions, fetchAssetOptions } from '@/lib/options-api';
-import type { ProductOption, AssetOption } from '@/lib/options-api';
 
 type Props = {
   type: OrderType;
@@ -52,13 +50,6 @@ function ItemRowEditor({
   onUpdate: (idx: number, patch: Partial<ItemRow>) => void;
   onRemove: (idx: number) => void;
 }) {
-  // 제품 선택 시에만 가용 자산을 조회한다.
-  const { data: assets = [] } = useQuery<AssetOption[]>({
-    queryKey: ['assets', 'available', item.productId],
-    queryFn: () => fetchAssetOptions(item.productId),
-    enabled: item.productId !== '',
-  });
-
   return (
     <div className="rounded-md border p-3 space-y-3">
       <div className="flex items-center justify-between">
@@ -76,22 +67,11 @@ function ItemRowEditor({
           />
         </Field>
         <Field label="자산(시리얼)">
-          <select
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
+          <AssetSelect
+            productId={item.productId}
             value={item.assetId}
-            disabled={item.productId === ''}
-            onChange={(e) => {
-              const asset = assets.find((a) => a.id === e.target.value);
-              onUpdate(index, { assetId: e.target.value, serialNumber: asset?.serialNumber ?? '' });
-            }}
-          >
-            <option value="">선택 안 함</option>
-            {assets.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.serialNumber}
-              </option>
-            ))}
-          </select>
+            onChange={(assetId, asset) => onUpdate(index, { assetId, serialNumber: asset?.serialNumber ?? '' })}
+          />
         </Field>
       </div>
 
@@ -162,27 +142,5 @@ function Field({ label, required, children }: { label: string; required?: boolea
       </p>
       {children}
     </div>
-  );
-}
-
-// 제품 native select — 제품 옵션을 직접 조회한다(쿼리 키 캐싱으로 행이 여러 개여도 네트워크 1회).
-function ProductSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const { data: products = [] } = useQuery<ProductOption[]>({
-    queryKey: ['products', 'options'],
-    queryFn: fetchProductOptions,
-  });
-  return (
-    <select
-      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">제품 선택</option>
-      {products.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.name}
-        </option>
-      ))}
-    </select>
   );
 }

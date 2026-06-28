@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { DetailRow } from '@/components/ui/detail-row';
 import { useAuthStore } from '@/store/auth.store';
 import type { OrderDetail, OrderStatus } from '../-types';
 import { ORDER_TYPE_LABEL, ORDER_STATUS_LABEL, ORDER_TRANSITIONS, customerNameOf, orderTotal } from '../-types';
@@ -108,10 +109,10 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <Row label="고객" value={customerNameOf(order.customer)} />
-          <Row label="담당자" value={order.manager?.name ?? '-'} />
-          <Row label="주문일" value={new Date(order.orderDate).toLocaleDateString('ko-KR')} />
-          <Row label="합계" value={`${orderTotal(order).toLocaleString('ko-KR')}원`} />
+          <DetailRow label="고객" value={customerNameOf(order.customer)} />
+          <DetailRow label="담당자" value={order.manager?.name ?? '-'} />
+          <DetailRow label="주문일" value={new Date(order.orderDate).toLocaleDateString('ko-KR')} />
+          <DetailRow label="합계" value={`${orderTotal(order).toLocaleString('ko-KR')}원`} />
         </div>
 
         {/* 상태 전환 */}
@@ -193,15 +194,6 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
     </div>
   );
 }

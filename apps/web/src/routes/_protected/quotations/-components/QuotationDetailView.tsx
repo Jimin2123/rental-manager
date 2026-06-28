@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { DetailRow } from '@/components/ui/detail-row';
 import { useAuthStore } from '@/store/auth.store';
 import type { QuotationDetail, QuotationStatus } from '../-types';
 import {
@@ -139,8 +140,8 @@ export function QuotationDetailView({ quotation }: { quotation: QuotationDetail 
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <Row label="고객" value={customerNameOf(quotation.customer)} />
-          <Row label="합계" value={`${quotationTotal(quotation).toLocaleString('ko-KR')}원`} />
+          <DetailRow label="고객" value={customerNameOf(quotation.customer)} />
+          <DetailRow label="합계" value={`${quotationTotal(quotation).toLocaleString('ko-KR')}원`} />
         </div>
 
         {nextStatuses.length > 0 && (
@@ -380,15 +381,6 @@ function AddItemForm({ quotation }: { quotation: QuotationDetail }) {
           추가
         </Button>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
     </div>
   );
 }

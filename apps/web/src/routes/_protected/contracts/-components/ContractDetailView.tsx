@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { DetailRow } from '@/components/ui/detail-row';
 import { fetchProductOptions, fetchAssetOptions } from '../../orders/-api';
 import type { ProductOption, AssetOption } from '../../orders/-api';
 import type { ContractDetail, ContractStatus } from '../-types';
@@ -82,15 +83,15 @@ export function ContractDetailView({ contract }: { contract: ContractDetail }) {
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <Row label="고객" value={customerNameOf(contract.rentalOrder.order.customer)} />
-          <Row label="월 렌탈료" value={`${contractMonthlyTotal(contract.items).toLocaleString('ko-KR')}원`} />
-          <Row
+          <DetailRow label="고객" value={customerNameOf(contract.rentalOrder.order.customer)} />
+          <DetailRow label="월 렌탈료" value={`${contractMonthlyTotal(contract.items).toLocaleString('ko-KR')}원`} />
+          <DetailRow
             label="기간"
             value={`${new Date(contract.startDate).toLocaleDateString('ko-KR')} ~ ${new Date(
               contract.endDate,
             ).toLocaleDateString('ko-KR')} (${contract.contractMonths}개월)`}
           />
-          <Row
+          <DetailRow
             label="청구"
             value={`${contract.billingTiming === 'PREPAID' ? '선불' : '후불'}${
               contract.billingDay ? ` · 매월 ${contract.billingDay}일` : ''
@@ -225,15 +226,6 @@ function AddContractItemForm({ contractId }: { contractId: string }) {
           추가
         </Button>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
     </div>
   );
 }

@@ -71,7 +71,26 @@ export class RentalContractService {
     return this.prisma.rentalContract.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
-      include: { rentalOrder: { include: { order: true } } },
+      include: {
+        rentalOrder: {
+          include: {
+            order: {
+              include: {
+                customer: {
+                  select: {
+                    id: true,
+                    individualProfile: { select: { name: true } },
+                    businessPartner: { select: { businessProfile: { select: { name: true } } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        items: {
+          include: { asset: { select: { id: true, serialNumber: true, product: { select: { name: true } } } } },
+        },
+      },
     });
   }
 
@@ -79,8 +98,25 @@ export class RentalContractService {
     const contract = await this.prisma.rentalContract.findUnique({
       where: { id_organizationId: { id, organizationId } },
       include: {
-        rentalOrder: { include: { order: true, items: true } },
-        items: { include: { asset: true } },
+        rentalOrder: {
+          include: {
+            order: {
+              include: {
+                customer: {
+                  select: {
+                    id: true,
+                    individualProfile: { select: { name: true } },
+                    businessPartner: { select: { businessProfile: { select: { name: true } } } },
+                  },
+                },
+              },
+            },
+            items: true,
+          },
+        },
+        items: {
+          include: { asset: { select: { id: true, serialNumber: true, product: { select: { name: true } } } } },
+        },
       },
     });
     if (!contract) throw new NotFoundException('계약을 찾을 수 없습니다.');

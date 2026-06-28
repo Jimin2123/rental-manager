@@ -523,4 +523,35 @@ describe('RentalContractService', () => {
       );
     });
   });
+
+  describe('findAll include', () => {
+    it('includes 고객/자산/제품 표시명', async () => {
+      prisma.rentalContract.findMany.mockResolvedValue([]);
+      await service.findAll('org-1');
+      expect(prisma.rentalContract.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            rentalOrder: {
+              include: {
+                order: {
+                  include: {
+                    customer: {
+                      select: {
+                        id: true,
+                        individualProfile: { select: { name: true } },
+                        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            items: {
+              include: { asset: { select: { id: true, serialNumber: true, product: { select: { name: true } } } } },
+            },
+          }),
+        }),
+      );
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { Link } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -160,7 +161,15 @@ export function CustomerDetailView({
                 <dd>{formatAddress(bp?.businessProfile.address ?? null)}</dd>
               </div>
             </dl>
-            <p className="text-xs text-muted-foreground">법인 고객 정보는 거래처에서 관리합니다.</p>
+            {bp && (
+              <Link
+                to="/business-partners/$id"
+                params={{ id: bp.id }}
+                className="inline-block text-xs text-primary underline-offset-2 hover:underline"
+              >
+                거래처에서 관리 →
+              </Link>
+            )}
           </>
         )}
 

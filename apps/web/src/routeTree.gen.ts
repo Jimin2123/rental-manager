@@ -15,7 +15,6 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as ProtectedRefundsRouteImport } from './routes/_protected/refunds'
-import { Route as ProtectedPaymentsRouteImport } from './routes/_protected/payments'
 import { Route as AuthTermsRouteImport } from './routes/_auth/terms'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
@@ -23,6 +22,7 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
 import { Route as ProtectedQuotationsIndexRouteImport } from './routes/_protected/quotations/index'
 import { Route as ProtectedProductsIndexRouteImport } from './routes/_protected/products/index'
+import { Route as ProtectedPaymentsIndexRouteImport } from './routes/_protected/payments/index'
 import { Route as ProtectedOrdersIndexRouteImport } from './routes/_protected/orders/index'
 import { Route as ProtectedInvoicesIndexRouteImport } from './routes/_protected/invoices/index'
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
@@ -33,6 +33,8 @@ import { Route as ProtectedQuotationsNewRouteImport } from './routes/_protected/
 import { Route as ProtectedQuotationsIdRouteImport } from './routes/_protected/quotations/$id'
 import { Route as ProtectedProductsNewRouteImport } from './routes/_protected/products/new'
 import { Route as ProtectedProductsIdRouteImport } from './routes/_protected/products/$id'
+import { Route as ProtectedPaymentsNewRouteImport } from './routes/_protected/payments/new'
+import { Route as ProtectedPaymentsIdRouteImport } from './routes/_protected/payments/$id'
 import { Route as ProtectedOrdersNewRouteImport } from './routes/_protected/orders/new'
 import { Route as ProtectedOrdersIdRouteImport } from './routes/_protected/orders/$id'
 import { Route as ProtectedInvoicesIdRouteImport } from './routes/_protected/invoices/$id'
@@ -71,11 +73,6 @@ const ProtectedRefundsRoute = ProtectedRefundsRouteImport.update({
   path: '/refunds',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedPaymentsRoute = ProtectedPaymentsRouteImport.update({
-  id: '/payments',
-  path: '/payments',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 const AuthTermsRoute = AuthTermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -110,6 +107,11 @@ const ProtectedQuotationsIndexRoute =
 const ProtectedProductsIndexRoute = ProtectedProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPaymentsIndexRoute = ProtectedPaymentsIndexRouteImport.update({
+  id: '/payments/',
+  path: '/payments/',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedOrdersIndexRoute = ProtectedOrdersIndexRouteImport.update({
@@ -162,6 +164,16 @@ const ProtectedProductsNewRoute = ProtectedProductsNewRouteImport.update({
 const ProtectedProductsIdRoute = ProtectedProductsIdRouteImport.update({
   id: '/products/$id',
   path: '/products/$id',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPaymentsNewRoute = ProtectedPaymentsNewRouteImport.update({
+  id: '/payments/new',
+  path: '/payments/new',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPaymentsIdRoute = ProtectedPaymentsIdRouteImport.update({
+  id: '/payments/$id',
+  path: '/payments/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedOrdersNewRoute = ProtectedOrdersNewRouteImport.update({
@@ -221,7 +233,6 @@ export interface FileRoutesByFullPath {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/terms': typeof AuthTermsRoute
-  '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
@@ -232,6 +243,8 @@ export interface FileRoutesByFullPath {
   '/invoices/$id': typeof ProtectedInvoicesIdRoute
   '/orders/$id': typeof ProtectedOrdersIdRoute
   '/orders/new': typeof ProtectedOrdersNewRoute
+  '/payments/$id': typeof ProtectedPaymentsIdRoute
+  '/payments/new': typeof ProtectedPaymentsNewRoute
   '/products/$id': typeof ProtectedProductsIdRoute
   '/products/new': typeof ProtectedProductsNewRoute
   '/quotations/$id': typeof ProtectedQuotationsIdRoute
@@ -242,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/customers/': typeof ProtectedCustomersIndexRoute
   '/invoices/': typeof ProtectedInvoicesIndexRoute
   '/orders/': typeof ProtectedOrdersIndexRoute
+  '/payments/': typeof ProtectedPaymentsIndexRoute
   '/products/': typeof ProtectedProductsIndexRoute
   '/quotations/': typeof ProtectedQuotationsIndexRoute
   '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
@@ -254,7 +268,6 @@ export interface FileRoutesByTo {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/terms': typeof AuthTermsRoute
-  '/payments': typeof ProtectedPaymentsRoute
   '/refunds': typeof ProtectedRefundsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
@@ -265,6 +278,8 @@ export interface FileRoutesByTo {
   '/invoices/$id': typeof ProtectedInvoicesIdRoute
   '/orders/$id': typeof ProtectedOrdersIdRoute
   '/orders/new': typeof ProtectedOrdersNewRoute
+  '/payments/$id': typeof ProtectedPaymentsIdRoute
+  '/payments/new': typeof ProtectedPaymentsNewRoute
   '/products/$id': typeof ProtectedProductsIdRoute
   '/products/new': typeof ProtectedProductsNewRoute
   '/quotations/$id': typeof ProtectedQuotationsIdRoute
@@ -275,6 +290,7 @@ export interface FileRoutesByTo {
   '/customers': typeof ProtectedCustomersIndexRoute
   '/invoices': typeof ProtectedInvoicesIndexRoute
   '/orders': typeof ProtectedOrdersIndexRoute
+  '/payments': typeof ProtectedPaymentsIndexRoute
   '/products': typeof ProtectedProductsIndexRoute
   '/quotations': typeof ProtectedQuotationsIndexRoute
   '/settings/members': typeof ProtectedSettingsMembersIndexRoute
@@ -289,7 +305,6 @@ export interface FileRoutesById {
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_auth/terms': typeof AuthTermsRoute
-  '/_protected/payments': typeof ProtectedPaymentsRoute
   '/_protected/refunds': typeof ProtectedRefundsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/_protected/': typeof ProtectedIndexRoute
@@ -301,6 +316,8 @@ export interface FileRoutesById {
   '/_protected/invoices/$id': typeof ProtectedInvoicesIdRoute
   '/_protected/orders/$id': typeof ProtectedOrdersIdRoute
   '/_protected/orders/new': typeof ProtectedOrdersNewRoute
+  '/_protected/payments/$id': typeof ProtectedPaymentsIdRoute
+  '/_protected/payments/new': typeof ProtectedPaymentsNewRoute
   '/_protected/products/$id': typeof ProtectedProductsIdRoute
   '/_protected/products/new': typeof ProtectedProductsNewRoute
   '/_protected/quotations/$id': typeof ProtectedQuotationsIdRoute
@@ -311,6 +328,7 @@ export interface FileRoutesById {
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
   '/_protected/invoices/': typeof ProtectedInvoicesIndexRoute
   '/_protected/orders/': typeof ProtectedOrdersIndexRoute
+  '/_protected/payments/': typeof ProtectedPaymentsIndexRoute
   '/_protected/products/': typeof ProtectedProductsIndexRoute
   '/_protected/quotations/': typeof ProtectedQuotationsIndexRoute
   '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
@@ -325,7 +343,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/terms'
-    | '/payments'
     | '/refunds'
     | '/invitations/accept'
     | '/business-partners/$id'
@@ -336,6 +353,8 @@ export interface FileRouteTypes {
     | '/invoices/$id'
     | '/orders/$id'
     | '/orders/new'
+    | '/payments/$id'
+    | '/payments/new'
     | '/products/$id'
     | '/products/new'
     | '/quotations/$id'
@@ -346,6 +365,7 @@ export interface FileRouteTypes {
     | '/customers/'
     | '/invoices/'
     | '/orders/'
+    | '/payments/'
     | '/products/'
     | '/quotations/'
     | '/settings/members/'
@@ -358,7 +378,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/terms'
-    | '/payments'
     | '/refunds'
     | '/invitations/accept'
     | '/business-partners/$id'
@@ -369,6 +388,8 @@ export interface FileRouteTypes {
     | '/invoices/$id'
     | '/orders/$id'
     | '/orders/new'
+    | '/payments/$id'
+    | '/payments/new'
     | '/products/$id'
     | '/products/new'
     | '/quotations/$id'
@@ -379,6 +400,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/invoices'
     | '/orders'
+    | '/payments'
     | '/products'
     | '/quotations'
     | '/settings/members'
@@ -392,7 +414,6 @@ export interface FileRouteTypes {
     | '/_auth/register'
     | '/_auth/reset-password'
     | '/_auth/terms'
-    | '/_protected/payments'
     | '/_protected/refunds'
     | '/invitations/accept'
     | '/_protected/'
@@ -404,6 +425,8 @@ export interface FileRouteTypes {
     | '/_protected/invoices/$id'
     | '/_protected/orders/$id'
     | '/_protected/orders/new'
+    | '/_protected/payments/$id'
+    | '/_protected/payments/new'
     | '/_protected/products/$id'
     | '/_protected/products/new'
     | '/_protected/quotations/$id'
@@ -414,6 +437,7 @@ export interface FileRouteTypes {
     | '/_protected/customers/'
     | '/_protected/invoices/'
     | '/_protected/orders/'
+    | '/_protected/payments/'
     | '/_protected/products/'
     | '/_protected/quotations/'
     | '/_protected/settings/members/'
@@ -470,13 +494,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedRefundsRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/payments': {
-      id: '/_protected/payments'
-      path: '/payments'
-      fullPath: '/payments'
-      preLoaderRoute: typeof ProtectedPaymentsRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/_auth/terms': {
       id: '/_auth/terms'
       path: '/terms'
@@ -524,6 +541,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products/'
       preLoaderRoute: typeof ProtectedProductsIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/payments/': {
+      id: '/_protected/payments/'
+      path: '/payments'
+      fullPath: '/payments/'
+      preLoaderRoute: typeof ProtectedPaymentsIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/orders/': {
@@ -594,6 +618,20 @@ declare module '@tanstack/react-router' {
       path: '/products/$id'
       fullPath: '/products/$id'
       preLoaderRoute: typeof ProtectedProductsIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/payments/new': {
+      id: '/_protected/payments/new'
+      path: '/payments/new'
+      fullPath: '/payments/new'
+      preLoaderRoute: typeof ProtectedPaymentsNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/payments/$id': {
+      id: '/_protected/payments/$id'
+      path: '/payments/$id'
+      fullPath: '/payments/$id'
+      preLoaderRoute: typeof ProtectedPaymentsIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/orders/new': {
@@ -681,7 +719,6 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface ProtectedRouteChildren {
-  ProtectedPaymentsRoute: typeof ProtectedPaymentsRoute
   ProtectedRefundsRoute: typeof ProtectedRefundsRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedBusinessPartnersIdRoute: typeof ProtectedBusinessPartnersIdRoute
@@ -692,6 +729,8 @@ interface ProtectedRouteChildren {
   ProtectedInvoicesIdRoute: typeof ProtectedInvoicesIdRoute
   ProtectedOrdersIdRoute: typeof ProtectedOrdersIdRoute
   ProtectedOrdersNewRoute: typeof ProtectedOrdersNewRoute
+  ProtectedPaymentsIdRoute: typeof ProtectedPaymentsIdRoute
+  ProtectedPaymentsNewRoute: typeof ProtectedPaymentsNewRoute
   ProtectedProductsIdRoute: typeof ProtectedProductsIdRoute
   ProtectedProductsNewRoute: typeof ProtectedProductsNewRoute
   ProtectedQuotationsIdRoute: typeof ProtectedQuotationsIdRoute
@@ -702,13 +741,13 @@ interface ProtectedRouteChildren {
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
   ProtectedInvoicesIndexRoute: typeof ProtectedInvoicesIndexRoute
   ProtectedOrdersIndexRoute: typeof ProtectedOrdersIndexRoute
+  ProtectedPaymentsIndexRoute: typeof ProtectedPaymentsIndexRoute
   ProtectedProductsIndexRoute: typeof ProtectedProductsIndexRoute
   ProtectedQuotationsIndexRoute: typeof ProtectedQuotationsIndexRoute
   ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedPaymentsRoute: ProtectedPaymentsRoute,
   ProtectedRefundsRoute: ProtectedRefundsRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedBusinessPartnersIdRoute: ProtectedBusinessPartnersIdRoute,
@@ -719,6 +758,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedInvoicesIdRoute: ProtectedInvoicesIdRoute,
   ProtectedOrdersIdRoute: ProtectedOrdersIdRoute,
   ProtectedOrdersNewRoute: ProtectedOrdersNewRoute,
+  ProtectedPaymentsIdRoute: ProtectedPaymentsIdRoute,
+  ProtectedPaymentsNewRoute: ProtectedPaymentsNewRoute,
   ProtectedProductsIdRoute: ProtectedProductsIdRoute,
   ProtectedProductsNewRoute: ProtectedProductsNewRoute,
   ProtectedQuotationsIdRoute: ProtectedQuotationsIdRoute,
@@ -729,6 +770,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
   ProtectedInvoicesIndexRoute: ProtectedInvoicesIndexRoute,
   ProtectedOrdersIndexRoute: ProtectedOrdersIndexRoute,
+  ProtectedPaymentsIndexRoute: ProtectedPaymentsIndexRoute,
   ProtectedProductsIndexRoute: ProtectedProductsIndexRoute,
   ProtectedQuotationsIndexRoute: ProtectedQuotationsIndexRoute,
   ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,

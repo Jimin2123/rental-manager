@@ -36,6 +36,8 @@ export default defineConfig({
       '/quotations': apiProxy(),
       '/rental-contracts': apiProxy(),
       '/invoices': apiProxy(),
+      '/payments': apiProxy(),
+      '/refunds': apiProxy(),
     },
   },
 });

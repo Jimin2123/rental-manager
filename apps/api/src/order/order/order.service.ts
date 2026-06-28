@@ -122,9 +122,16 @@ export class OrderService {
         ...(query.customerId && { customerId: query.customerId }),
       },
       include: {
-        customer: { select: { id: true } },
-        saleOrder: { include: { items: true } },
-        rentalOrder: { include: { items: true } },
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+        manager: { select: { id: true, name: true } },
+        saleOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
+        rentalOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -134,9 +141,16 @@ export class OrderService {
     const order = await this.prisma.order.findUnique({
       where: { id_organizationId: { id, organizationId } },
       include: {
-        customer: { select: { id: true } },
-        saleOrder: { include: { items: true } },
-        rentalOrder: { include: { items: true } },
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+        manager: { select: { id: true, name: true } },
+        saleOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
+        rentalOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
       },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');

@@ -155,4 +155,44 @@ describe('OrderService', () => {
       expect(prisma.order.delete).toHaveBeenCalled();
     });
   });
+
+  describe('findAll', () => {
+    it('includes customer/manager/product 표시명', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            customer: expect.objectContaining({
+              select: expect.objectContaining({
+                id: true,
+                individualProfile: { select: { name: true } },
+                businessPartner: { select: { businessProfile: { select: { name: true } } } },
+              }),
+            }),
+            manager: { select: { id: true, name: true } },
+            saleOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
+            rentalOrder: { include: { items: { include: { product: { select: { name: true } } } } } },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('findOne', () => {
+    it('throws NotFoundException when order not found', async () => {
+      prisma.order.findUnique.mockResolvedValue(null);
+      await expect(service.findOne('org-1', 'o-x')).rejects.toThrow('주문을 찾을 수 없습니다.');
+    });
+
+    it('includes manager 표시명', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'o-1' });
+      await service.findOne('org-1', 'o-1');
+      expect(prisma.order.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({ manager: { select: { id: true, name: true } } }),
+        }),
+      );
+    });
+  });
 });

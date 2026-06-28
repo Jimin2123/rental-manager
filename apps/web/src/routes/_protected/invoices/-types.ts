@@ -80,14 +80,6 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   ETC: '기타',
 };
 
-// 백엔드 상태 전환 미러: 발행은 DRAFT→ISSUED, 취소는 ISSUED→CANCELED.
-// (취소는 추가로 paidAmount===0 조건이 있어 화면에서 별도 판정한다.)
-export const INVOICE_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
-  DRAFT: ['ISSUED'],
-  ISSUED: ['CANCELED'],
-  CANCELED: [],
-};
-
 export type InvoiceListItem = {
   id: string;
   invoiceNo: string;

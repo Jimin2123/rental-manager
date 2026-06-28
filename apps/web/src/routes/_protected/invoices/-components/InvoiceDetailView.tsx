@@ -47,7 +47,7 @@ export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
     },
     onError: (err) => {
       const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '수납 내역이 있어 취소할 수 없습니다.' : '취소 중 오류가 발생했습니다.');
+      toast.error(s === 400 ? '취소할 수 없는 상태이거나 수납 내역이 있습니다.' : '취소 중 오류가 발생했습니다.');
     },
   });
 

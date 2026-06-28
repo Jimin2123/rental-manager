@@ -367,4 +367,49 @@ describe('InvoiceService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('findAll', () => {
+    it('고객 표시명(individualProfile/businessPartner)을 include 한다', async () => {
+      prisma.invoice.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.invoice.findMany.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+
+    it('전달된 필터를 where 절에 반영한다', async () => {
+      prisma.invoice.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', { status: InvoiceStatus.ISSUED, type: InvoiceType.SALE });
+      const arg = prisma.invoice.findMany.mock.calls[0][0];
+      expect(arg.where).toMatchObject({
+        organizationId: 'org-1',
+        status: InvoiceStatus.ISSUED,
+        type: InvoiceType.SALE,
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('항목/조정/수납과 함께 고객 표시명을 include 한다', async () => {
+      prisma.invoice.findUnique.mockResolvedValue(mockInvoice());
+      await service.findOne('org-1', 'inv-1');
+      const arg = prisma.invoice.findUnique.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+      expect(arg.include.items).toBe(true);
+      expect(arg.include.adjustments).toBe(true);
+      expect(arg.include.allocations).toEqual({ include: { payment: true } });
+    });
+
+    it('존재하지 않으면 NotFoundException', async () => {
+      prisma.invoice.findUnique.mockResolvedValue(null);
+      await expect(service.findOne('org-1', 'nope')).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
 });

@@ -1,0 +1,136 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { TaxInvoiceListItem, TaxInvoiceStatus, TaxInvoiceType } from './-types';
+import { TAX_INVOICE_STATUS_LABEL, TAX_INVOICE_TYPE_LABEL } from './-types';
+import type { TaxInvoiceFilters } from './-api';
+import { taxInvoiceKeys, fetchTaxInvoices } from './-api';
+
+export const Route = createFileRoute('/_protected/tax-invoices/')({
+  component: TaxInvoicesPage,
+});
+
+type TypeFilter = 'ALL' | TaxInvoiceType;
+type StatusFilter = 'ALL' | TaxInvoiceStatus;
+
+function TaxInvoicesPage() {
+  const navigate = useNavigate();
+  const [type, setType] = useState<TypeFilter>('ALL');
+  const [status, setStatus] = useState<StatusFilter>('ALL');
+
+  const filters: TaxInvoiceFilters = {
+    ...(type !== 'ALL' && { type }),
+    ...(status !== 'ALL' && { status }),
+  };
+
+  const { data = [], isLoading } = useQuery<TaxInvoiceListItem[]>({
+    queryKey: taxInvoiceKeys.list(filters),
+    queryFn: () => fetchTaxInvoices(filters),
+  });
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-foreground">세금계산서</h1>
+      </div>
+
+      <div className="mb-4 space-y-2">
+        <FilterRow<TypeFilter>
+          label="구분"
+          options={['ALL', 'TAX_INVOICE', 'CREDIT_NOTE']}
+          value={type}
+          onChange={setType}
+          labelOf={(v) => (v === 'ALL' ? '전체' : TAX_INVOICE_TYPE_LABEL[v])}
+        />
+        <FilterRow<StatusFilter>
+          label="상태"
+          options={['ALL', 'DRAFT', 'ISSUED', 'CANCELED', 'NTS_CONFIRMED']}
+          value={status}
+          onChange={setStatus}
+          labelOf={(v) => (v === 'ALL' ? '전체' : TAX_INVOICE_STATUS_LABEL[v])}
+        />
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>계산서번호</TableHead>
+              <TableHead>구분</TableHead>
+              <TableHead>매입자</TableHead>
+              <TableHead>발행일</TableHead>
+              <TableHead>상태</TableHead>
+              <TableHead className="text-right">공급가액</TableHead>
+              <TableHead className="text-right">세액</TableHead>
+              <TableHead className="text-right">합계</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                  불러오는 중...
+                </TableCell>
+              </TableRow>
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                  세금계산서가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((t) => (
+                <TableRow
+                  key={t.id}
+                  className="cursor-pointer"
+                  onClick={() => void navigate({ to: '/tax-invoices/$id', params: { id: t.id } })}
+                >
+                  <TableCell className="font-medium">{t.taxInvoiceNo}</TableCell>
+                  <TableCell>{TAX_INVOICE_TYPE_LABEL[t.type]}</TableCell>
+                  <TableCell>{t.buyerName}</TableCell>
+                  <TableCell>{new Date(t.issueDate).toLocaleDateString('ko-KR')}</TableCell>
+                  <TableCell>
+                    <Badge variant={t.status === 'ISSUED' ? 'default' : 'secondary'}>
+                      {TAX_INVOICE_STATUS_LABEL[t.status]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">{t.supplyAmount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{t.vatAmount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{t.totalAmount.toLocaleString('ko-KR')}원</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+function FilterRow<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  labelOf,
+}: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+  labelOf: (v: T) => string;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
+      {options.map((o) => (
+        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
+          {labelOf(o)}
+        </Button>
+      ))}
+    </div>
+  );
+}

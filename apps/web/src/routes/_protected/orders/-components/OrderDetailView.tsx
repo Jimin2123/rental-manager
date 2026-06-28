@@ -223,11 +223,11 @@ function ContractCreateCard({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post<{ id: string }>('/contracts', buildCreateContractBody(rentalOrderId, form));
+      const res = await api.post<{ id: string }>('/rental-contracts', buildCreateContractBody(rentalOrderId, form));
       const contractId = res.data.id;
       // 자산이 지정된 주문 항목을 계약 항목으로 자동 복사.
       for (const it of copyable) {
-        await api.post(`/contracts/${contractId}/items`, {
+        await api.post(`/rental-contracts/${contractId}/items`, {
           assetId: it.assetId,
           rentalOrderItemId: it.id,
           monthlyRentalPrice: it.monthlyRentalPrice,

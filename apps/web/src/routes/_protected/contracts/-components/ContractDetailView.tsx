@@ -32,7 +32,7 @@ export function ContractDetailView({ contract }: { contract: ContractDetail }) {
   const nextStatuses = CONTRACT_TRANSITIONS[contract.status];
 
   const statusMutation = useMutation({
-    mutationFn: (status: ContractStatus) => api.patch(`/contracts/${contract.id}/status`, { status }),
+    mutationFn: (status: ContractStatus) => api.patch(`/rental-contracts/${contract.id}/status`, { status }),
     onSuccess: () => {
       invalidateContract(queryClient, contract.id);
       toast.success('상태가 변경되었습니다.');
@@ -46,7 +46,7 @@ export function ContractDetailView({ contract }: { contract: ContractDetail }) {
   });
 
   const returnMutation = useMutation({
-    mutationFn: (itemId: string) => api.post(`/contracts/${contract.id}/items/${itemId}/return`, {}),
+    mutationFn: (itemId: string) => api.post(`/rental-contracts/${contract.id}/items/${itemId}/return`, {}),
     onSuccess: () => {
       invalidateContract(queryClient, contract.id);
       toast.success('항목을 회수했습니다.');
@@ -167,7 +167,7 @@ function AddContractItemForm({ contractId }: { contractId: string }) {
   });
 
   const mutation = useMutation({
-    mutationFn: () => api.post(`/contracts/${contractId}/items`, { assetId, monthlyRentalPrice: Number(price) }),
+    mutationFn: () => api.post(`/rental-contracts/${contractId}/items`, { assetId, monthlyRentalPrice: Number(price) }),
     onSuccess: () => {
       invalidateContract(queryClient, contractId);
       toast.success('항목이 추가되었습니다.');

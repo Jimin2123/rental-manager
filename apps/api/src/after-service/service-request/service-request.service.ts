@@ -75,6 +75,16 @@ export class ServiceRequestService {
         ...(customerId && { customerId }),
         ...(assetId && { assetId }),
       },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+        asset: { select: { id: true, serialNumber: true, status: true, product: { select: { name: true } } } },
+      },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -84,7 +94,17 @@ export class ServiceRequestService {
   async findOne(organizationId: string, id: string) {
     const request = await this.prisma.serviceRequest.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      include: { visits: true },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            individualProfile: { select: { name: true } },
+            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+          },
+        },
+        asset: { select: { id: true, serialNumber: true, status: true, product: { select: { name: true } } } },
+        visits: { include: { staff: { select: { id: true, name: true } } } },
+      },
     });
     if (!request || request.deletedAt) throw new NotFoundException('AS 접수를 찾을 수 없습니다.');
     return request;

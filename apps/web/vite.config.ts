@@ -18,29 +18,7 @@ const apiProxy = (target = 'http://localhost:3000') => ({
   },
 });
 
-// 백엔드(NestJS, :3000)로 프록시할 API 최상위 경로.
-// dev 프록시는 catch-all이 불가하므로(vite 내부 자산까지 가로챔) 경로 prefix를 열거한다.
-// **새 백엔드 도메인 추가 시 이 배열에 한 줄 추가** — 누락 시 dev에서 해당 API 호출이 SPA로 빠져 깨진다.
-const API_PROXY_PATHS = [
-  '/auth',
-  '/organizations',
-  '/invitations',
-  '/assets',
-  '/business-partners',
-  '/products',
-  '/customers',
-  '/orders',
-  '/quotations',
-  '/rental-contracts',
-  '/invoices',
-  '/payments',
-  '/refunds',
-  '/tax-invoices',
-  '/service-requests',
-  '/service-visits',
-  '/maintenance-schedules',
-  '/audit-logs',
-];
+const API_TARGET = 'http://localhost:3000';
 
 export default defineConfig({
   plugins: [TanStackRouterVite({ routesDirectory: './src/routes' }), react(), tailwindcss()],
@@ -48,6 +26,17 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
-    proxy: Object.fromEntries(API_PROXY_PATHS.map((p) => [p, apiProxy()])),
+    proxy: {
+      // 모든 XHR API 호출 — dev에서 axios baseURL이 '/api'(lib/api.ts).
+      // '/api' 한 줄이 전 도메인을 자동 커버하고, rewrite로 prefix를 떼어 백엔드에 전달한다.
+      // 신규 백엔드 도메인 추가 시 프록시 수정 불필요.
+      '/api': {
+        target: API_TARGET,
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+      // 소셜 로그인 전체 페이지 리다이렉트/콜백(브라우저 네비게이션, axios 아님 → '/api' 미경유).
+      '/auth/social': apiProxy(API_TARGET),
+    },
   },
 });

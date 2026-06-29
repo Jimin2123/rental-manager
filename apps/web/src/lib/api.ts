@@ -1,14 +1,18 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth.store';
 
+// dev: 모든 API 호출을 '/api' 네임스페이스로 보내 vite 프록시 1개가 백엔드로 전달(신규 도메인 자동 커버).
+// prod: 기존대로 VITE_API_URL(없으면 same-origin) 직접 호출 — DEV 가드로 prod 동작 불변.
+const baseURL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL ?? '');
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '',
+  baseURL,
   withCredentials: true,
 });
 
 // interceptor를 타지 않는 별도 인스턴스 — refresh 전용
 const refreshApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '',
+  baseURL,
   withCredentials: true,
 });
 

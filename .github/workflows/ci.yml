@@ -118,3 +118,73 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec prisma generate
       - run: pnpm test:db
+
+  # T3 — 풀 E2E(Playwright). 풀스택 기동 후 globalSetup이 기준 데이터를 시드한다.
+  e2e:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' || needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: rental_manager
+          POSTGRES_PASSWORD: rental_manager_password
+          POSTGRES_DB: rental_manager
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rental_manager -d rental_manager"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://rental_manager:rental_manager_password@127.0.0.1:5432/rental_manager
+      JWT_SECRET: e2e-test-secret
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: apps/*/pnpm-lock.yaml
+
+      # API: 설치 → 마이그레이트 → 빌드 → 백그라운드 기동
+      - name: api install
+        working-directory: apps/api
+        run: pnpm install --frozen-lockfile
+      - name: api prisma generate + migrate
+        working-directory: apps/api
+        run: |
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+      - name: api build
+        working-directory: apps/api
+        run: pnpm build
+      - name: api start (background)
+        working-directory: apps/api
+        run: nohup node dist/src/main.js > /tmp/api.log 2>&1 &
+      - name: wait for API :3000
+        run: |
+          for i in $(seq 1 60); do curl -s http://localhost:3000 -o /dev/null && exit 0; sleep 2; done
+          echo "API가 기동하지 않음"; cat /tmp/api.log; exit 1
+
+      # Web: 설치 → 브라우저 → dev 서버 기동 → Playwright
+      - name: web install
+        working-directory: apps/web
+        run: pnpm install --frozen-lockfile
+      - name: playwright browser install
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+      - name: web dev (background)
+        working-directory: apps/web
+        run: nohup pnpm dev > /tmp/web.log 2>&1 &
+      - name: wait for web :5173
+        run: |
+          for i in $(seq 1 60); do curl -s http://localhost:5173 -o /dev/null && exit 0; sleep 2; done
+          echo "web이 기동하지 않음"; cat /tmp/web.log; exit 1
+      - name: playwright test
+        working-directory: apps/web
+        run: pnpm exec playwright test

@@ -12,12 +12,15 @@ async function login(page: Page) {
   await page.waitForURL('/');
 }
 
-// 감사로그를 유발하기 위해 invoice 1건 생성(CREATE 로그). 고객은 첫 번째 사용.
+// 감사로그를 유발한다. 청구서 "생성"은 감사로그를 남기지 않고 발행/취소(STATUS_CHANGE)만
+// 남기므로, 생성 후 발행까지 해야 로그가 1건 생긴다. 고객은 첫 번째 사용.
 async function seedAuditLog(page: Page): Promise<void> {
   const res = await page.request.get(`${API}/customers`);
   const customers = (await res.json()) as Array<{ id: string }>;
   if (customers.length === 0) return;
-  await page.request.post(`${API}/invoices`, { data: { type: 'MANUAL', customerId: customers[0].id } });
+  const created = await page.request.post(`${API}/invoices`, { data: { type: 'MANUAL', customerId: customers[0].id } });
+  const { id } = (await created.json()) as { id: string };
+  await page.request.post(`${API}/invoices/${id}/issue`, { data: {} });
 }
 
 test.beforeEach(async ({ context }) => {

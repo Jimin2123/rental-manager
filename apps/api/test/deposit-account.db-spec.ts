@@ -100,6 +100,10 @@ describe('DepositAccount DB integration', () => {
     );
   };
 
+  beforeEach(async () => {
+    await client.query('DELETE FROM "DepositAccount" WHERE "organizationId" = $1', [organizationId]);
+  });
+
   describe('부분 유니크 — 기본계좌', () => {
     it('기본계좌는 조직당 1개만 허용한다 (두 번째 isDefault=true 삽입을 거부한다)', async () => {
       await insertDepositAccount({ isDefault: true });

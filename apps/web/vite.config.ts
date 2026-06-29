@@ -18,31 +18,36 @@ const apiProxy = (target = 'http://localhost:3000') => ({
   },
 });
 
+// 백엔드(NestJS, :3000)로 프록시할 API 최상위 경로.
+// dev 프록시는 catch-all이 불가하므로(vite 내부 자산까지 가로챔) 경로 prefix를 열거한다.
+// **새 백엔드 도메인 추가 시 이 배열에 한 줄 추가** — 누락 시 dev에서 해당 API 호출이 SPA로 빠져 깨진다.
+const API_PROXY_PATHS = [
+  '/auth',
+  '/organizations',
+  '/invitations',
+  '/assets',
+  '/business-partners',
+  '/products',
+  '/customers',
+  '/orders',
+  '/quotations',
+  '/rental-contracts',
+  '/invoices',
+  '/payments',
+  '/refunds',
+  '/tax-invoices',
+  '/service-requests',
+  '/service-visits',
+  '/maintenance-schedules',
+  '/audit-logs',
+];
+
 export default defineConfig({
   plugins: [TanStackRouterVite({ routesDirectory: './src/routes' }), react(), tailwindcss()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
-    proxy: {
-      '/auth': apiProxy(),
-      '/organizations': apiProxy(),
-      '/invitations': apiProxy(),
-      '/assets': apiProxy(),
-      '/business-partners': apiProxy(),
-      '/products': apiProxy(),
-      '/customers': apiProxy(),
-      '/orders': apiProxy(),
-      '/quotations': apiProxy(),
-      '/rental-contracts': apiProxy(),
-      '/invoices': apiProxy(),
-      '/payments': apiProxy(),
-      '/refunds': apiProxy(),
-      '/tax-invoices': apiProxy(),
-      '/service-requests': apiProxy(),
-      '/service-visits': apiProxy(),
-      '/maintenance-schedules': apiProxy(),
-      '/audit-logs': apiProxy(),
-    },
+    proxy: Object.fromEntries(API_PROXY_PATHS.map((p) => [p, apiProxy()])),
   },
 });

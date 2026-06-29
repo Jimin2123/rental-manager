@@ -39,6 +39,8 @@ export default defineConfig({
       '/payments': apiProxy(),
       '/refunds': apiProxy(),
       '/tax-invoices': apiProxy(),
+      '/service-requests': apiProxy(),
+      '/service-visits': apiProxy(),
     },
   },
 });

@@ -31,6 +31,7 @@ import { Route as ProtectedInvoicesIndexRouteImport } from './routes/_protected/
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
 import { Route as ProtectedContractsIndexRouteImport } from './routes/_protected/contracts/index'
 import { Route as ProtectedBusinessPartnersIndexRouteImport } from './routes/_protected/business-partners/index'
+import { Route as ProtectedAuditLogsIndexRouteImport } from './routes/_protected/audit-logs/index'
 import { Route as ProtectedTaxInvoicesIdRouteImport } from './routes/_protected/tax-invoices/$id'
 import { Route as ProtectedSettingsAccountRouteImport } from './routes/_protected/settings/account'
 import { Route as ProtectedServiceRequestsNewRouteImport } from './routes/_protected/service-requests/new'
@@ -168,6 +169,11 @@ const ProtectedBusinessPartnersIndexRoute =
     path: '/business-partners/',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedAuditLogsIndexRoute = ProtectedAuditLogsIndexRouteImport.update({
+  id: '/audit-logs/',
+  path: '/audit-logs/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedTaxInvoicesIdRoute = ProtectedTaxInvoicesIdRouteImport.update({
   id: '/tax-invoices/$id',
   path: '/tax-invoices/$id',
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/service-requests/new': typeof ProtectedServiceRequestsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
+  '/audit-logs/': typeof ProtectedAuditLogsIndexRoute
   '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/contracts/': typeof ProtectedContractsIndexRoute
   '/customers/': typeof ProtectedCustomersIndexRoute
@@ -368,6 +375,7 @@ export interface FileRoutesByTo {
   '/service-requests/new': typeof ProtectedServiceRequestsNewRoute
   '/settings/account': typeof ProtectedSettingsAccountRoute
   '/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
+  '/audit-logs': typeof ProtectedAuditLogsIndexRoute
   '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
   '/contracts': typeof ProtectedContractsIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
@@ -416,6 +424,7 @@ export interface FileRoutesById {
   '/_protected/service-requests/new': typeof ProtectedServiceRequestsNewRoute
   '/_protected/settings/account': typeof ProtectedSettingsAccountRoute
   '/_protected/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
+  '/_protected/audit-logs/': typeof ProtectedAuditLogsIndexRoute
   '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
   '/_protected/contracts/': typeof ProtectedContractsIndexRoute
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
@@ -463,6 +472,7 @@ export interface FileRouteTypes {
     | '/service-requests/new'
     | '/settings/account'
     | '/tax-invoices/$id'
+    | '/audit-logs/'
     | '/business-partners/'
     | '/contracts/'
     | '/customers/'
@@ -508,6 +518,7 @@ export interface FileRouteTypes {
     | '/service-requests/new'
     | '/settings/account'
     | '/tax-invoices/$id'
+    | '/audit-logs'
     | '/business-partners'
     | '/contracts'
     | '/customers'
@@ -555,6 +566,7 @@ export interface FileRouteTypes {
     | '/_protected/service-requests/new'
     | '/_protected/settings/account'
     | '/_protected/tax-invoices/$id'
+    | '/_protected/audit-logs/'
     | '/_protected/business-partners/'
     | '/_protected/contracts/'
     | '/_protected/customers/'
@@ -731,6 +743,13 @@ declare module '@tanstack/react-router' {
       path: '/business-partners'
       fullPath: '/business-partners/'
       preLoaderRoute: typeof ProtectedBusinessPartnersIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/audit-logs/': {
+      id: '/_protected/audit-logs/'
+      path: '/audit-logs'
+      fullPath: '/audit-logs/'
+      preLoaderRoute: typeof ProtectedAuditLogsIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/tax-invoices/$id': {
@@ -939,6 +958,7 @@ interface ProtectedRouteChildren {
   ProtectedServiceRequestsNewRoute: typeof ProtectedServiceRequestsNewRoute
   ProtectedSettingsAccountRoute: typeof ProtectedSettingsAccountRoute
   ProtectedTaxInvoicesIdRoute: typeof ProtectedTaxInvoicesIdRoute
+  ProtectedAuditLogsIndexRoute: typeof ProtectedAuditLogsIndexRoute
   ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
   ProtectedContractsIndexRoute: typeof ProtectedContractsIndexRoute
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
@@ -978,6 +998,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedServiceRequestsNewRoute: ProtectedServiceRequestsNewRoute,
   ProtectedSettingsAccountRoute: ProtectedSettingsAccountRoute,
   ProtectedTaxInvoicesIdRoute: ProtectedTaxInvoicesIdRoute,
+  ProtectedAuditLogsIndexRoute: ProtectedAuditLogsIndexRoute,
   ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
   ProtectedContractsIndexRoute: ProtectedContractsIndexRoute,
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,

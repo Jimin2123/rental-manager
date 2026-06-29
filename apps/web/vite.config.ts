@@ -42,6 +42,7 @@ export default defineConfig({
       '/service-requests': apiProxy(),
       '/service-visits': apiProxy(),
       '/maintenance-schedules': apiProxy(),
+      '/audit-logs': apiProxy(),
     },
   },
 });

@@ -16,7 +16,7 @@ function isPaginated(v: unknown): v is Paginated {
 export class PaginationInterceptor implements NestInterceptor {
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle().pipe(
-      map((result) => {
+      map((result: unknown) => {
         if (!isPaginated(result)) return result;
         ctx.switchToHttp().getResponse<Response>().setHeader('X-Total-Count', String(result.total));
         return result.data;

@@ -5,12 +5,16 @@ import cookieParser from 'cookie-parser';
 import { SwaggerModule } from '@nestjs/swagger';
 import swaggerConfig from './configs/swagger.config';
 import { ValidationPipe } from '@nestjs/common';
+import { DatabaseExceptionFilter } from './common/filters/database-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, documentFactory());
+
+  // DB 트리거/제약 위반을 500 대신 400/409/404로 변환 (HttpException은 통과)
+  app.useGlobalFilters(new DatabaseExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

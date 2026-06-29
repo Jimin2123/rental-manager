@@ -83,3 +83,16 @@ test('AS 방문 완료 - 비용 입력 후 완료하면 토스트가 뜬다', as
   await page.getByRole('button', { name: '완료 처리' }).click();
   await expect(page.getByText(/방문을 완료 처리했습니다/)).toBeVisible();
 });
+
+// 회귀: SCHEDULED 접수의 마지막 방문을 취소하면 접수를 RECEIVED로 되돌리는데,
+// 전이맵에 SCHEDULED→RECEIVED가 없어 500이 났었다(#117).
+test('AS 방문 취소 - 마지막 방문 취소 시 접수가 복귀된다 (#117)', async ({ page }) => {
+  await login(page);
+  const id = await createRequest(page);
+  await page.goto(`/service-requests/${id}`);
+  await page.getByRole('button', { name: '추가' }).click();
+  await expect(page.getByText('방문을 추가했습니다.')).toBeVisible();
+  // 방문 행의 취소 → 토스트(현재는 500이라 안 뜸)
+  await page.getByRole('button', { name: '취소', exact: true }).first().click();
+  await expect(page.getByText('방문을 취소했습니다.')).toBeVisible();
+});

@@ -3,7 +3,6 @@ import { AuditAction, DocumentSequenceType, RefundStatus } from '@prisma/client'
 import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
-import { computeSettlementStatus } from '../common/settlement.util';
 import type { CreateRefundDto } from './dto/create-refund.dto';
 import type { QueryRefundDto } from './dto/query-refund.dto';
 
@@ -57,9 +56,8 @@ export class RefundService {
         },
       });
 
-      if (dto.invoiceId) {
-        await this.recalcInvoiceAfterRefund(tx, organizationId, dto.invoiceId, dto.amount);
-      }
+      // 청구서 정산필드(refundedAmount/outstanding/settlementStatus)는 Refund 변경 시
+      // DB 트리거가 자동 재계산한다(COMPLETED 환불만 집계). 앱 수동 update는 가드 트리거가 금지 — #114.
 
       await this.auditLog.log(tx, {
         organizationId,
@@ -71,32 +69,6 @@ export class RefundService {
       });
 
       return { id: refund.id };
-    });
-  }
-
-  private async recalcInvoiceAfterRefund(
-    tx: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
-    organizationId: string,
-    invoiceId: string,
-    refundDelta: number,
-  ) {
-    const invoice = await tx.invoice.findUnique({
-      where: { id_organizationId: { id: invoiceId, organizationId } },
-      select: { paidAmount: true, finalAmount: true, refundedAmount: true },
-    });
-    if (!invoice) return;
-
-    const newRefundedAmount = invoice.refundedAmount + refundDelta;
-    const newOutstandingAmount = invoice.finalAmount - invoice.paidAmount + newRefundedAmount;
-    const newSettlementStatus = computeSettlementStatus(invoice.paidAmount, invoice.finalAmount, newRefundedAmount);
-
-    await tx.invoice.update({
-      where: { id_organizationId: { id: invoiceId, organizationId } },
-      data: {
-        refundedAmount: newRefundedAmount,
-        outstandingAmount: newOutstandingAmount,
-        settlementStatus: newSettlementStatus,
-      },
     });
   }
 
@@ -179,9 +151,7 @@ export class RefundService {
       throw new BadRequestException('PENDING 상태의 환불만 취소할 수 있습니다.');
 
     await this.prisma.$transaction(async (tx) => {
-      if (before.invoiceId) {
-        await this.recalcInvoiceAfterRefund(tx, organizationId, before.invoiceId, -before.amount);
-      }
+      // 환불 상태 변경 시 DB 트리거가 청구서 정산필드를 자동 재계산(COMPLETED만 집계). 수동 update 불필요 — #114.
       await tx.refund.update({
         where: { id_organizationId: { id, organizationId } },
         data: { status: RefundStatus.CANCELED },

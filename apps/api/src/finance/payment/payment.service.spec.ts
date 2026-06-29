@@ -108,15 +108,8 @@ describe('PaymentService', () => {
       expect(prisma.paymentAllocation.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ amount: 110000, invoiceId: 'inv-1' }) }),
       );
-      expect(prisma.invoice.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            paidAmount: 110000,
-            outstandingAmount: 0,
-            settlementStatus: InvoiceSettlementStatus.PAID,
-          }),
-        }),
-      );
+      // 정산필드는 DB 트리거가 재계산 — 서비스는 invoice.update 하지 않는다 (#114).
+      expect(prisma.invoice.update).not.toHaveBeenCalled();
     });
 
     it('두 Invoice FIFO — 수납액이 첫 번째 청산 후 두 번째에 부분 배분', async () => {

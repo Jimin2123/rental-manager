@@ -11,7 +11,6 @@ import { won } from '@/lib/format';
 import { fetchCustomers, customerKeys } from '../../customers/-api';
 import type { CustomerListItem } from '../../customers/-types';
 import { fetchPayments, paymentKeys } from '../../payments/-api';
-import type { PaymentListItem } from '../../payments/-types';
 import type { RefundReason } from '../-types';
 import { REFUND_REASON_LABEL } from '../-types';
 import { refundKeys } from '../-api';
@@ -35,12 +34,13 @@ export function RefundForm() {
     queryFn: () => fetchCustomers({}),
   });
 
-  // 고객 선택 시 그 고객의 완료된 수납만 조회 (환불 원천은 완료 수납이어야 함).
-  const { data: payments = [] } = useQuery<PaymentListItem[]>({
-    queryKey: paymentKeys.list({ customerId, status: 'COMPLETED' }),
-    queryFn: () => fetchPayments({ customerId, status: 'COMPLETED' }),
+  // 고객 선택 시 그 고객의 완료된 수납만 조회 (환불 원천은 완료 수납이어야 함). 선택용이라 1페이지.
+  const { data: paymentsPage } = useQuery({
+    queryKey: paymentKeys.list({ customerId, status: 'COMPLETED' }, 1),
+    queryFn: () => fetchPayments({ customerId, status: 'COMPLETED' }, 1),
     enabled: customerId !== '',
   });
+  const payments = paymentsPage?.data ?? [];
 
   const submittable = customerId !== '' && paymentId !== '' && Number(amount) > 0;
 

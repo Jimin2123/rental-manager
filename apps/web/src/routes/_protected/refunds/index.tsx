@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { RefundListItem, RefundReason, RefundStatus } from './-types';
+import type { RefundReason, RefundStatus } from './-types';
 import { REFUND_REASON_LABEL, REFUND_STATUS_LABEL, customerNameOf } from './-types';
 import type { RefundFilters } from './-api';
 import { refundKeys, fetchRefunds } from './-api';
 import { FilterRow } from '@/components/ui/filter-row';
+import { Pagination } from '@/components/ui/pagination';
+import { PAGE_SIZE } from '@/lib/pagination';
 import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/refunds/')({
@@ -22,16 +24,20 @@ function RefundsPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<StatusFilter>('ALL');
   const [reason, setReason] = useState<ReasonFilter>('ALL');
+  const [page, setPage] = useState(1);
 
   const filters: RefundFilters = {
     ...(status !== 'ALL' && { status }),
     ...(reason !== 'ALL' && { reason }),
   };
 
-  const { data = [], isLoading } = useQuery<RefundListItem[]>({
-    queryKey: refundKeys.list(filters),
-    queryFn: () => fetchRefunds(filters),
+  const { data, isLoading } = useQuery({
+    queryKey: refundKeys.list(filters, page),
+    queryFn: () => fetchRefunds(filters, page),
+    placeholderData: keepPreviousData,
   });
+  const refunds = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div>
@@ -47,7 +53,10 @@ function RefundsPage() {
           label="상태"
           options={['ALL', 'PENDING', 'COMPLETED', 'FAILED', 'CANCELED']}
           value={status}
-          onChange={setStatus}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : REFUND_STATUS_LABEL[v])}
         />
         <FilterRow<ReasonFilter>
@@ -63,7 +72,10 @@ function RefundsPage() {
             'ETC',
           ]}
           value={reason}
-          onChange={setReason}
+          onChange={(v) => {
+            setReason(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : REFUND_REASON_LABEL[v])}
         />
       </div>
@@ -86,14 +98,14 @@ function RefundsPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : refunds.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   환불 내역이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((r) => (
+              refunds.map((r) => (
                 <TableRow
                   key={r.id}
                   className="cursor-pointer"
@@ -114,6 +126,8 @@ function RefundsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && <Pagination page={page} limit={PAGE_SIZE} total={total} onPage={setPage} />}
     </div>
   );
 }

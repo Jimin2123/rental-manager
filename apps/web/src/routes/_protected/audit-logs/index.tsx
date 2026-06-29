@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Fragment, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,6 +8,8 @@ import type { AuditLogItem, AuditAction } from './-types';
 import { AUDIT_ACTION_LABEL, targetTypeLabel } from './-types';
 import type { AuditLogFilters } from './-api';
 import { auditLogKeys, fetchAuditLogs } from './-api';
+import { Pagination } from '@/components/ui/pagination';
+import { PAGE_SIZE } from '@/lib/pagination';
 
 export const Route = createFileRoute('/_protected/audit-logs/')({
   component: AuditLogsPage,
@@ -18,15 +20,19 @@ type ActionFilter = 'ALL' | AuditAction;
 function AuditLogsPage() {
   const [action, setAction] = useState<ActionFilter>('ALL');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const filters: AuditLogFilters = {
     ...(action !== 'ALL' && { action }),
   };
 
-  const { data = [], isLoading } = useQuery<AuditLogItem[]>({
-    queryKey: auditLogKeys.list(filters),
-    queryFn: () => fetchAuditLogs(filters),
+  const { data, isLoading } = useQuery({
+    queryKey: auditLogKeys.list(filters, page),
+    queryFn: () => fetchAuditLogs(filters, page),
+    placeholderData: keepPreviousData,
   });
+  const logs = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div>
@@ -36,7 +42,15 @@ function AuditLogsPage() {
 
       <div className="mb-4 flex items-center gap-1">
         {(['ALL', 'CREATE', 'UPDATE', 'STATUS_CHANGE', 'CANCEL'] as const).map((a) => (
-          <Button key={a} variant={action === a ? 'default' : 'outline'} size="sm" onClick={() => setAction(a)}>
+          <Button
+            key={a}
+            variant={action === a ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setAction(a);
+              setPage(1);
+            }}
+          >
             {a === 'ALL' ? '전체' : AUDIT_ACTION_LABEL[a]}
           </Button>
         ))}
@@ -60,14 +74,14 @@ function AuditLogsPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : logs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   감사로그가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((log) => (
+              logs.map((log) => (
                 <Fragment key={log.id}>
                   <TableRow
                     className="cursor-pointer"
@@ -94,6 +108,8 @@ function AuditLogsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && <Pagination page={page} limit={PAGE_SIZE} total={total} onPage={setPage} />}
     </div>
   );
 }

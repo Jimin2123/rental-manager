@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,8 +16,6 @@ import { INTERVAL_UNIT_LABEL, intervalLabel, contractCustomerName } from '../-ty
 import { invalidateSchedule } from '../-api';
 
 import { date } from '@/lib/format';
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function ScheduleDetailView({ schedule }: { schedule: MaintenanceScheduleDetail }) {
   const queryClient = useQueryClient();
@@ -93,8 +92,7 @@ export function ScheduleDetailView({ schedule }: { schedule: MaintenanceSchedule
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium">주기 단위</p>
-              <select
-                className={selectClass}
+              <NativeSelect
                 value={intervalUnit}
                 onChange={(e) => setIntervalUnit(e.target.value as MaintenanceIntervalUnit)}
               >
@@ -103,7 +101,7 @@ export function ScheduleDetailView({ schedule }: { schedule: MaintenanceSchedule
                     {INTERVAL_UNIT_LABEL[u]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">주기 값</p>
@@ -115,18 +113,14 @@ export function ScheduleDetailView({ schedule }: { schedule: MaintenanceSchedule
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">담당자</p>
-              <select
-                className={selectClass}
-                value={assignedStaffId}
-                onChange={(e) => setAssignedStaffId(e.target.value)}
-              >
+              <NativeSelect value={assignedStaffId} onChange={(e) => setAssignedStaffId(e.target.value)}>
                 <option value="">담당자 미지정</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1 col-span-2">
               <p className="text-sm font-medium">메모</p>

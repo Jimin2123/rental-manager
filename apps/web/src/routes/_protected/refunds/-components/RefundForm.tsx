@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -18,9 +19,6 @@ import { refundKeys } from '../-api';
 function customerLabel(c: CustomerListItem): string {
   return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '(이름 없음)';
 }
-
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function RefundForm() {
   const navigate = useNavigate();
@@ -74,8 +72,7 @@ export function RefundForm() {
           <p className="text-sm font-medium">
             고객 <span className="text-destructive">*</span>
           </p>
-          <select
-            className={selectClass}
+          <NativeSelect
             value={customerId}
             onChange={(e) => {
               setCustomerId(e.target.value);
@@ -88,37 +85,32 @@ export function RefundForm() {
                 {customerLabel(c)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">
             원천 수납 <span className="text-destructive">*</span>
           </p>
-          <select
-            className={selectClass}
-            value={paymentId}
-            onChange={(e) => setPaymentId(e.target.value)}
-            disabled={customerId === ''}
-          >
+          <NativeSelect value={paymentId} onChange={(e) => setPaymentId(e.target.value)} disabled={customerId === ''}>
             <option value="">{customerId === '' ? '고객 먼저 선택' : '수납을 선택하세요'}</option>
             {payments.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.paymentNo} ({won(p.amount)})
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">
             사유 <span className="text-destructive">*</span>
           </p>
-          <select className={selectClass} value={reason} onChange={(e) => setReason(e.target.value as RefundReason)}>
+          <NativeSelect value={reason} onChange={(e) => setReason(e.target.value as RefundReason)}>
             {(Object.keys(REFUND_REASON_LABEL) as RefundReason[]).map((r) => (
               <option key={r} value={r}>
                 {REFUND_REASON_LABEL[r]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">

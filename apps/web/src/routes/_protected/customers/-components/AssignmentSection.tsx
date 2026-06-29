@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -161,11 +162,7 @@ export function AssignmentSection({
         <div className="rounded-md border p-3 space-y-3">
           <div className="space-y-1">
             <p className="text-xs font-medium">담당 직원</p>
-            <select
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
-              value={memberId}
-              onChange={(e) => setMemberId(e.target.value)}
-            >
+            <NativeSelect value={memberId} onChange={(e) => setMemberId(e.target.value)}>
               <option value="">직원을 선택하세요</option>
               {members
                 .filter((m) => m.isActive)
@@ -174,7 +171,7 @@ export function AssignmentSection({
                     {m.name} ({ROLE_LABEL[m.role]})
                   </option>
                 ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-1">
             <p className="text-xs font-medium">역할 (선택)</p>

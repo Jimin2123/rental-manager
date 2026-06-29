@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -256,14 +257,13 @@ function ContractCreateCard({
         />
         <div className="space-y-1">
           <p className="text-xs font-medium">선/후불</p>
-          <select
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
+          <NativeSelect
             value={form.billingTiming}
             onChange={(e) => patch({ billingTiming: e.target.value as ContractFormState['billingTiming'] })}
           >
             <option value="PREPAID">선불</option>
             <option value="POSTPAID">후불</option>
-          </select>
+          </NativeSelect>
         </div>
         <LabeledInput
           label="청구일(1-31)"

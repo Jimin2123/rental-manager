@@ -24,7 +24,7 @@ import { invalidateServiceRequest } from '../-api';
 import { VisitCompleteForm } from './VisitCompleteForm';
 
 import { won, date } from '@/lib/format';
-const selectClass = 'flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
+import { NativeSelect } from '@/components/ui/native-select';
 
 export function ServiceRequestDetailView({ request }: { request: ServiceRequestDetail }) {
   const queryClient = useQueryClient();
@@ -72,8 +72,8 @@ export function ServiceRequestDetailView({ request }: { request: ServiceRequestD
           </div>
           {nextStatuses.length > 0 && (
             <div className="flex items-center gap-2">
-              <select
-                className={selectClass}
+              <NativeSelect
+                className="w-auto"
                 value={nextStatus}
                 onChange={(e) => setNextStatus(e.target.value as ServiceRequestStatus)}
               >
@@ -82,7 +82,7 @@ export function ServiceRequestDetailView({ request }: { request: ServiceRequestD
                     {REQUEST_STATUS_LABEL[s]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
               <Button
                 size="sm"
                 variant="outline"
@@ -220,18 +220,14 @@ function AddVisitForm({ requestId, members }: { requestId: string; members: Memb
     <div className="border-t p-3">
       <p className="mb-2 text-xs font-medium text-muted-foreground">방문 추가</p>
       <div className="flex flex-wrap items-end gap-2">
-        <select
-          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-          value={staffId}
-          onChange={(e) => setStaffId(e.target.value)}
-        >
+        <NativeSelect className="w-auto" value={staffId} onChange={(e) => setStaffId(e.target.value)}>
           <option value="">담당자 미지정</option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         <Input type="date" className="w-40" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
         <Input className="w-48" value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="메모 (선택)" />
         <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate()}>

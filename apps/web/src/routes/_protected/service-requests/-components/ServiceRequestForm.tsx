@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -16,9 +17,6 @@ import { serviceRequestKeys } from '../-api';
 function customerLabel(c: CustomerListItem): string {
   return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '(이름 없음)';
 }
-
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function ServiceRequestForm() {
   const navigate = useNavigate();
@@ -68,13 +66,13 @@ export function ServiceRequestForm() {
           <p className="text-sm font-medium">
             유형 <span className="text-destructive">*</span>
           </p>
-          <select className={selectClass} value={type} onChange={(e) => setType(e.target.value as ServiceRequestType)}>
+          <NativeSelect value={type} onChange={(e) => setType(e.target.value as ServiceRequestType)}>
             {(Object.keys(REQUEST_TYPE_LABEL) as ServiceRequestType[]).map((t) => (
               <option key={t} value={t}>
                 {REQUEST_TYPE_LABEL[t]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">보증 여부</p>
@@ -87,27 +85,27 @@ export function ServiceRequestForm() {
           <p className="text-sm font-medium">
             고객 <span className="text-destructive">*</span>
           </p>
-          <select className={selectClass} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+          <NativeSelect value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
             <option value="">고객을 선택하세요</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {customerLabel(c)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">
             자산 <span className="text-destructive">*</span>
           </p>
-          <select className={selectClass} value={assetId} onChange={(e) => setAssetId(e.target.value)}>
+          <NativeSelect value={assetId} onChange={(e) => setAssetId(e.target.value)}>
             <option value="">자산을 선택하세요</option>
             {assets.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.product.name} ({a.serialNumber}) · {ASSET_STATUS_LABEL[a.status as AssetStatus] ?? a.status}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">요청 방문일</p>

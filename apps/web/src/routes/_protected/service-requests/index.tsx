@@ -8,6 +8,7 @@ import type { ServiceRequestListItem, ServiceRequestStatus, ServiceRequestType }
 import { REQUEST_STATUS_LABEL, REQUEST_TYPE_LABEL, customerNameOf } from './-types';
 import type { ServiceRequestFilters } from './-api';
 import { serviceRequestKeys, fetchServiceRequests } from './-api';
+import { FilterRow } from '@/components/ui/filter-row';
 
 export const Route = createFileRoute('/_protected/service-requests/')({
   component: ServiceRequestsPage,
@@ -107,31 +108,6 @@ function ServiceRequestsPage() {
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-}
-
-function FilterRow<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  labelOf,
-}: {
-  label: string;
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  labelOf: (v: T) => string;
-}) {
-  return (
-    <div className="flex items-center gap-1 flex-wrap">
-      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
-      {options.map((o) => (
-        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
-          {labelOf(o)}
-        </Button>
-      ))}
     </div>
   );
 }

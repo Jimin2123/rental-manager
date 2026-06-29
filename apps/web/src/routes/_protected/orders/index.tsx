@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { OrderListItem, OrderType, OrderStatus } from './-types';
 import { ORDER_TYPE_LABEL, ORDER_STATUS_LABEL, customerNameOf, orderTotal } from './-types';
 import { orderKeys, fetchOrders } from './-api';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/orders/')({
   component: OrdersPage,
@@ -94,7 +95,7 @@ function OrdersPage() {
                   <TableCell>{o.manager?.name ?? '-'}</TableCell>
                   <TableCell>{ORDER_STATUS_LABEL[o.status]}</TableCell>
                   <TableCell>{new Date(o.orderDate).toLocaleDateString('ko-KR')}</TableCell>
-                  <TableCell className="text-right">{orderTotal(o).toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{won(orderTotal(o))}</TableCell>
                 </TableRow>
               ))
             )}

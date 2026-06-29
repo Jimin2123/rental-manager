@@ -10,7 +10,7 @@ import type { PaymentDetail } from '../-types';
 import { PAYMENT_STATUS_LABEL, PAYMENT_METHOD_LABEL, PAYMENT_PROVIDER_LABEL, customerNameOf } from '../-types';
 import { invalidatePayment } from '../-api';
 
-const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
+import { won } from '@/lib/format';
 
 export function PaymentDetailView({ payment }: { payment: PaymentDetail }) {
   const queryClient = useQueryClient();

@@ -8,6 +8,8 @@ import type { RefundListItem, RefundReason, RefundStatus } from './-types';
 import { REFUND_REASON_LABEL, REFUND_STATUS_LABEL, customerNameOf } from './-types';
 import type { RefundFilters } from './-api';
 import { refundKeys, fetchRefunds } from './-api';
+import { FilterRow } from '@/components/ui/filter-row';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/refunds/')({
   component: RefundsPage,
@@ -105,38 +107,13 @@ function RefundsPage() {
                       {REFUND_STATUS_LABEL[r.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{r.amount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{won(r.amount)}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-}
-
-function FilterRow<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  labelOf,
-}: {
-  label: string;
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  labelOf: (v: T) => string;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
-      {options.map((o) => (
-        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
-          {labelOf(o)}
-        </Button>
-      ))}
     </div>
   );
 }

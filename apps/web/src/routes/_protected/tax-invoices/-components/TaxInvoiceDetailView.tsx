@@ -12,7 +12,8 @@ import type { TaxInvoiceDetail } from '../-types';
 import { TAX_INVOICE_STATUS_LABEL, TAX_INVOICE_TYPE_LABEL } from '../-types';
 import { invalidateTaxInvoice } from '../-api';
 
-const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
+import { won } from '@/lib/format';
+
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function TaxInvoiceDetailView({ taxInvoice }: { taxInvoice: TaxInvoiceDetail }) {

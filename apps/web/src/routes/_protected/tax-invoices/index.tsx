@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { TaxInvoiceListItem, TaxInvoiceStatus, TaxInvoiceType } from './-types';
 import { TAX_INVOICE_STATUS_LABEL, TAX_INVOICE_TYPE_LABEL } from './-types';
 import type { TaxInvoiceFilters } from './-api';
 import { taxInvoiceKeys, fetchTaxInvoices } from './-api';
+import { FilterRow } from '@/components/ui/filter-row';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/tax-invoices/')({
   component: TaxInvoicesPage,
@@ -97,40 +98,15 @@ function TaxInvoicesPage() {
                       {TAX_INVOICE_STATUS_LABEL[t.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{t.supplyAmount.toLocaleString('ko-KR')}원</TableCell>
-                  <TableCell className="text-right">{t.vatAmount.toLocaleString('ko-KR')}원</TableCell>
-                  <TableCell className="text-right">{t.totalAmount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{won(t.supplyAmount)}</TableCell>
+                  <TableCell className="text-right">{won(t.vatAmount)}</TableCell>
+                  <TableCell className="text-right">{won(t.totalAmount)}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-}
-
-function FilterRow<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  labelOf,
-}: {
-  label: string;
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  labelOf: (v: T) => string;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
-      {options.map((o) => (
-        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
-          {labelOf(o)}
-        </Button>
-      ))}
     </div>
   );
 }

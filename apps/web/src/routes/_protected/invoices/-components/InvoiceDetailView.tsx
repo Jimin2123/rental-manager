@@ -20,9 +20,7 @@ import {
   customerNameOf,
 } from '../-types';
 import { invalidateInvoice } from '../-api';
-
-const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
-const date = (s: string | null) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
+import { won, date } from '@/lib/format';
 
 export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
   const queryClient = useQueryClient();

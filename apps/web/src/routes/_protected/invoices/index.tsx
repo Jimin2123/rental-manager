@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { InvoiceListItem, InvoiceStatus, InvoiceType, InvoiceSettlementStatus } from './-types';
 import { INVOICE_STATUS_LABEL, INVOICE_TYPE_LABEL, INVOICE_SETTLEMENT_LABEL, customerNameOf } from './-types';
 import type { InvoiceFilters } from './-api';
 import { invoiceKeys, fetchInvoices } from './-api';
+import { FilterRow } from '@/components/ui/filter-row';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/invoices/')({
   component: InvoicesPage,
@@ -112,39 +113,14 @@ function InvoicesPage() {
                       {INVOICE_SETTLEMENT_LABEL[inv.settlementStatus]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{inv.finalAmount.toLocaleString('ko-KR')}원</TableCell>
-                  <TableCell className="text-right">{inv.outstandingAmount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{won(inv.finalAmount)}</TableCell>
+                  <TableCell className="text-right">{won(inv.outstandingAmount)}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-}
-
-function FilterRow<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  labelOf,
-}: {
-  label: string;
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  labelOf: (v: T) => string;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
-      {options.map((o) => (
-        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
-          {labelOf(o)}
-        </Button>
-      ))}
     </div>
   );
 }

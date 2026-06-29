@@ -4,6 +4,32 @@ import type { CreateMaintenanceScheduleDto } from './dto/create-maintenance-sche
 import type { UpdateMaintenanceScheduleDto } from './dto/update-maintenance-schedule.dto';
 import type { QueryMaintenanceScheduleDto } from './dto/query-maintenance-schedule.dto';
 
+// 목록·상세 공용 include — 계약(번호+고객명)과 담당자 표시명.
+const SCHEDULE_INCLUDE = {
+  rentalContract: {
+    select: {
+      id: true,
+      contractNo: true,
+      rentalOrder: {
+        select: {
+          order: {
+            select: {
+              customer: {
+                select: {
+                  id: true,
+                  individualProfile: { select: { name: true } },
+                  businessPartner: { select: { businessProfile: { select: { name: true } } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  assignedStaff: { select: { id: true, name: true } },
+} as const;
+
 @Injectable()
 export class MaintenanceScheduleService {
   constructor(private readonly prisma: PrismaService) {}
@@ -49,6 +75,7 @@ export class MaintenanceScheduleService {
         ...(isActive !== undefined && { isActive }),
         ...(dueBefore && { nextScheduledAt: { lte: new Date(dueBefore) } }),
       },
+      include: SCHEDULE_INCLUDE,
       orderBy: { nextScheduledAt: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -58,6 +85,7 @@ export class MaintenanceScheduleService {
   async findOne(organizationId: string, id: string) {
     const schedule = await this.prisma.maintenanceSchedule.findUnique({
       where: { id_organizationId: { id, organizationId } },
+      include: SCHEDULE_INCLUDE,
     });
     if (!schedule) throw new NotFoundException('점검 일정을 찾을 수 없습니다.');
     return schedule;

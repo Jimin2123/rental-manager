@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -43,11 +43,7 @@ export function QuotationForm() {
       toast.success('견적이 등록되었습니다.');
       void navigate({ to: '/quotations/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 404) toast.error('고객을 찾을 수 없습니다.');
-      else toast.error('견적 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '견적 등록 중 오류가 발생했습니다.', { 404: '고객을 찾을 수 없습니다.' }),
   });
 
   return (

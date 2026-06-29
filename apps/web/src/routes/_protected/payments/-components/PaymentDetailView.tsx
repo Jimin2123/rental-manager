@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +22,7 @@ export function PaymentDetailView({ payment }: { payment: PaymentDetail }) {
       invalidatePayment(queryClient, payment.id);
       toast.success('수납을 취소했습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '취소할 수 없는 상태입니다.' : '취소 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '취소 중 오류가 발생했습니다.', { 400: '취소할 수 없는 상태입니다.' }),
   });
 
   return (

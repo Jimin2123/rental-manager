@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -60,12 +60,11 @@ export function RefundForm() {
       toast.success('환불이 등록되었습니다.');
       void navigate({ to: '/refunds/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      if (s === 400) toast.error('환불액이 수납 금액을 초과할 수 없습니다.');
-      else if (s === 404) toast.error('고객 또는 수납 내역을 찾을 수 없습니다.');
-      else toast.error('환불 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '환불 등록 중 오류가 발생했습니다.', {
+        400: '환불액이 수납 금액을 초과할 수 없습니다.',
+        404: '고객 또는 수납 내역을 찾을 수 없습니다.',
+      }),
   });
 
   return (

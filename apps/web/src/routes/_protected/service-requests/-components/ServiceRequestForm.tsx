@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -57,10 +57,8 @@ export function ServiceRequestForm() {
       toast.success('AS 접수가 등록되었습니다.');
       void navigate({ to: '/service-requests/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 404 ? '고객 또는 자산을 찾을 수 없습니다.' : 'AS 접수 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, 'AS 접수 등록 중 오류가 발생했습니다.', { 404: '고객 또는 자산을 찾을 수 없습니다.' }),
   });
 
   return (

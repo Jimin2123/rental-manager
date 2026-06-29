@@ -267,4 +267,37 @@ describe('ServiceRequestService', () => {
       );
     });
   });
+
+  describe('findAll (목록 include)', () => {
+    it('고객·자산을 include 한다', async () => {
+      prisma.serviceRequest.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.serviceRequest.findMany.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+      expect(arg.include.asset).toEqual({
+        select: { id: true, serialNumber: true, status: true, product: { select: { name: true } } },
+      });
+    });
+  });
+
+  describe('findOne (상세 include)', () => {
+    it('고객·자산·방문(담당자 포함)을 include 한다', async () => {
+      prisma.serviceRequest.findUnique.mockResolvedValue({ id: 'sr-1', deletedAt: null });
+      await service.findOne('org-1', 'sr-1');
+      const arg = prisma.serviceRequest.findUnique.mock.calls[0][0];
+      expect(arg.include.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+      expect(arg.include.asset).toEqual({
+        select: { id: true, serialNumber: true, status: true, product: { select: { name: true } } },
+      });
+      expect(arg.include.visits).toEqual({ include: { staff: { select: { id: true, name: true } } } });
+    });
+  });
 });

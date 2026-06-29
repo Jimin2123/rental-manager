@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,6 +9,8 @@ import type { MaintenanceScheduleListItem } from './-types';
 import { intervalLabel, contractCustomerName } from './-types';
 import type { ScheduleFilters } from './-api';
 import { scheduleKeys, fetchSchedules } from './-api';
+import { Pagination } from '@/components/ui/pagination';
+import { PAGE_SIZE } from '@/lib/pagination';
 
 export const Route = createFileRoute('/_protected/maintenance-schedules/')({
   component: SchedulesPage,
@@ -21,15 +23,19 @@ function SchedulesPage() {
   const role = useAuthStore((s) => s.currentOrganization?.role);
   const canManage = role === 'OWNER' || role === 'ADMIN';
   const [active, setActive] = useState<ActiveFilter>('ALL');
+  const [page, setPage] = useState(1);
 
   const filters: ScheduleFilters = {
     ...(active !== 'ALL' && { isActive: active === 'ACTIVE' }),
   };
 
-  const { data = [], isLoading } = useQuery<MaintenanceScheduleListItem[]>({
-    queryKey: scheduleKeys.list(filters),
-    queryFn: () => fetchSchedules(filters),
+  const { data, isLoading } = useQuery({
+    queryKey: scheduleKeys.list(filters, page),
+    queryFn: () => fetchSchedules(filters, page),
+    placeholderData: keepPreviousData,
   });
+  const schedules = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   // 마운트 시 1회 계산 (렌더 중 Date 호출 회피).
   const [todayStart] = useState(() => new Date().setHours(0, 0, 0, 0));
@@ -49,7 +55,15 @@ function SchedulesPage() {
 
       <div className="mb-4 flex items-center gap-1">
         {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((a) => (
-          <Button key={a} variant={active === a ? 'default' : 'outline'} size="sm" onClick={() => setActive(a)}>
+          <Button
+            key={a}
+            variant={active === a ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setActive(a);
+              setPage(1);
+            }}
+          >
             {a === 'ALL' ? '전체' : a === 'ACTIVE' ? '활성' : '비활성'}
           </Button>
         ))}
@@ -75,14 +89,14 @@ function SchedulesPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : schedules.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   점검 일정이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((s) => (
+              schedules.map((s) => (
                 <TableRow
                   key={s.id}
                   className="cursor-pointer"
@@ -107,6 +121,8 @@ function SchedulesPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && <Pagination page={page} limit={PAGE_SIZE} total={total} onPage={setPage} />}
     </div>
   );
 }

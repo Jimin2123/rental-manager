@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { ServiceRequestListItem, ServiceRequestStatus, ServiceRequestType } from './-types';
+import type { ServiceRequestStatus, ServiceRequestType } from './-types';
 import { REQUEST_STATUS_LABEL, REQUEST_TYPE_LABEL, customerNameOf } from './-types';
 import type { ServiceRequestFilters } from './-api';
 import { serviceRequestKeys, fetchServiceRequests } from './-api';
 import { FilterRow } from '@/components/ui/filter-row';
+import { Pagination } from '@/components/ui/pagination';
+import { PAGE_SIZE } from '@/lib/pagination';
 
 export const Route = createFileRoute('/_protected/service-requests/')({
   component: ServiceRequestsPage,
@@ -21,16 +23,20 @@ function ServiceRequestsPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<StatusFilter>('ALL');
   const [type, setType] = useState<TypeFilter>('ALL');
+  const [page, setPage] = useState(1);
 
   const filters: ServiceRequestFilters = {
     ...(status !== 'ALL' && { status }),
     ...(type !== 'ALL' && { type }),
   };
 
-  const { data = [], isLoading } = useQuery<ServiceRequestListItem[]>({
-    queryKey: serviceRequestKeys.list(filters),
-    queryFn: () => fetchServiceRequests(filters),
+  const { data, isLoading } = useQuery({
+    queryKey: serviceRequestKeys.list(filters, page),
+    queryFn: () => fetchServiceRequests(filters, page),
+    placeholderData: keepPreviousData,
   });
+  const requests = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div>
@@ -46,14 +52,20 @@ function ServiceRequestsPage() {
           label="상태"
           options={['ALL', 'RECEIVED', 'SCHEDULED', 'IN_PROGRESS', 'WAITING_FOR_PARTS', 'COMPLETED', 'CANCELED']}
           value={status}
-          onChange={setStatus}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : REQUEST_STATUS_LABEL[v])}
         />
         <FilterRow<TypeFilter>
           label="유형"
           options={['ALL', 'REPAIR', 'MAINTENANCE', 'INSTALLATION', 'REMOVAL', 'INSPECTION', 'ETC']}
           value={type}
-          onChange={setType}
+          onChange={(v) => {
+            setType(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : REQUEST_TYPE_LABEL[v])}
         />
       </div>
@@ -77,14 +89,14 @@ function ServiceRequestsPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : requests.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   AS 접수가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((r) => (
+              requests.map((r) => (
                 <TableRow
                   key={r.id}
                   className="cursor-pointer"
@@ -108,6 +120,8 @@ function ServiceRequestsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && <Pagination page={page} limit={PAGE_SIZE} total={total} onPage={setPage} />}
     </div>
   );
 }

@@ -96,29 +96,34 @@ export class PaymentService {
     }
   }
 
-  findAll(organizationId: string, dto: QueryPaymentDto) {
+  async findAll(organizationId: string, dto: QueryPaymentDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
-    return this.prisma.payment.findMany({
-      where: {
-        organizationId,
-        ...(dto.customerId && { customerId: dto.customerId }),
-        ...(dto.method && { method: dto.method }),
-        ...(dto.status && { status: dto.status }),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            individualProfile: { select: { name: true } },
-            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+    const where = {
+      organizationId,
+      ...(dto.customerId && { customerId: dto.customerId }),
+      ...(dto.method && { method: dto.method }),
+      ...(dto.status && { status: dto.status }),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.payment.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              individualProfile: { select: { name: true } },
+              businessPartner: { select: { businessProfile: { select: { name: true } } } },
+            },
           },
         },
-      },
-      orderBy: { paidAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+        orderBy: { paidAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.payment.count({ where }),
+    ]);
+    return { data, total };
   }
 
   async findOne(organizationId: string, id: string) {

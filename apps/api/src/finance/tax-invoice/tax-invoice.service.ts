@@ -59,37 +59,42 @@ export class TaxInvoiceService {
     });
   }
 
-  findAll(organizationId: string, dto: QueryTaxInvoiceDto) {
+  async findAll(organizationId: string, dto: QueryTaxInvoiceDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
-    return this.prisma.taxInvoice.findMany({
-      where: {
-        organizationId,
-        ...(dto.type && { type: dto.type }),
-        ...(dto.status && { status: dto.status }),
-        ...(dto.customerId && { customerId: dto.customerId }),
-        ...(dto.issueDateFrom || dto.issueDateTo
-          ? {
-              issueDate: {
-                ...(dto.issueDateFrom && { gte: new Date(dto.issueDateFrom) }),
-                ...(dto.issueDateTo && { lte: new Date(dto.issueDateTo) }),
-              },
-            }
-          : {}),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            individualProfile: { select: { name: true } },
-            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+    const where = {
+      organizationId,
+      ...(dto.type && { type: dto.type }),
+      ...(dto.status && { status: dto.status }),
+      ...(dto.customerId && { customerId: dto.customerId }),
+      ...(dto.issueDateFrom || dto.issueDateTo
+        ? {
+            issueDate: {
+              ...(dto.issueDateFrom && { gte: new Date(dto.issueDateFrom) }),
+              ...(dto.issueDateTo && { lte: new Date(dto.issueDateTo) }),
+            },
+          }
+        : {}),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.taxInvoice.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              individualProfile: { select: { name: true } },
+              businessPartner: { select: { businessProfile: { select: { name: true } } } },
+            },
           },
         },
-      },
-      orderBy: { issueDate: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+        orderBy: { issueDate: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.taxInvoice.count({ where }),
+    ]);
+    return { data, total };
   }
 
   async findOne(organizationId: string, id: string) {

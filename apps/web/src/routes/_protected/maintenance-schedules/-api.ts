@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { PAGE_SIZE, paginated } from '@/lib/pagination';
 import type { MaintenanceScheduleListItem, MaintenanceScheduleDetail } from './-types';
 
 export type ScheduleFilters = {
@@ -9,14 +10,14 @@ export type ScheduleFilters = {
 export const scheduleKeys = {
   all: ['maintenance-schedules'] as const,
   lists: () => [...scheduleKeys.all, 'list'] as const,
-  list: (filters: ScheduleFilters) => [...scheduleKeys.all, 'list', filters] as const,
+  list: (filters: ScheduleFilters, page: number) => [...scheduleKeys.all, 'list', filters, page] as const,
   detail: (id: string) => [...scheduleKeys.all, 'detail', id] as const,
 };
 
-export const fetchSchedules = (filters: ScheduleFilters) =>
+export const fetchSchedules = (filters: ScheduleFilters, page = 1) =>
   api
-    .get<MaintenanceScheduleListItem[]>('/maintenance-schedules', { params: { ...filters, limit: 100 } })
-    .then((r) => r.data);
+    .get<MaintenanceScheduleListItem[]>('/maintenance-schedules', { params: { ...filters, page, limit: PAGE_SIZE } })
+    .then(paginated);
 
 export const fetchSchedule = (id: string) =>
   api.get<MaintenanceScheduleDetail>(`/maintenance-schedules/${id}`).then((r) => r.data);

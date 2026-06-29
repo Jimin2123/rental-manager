@@ -65,21 +65,26 @@ export class MaintenanceScheduleService {
     return { id: schedule.id };
   }
 
-  findAll(organizationId: string, query: QueryMaintenanceScheduleDto) {
+  async findAll(organizationId: string, query: QueryMaintenanceScheduleDto) {
     const { rentalContractId, assignedStaffId, isActive, dueBefore, page = 1, limit = 20 } = query;
-    return this.prisma.maintenanceSchedule.findMany({
-      where: {
-        organizationId,
-        ...(rentalContractId && { rentalContractId }),
-        ...(assignedStaffId && { assignedStaffId }),
-        ...(isActive !== undefined && { isActive }),
-        ...(dueBefore && { nextScheduledAt: { lte: new Date(dueBefore) } }),
-      },
-      include: SCHEDULE_INCLUDE,
-      orderBy: { nextScheduledAt: 'asc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const where = {
+      organizationId,
+      ...(rentalContractId && { rentalContractId }),
+      ...(assignedStaffId && { assignedStaffId }),
+      ...(isActive !== undefined && { isActive }),
+      ...(dueBefore && { nextScheduledAt: { lte: new Date(dueBefore) } }),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.maintenanceSchedule.findMany({
+        where,
+        include: SCHEDULE_INCLUDE,
+        orderBy: { nextScheduledAt: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.maintenanceSchedule.count({ where }),
+    ]);
+    return { data, total };
   }
 
   async findOne(organizationId: string, id: string) {

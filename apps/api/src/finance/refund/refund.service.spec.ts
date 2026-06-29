@@ -36,6 +36,7 @@ describe('RefundService', () => {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn(),
         update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
       },
       invoice: {
         findUnique: jest.fn(),

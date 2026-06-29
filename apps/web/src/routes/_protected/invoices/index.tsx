@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { InvoiceListItem, InvoiceStatus, InvoiceType, InvoiceSettlementStatus } from './-types';
+import type { InvoiceStatus, InvoiceType, InvoiceSettlementStatus } from './-types';
 import { INVOICE_STATUS_LABEL, INVOICE_TYPE_LABEL, INVOICE_SETTLEMENT_LABEL, customerNameOf } from './-types';
 import type { InvoiceFilters } from './-api';
 import { invoiceKeys, fetchInvoices } from './-api';
 import { FilterRow } from '@/components/ui/filter-row';
+import { Pagination } from '@/components/ui/pagination';
+import { PAGE_SIZE } from '@/lib/pagination';
 import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/invoices/')({
@@ -23,6 +25,7 @@ function InvoicesPage() {
   const [type, setType] = useState<TypeFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('ALL');
   const [settlement, setSettlement] = useState<SettlementFilter>('ALL');
+  const [page, setPage] = useState(1);
 
   const filters: InvoiceFilters = {
     ...(type !== 'ALL' && { type }),
@@ -30,10 +33,13 @@ function InvoicesPage() {
     ...(settlement !== 'ALL' && { settlementStatus: settlement }),
   };
 
-  const { data = [], isLoading } = useQuery<InvoiceListItem[]>({
-    queryKey: invoiceKeys.list(filters),
-    queryFn: () => fetchInvoices(filters),
+  const { data, isLoading } = useQuery({
+    queryKey: invoiceKeys.list(filters, page),
+    queryFn: () => fetchInvoices(filters, page),
+    placeholderData: keepPreviousData,
   });
+  const invoices = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div>
@@ -46,21 +52,30 @@ function InvoicesPage() {
           label="타입"
           options={['ALL', 'SALE', 'RENTAL_MONTHLY', 'SERVICE_FEE', 'MANUAL']}
           value={type}
-          onChange={setType}
+          onChange={(v) => {
+            setType(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : INVOICE_TYPE_LABEL[v])}
         />
         <FilterRow<StatusFilter>
           label="상태"
           options={['ALL', 'DRAFT', 'ISSUED', 'CANCELED']}
           value={status}
-          onChange={setStatus}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : INVOICE_STATUS_LABEL[v])}
         />
         <FilterRow<SettlementFilter>
           label="수납"
           options={['ALL', 'UNPAID', 'PARTIALLY_PAID', 'PAID', 'OVERPAID']}
           value={settlement}
-          onChange={setSettlement}
+          onChange={(v) => {
+            setSettlement(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : INVOICE_SETTLEMENT_LABEL[v])}
         />
       </div>
@@ -86,14 +101,14 @@ function InvoicesPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : invoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                   청구서가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((inv) => (
+              invoices.map((inv) => (
                 <TableRow
                   key={inv.id}
                   className="cursor-pointer"
@@ -121,6 +136,8 @@ function InvoicesPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && <Pagination page={page} limit={PAGE_SIZE} total={total} onPage={setPage} />}
     </div>
   );
 }

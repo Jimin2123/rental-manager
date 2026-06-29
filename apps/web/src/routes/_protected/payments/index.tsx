@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { PaymentListItem, PaymentMethod, PaymentStatus } from './-types';
+import type { PaymentMethod, PaymentStatus } from './-types';
 import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL, customerNameOf } from './-types';
 import type { PaymentFilters } from './-api';
 import { paymentKeys, fetchPayments } from './-api';
 import { FilterRow } from '@/components/ui/filter-row';
+import { Pagination } from '@/components/ui/pagination';
+import { PAGE_SIZE } from '@/lib/pagination';
 import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/payments/')({
@@ -22,16 +24,20 @@ function PaymentsPage() {
   const navigate = useNavigate();
   const [method, setMethod] = useState<MethodFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('ALL');
+  const [page, setPage] = useState(1);
 
   const filters: PaymentFilters = {
     ...(method !== 'ALL' && { method }),
     ...(status !== 'ALL' && { status }),
   };
 
-  const { data = [], isLoading } = useQuery<PaymentListItem[]>({
-    queryKey: paymentKeys.list(filters),
-    queryFn: () => fetchPayments(filters),
+  const { data, isLoading } = useQuery({
+    queryKey: paymentKeys.list(filters, page),
+    queryFn: () => fetchPayments(filters, page),
+    placeholderData: keepPreviousData,
   });
+  const payments = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div>
@@ -47,14 +53,20 @@ function PaymentsPage() {
           label="방법"
           options={['ALL', 'CASH', 'BANK_TRANSFER', 'CARD', 'VIRTUAL_ACCOUNT', 'CMS', 'ETC']}
           value={method}
-          onChange={setMethod}
+          onChange={(v) => {
+            setMethod(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : PAYMENT_METHOD_LABEL[v])}
         />
         <FilterRow<StatusFilter>
           label="상태"
           options={['ALL', 'PENDING', 'COMPLETED', 'CANCELED', 'FAILED']}
           value={status}
-          onChange={setStatus}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
           labelOf={(v) => (v === 'ALL' ? '전체' : PAYMENT_STATUS_LABEL[v])}
         />
       </div>
@@ -78,14 +90,14 @@ function PaymentsPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : payments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   수납 내역이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((p) => (
+              payments.map((p) => (
                 <TableRow
                   key={p.id}
                   className="cursor-pointer"
@@ -107,6 +119,8 @@ function PaymentsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && <Pagination page={page} limit={PAGE_SIZE} total={total} onPage={setPage} />}
     </div>
   );
 }

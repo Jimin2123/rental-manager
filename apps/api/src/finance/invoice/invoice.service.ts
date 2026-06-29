@@ -80,31 +80,36 @@ export class InvoiceService {
     });
   }
 
-  findAll(organizationId: string, dto: QueryInvoiceDto) {
+  async findAll(organizationId: string, dto: QueryInvoiceDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
-    return this.prisma.invoice.findMany({
-      where: {
-        organizationId,
-        ...(dto.type && { type: dto.type }),
-        ...(dto.status && { status: dto.status }),
-        ...(dto.settlementStatus && { settlementStatus: dto.settlementStatus }),
-        ...(dto.billingMonth && { billingMonth: dto.billingMonth }),
-        ...(dto.customerId && { customerId: dto.customerId }),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            individualProfile: { select: { name: true } },
-            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+    const where = {
+      organizationId,
+      ...(dto.type && { type: dto.type }),
+      ...(dto.status && { status: dto.status }),
+      ...(dto.settlementStatus && { settlementStatus: dto.settlementStatus }),
+      ...(dto.billingMonth && { billingMonth: dto.billingMonth }),
+      ...(dto.customerId && { customerId: dto.customerId }),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.invoice.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              individualProfile: { select: { name: true } },
+              businessPartner: { select: { businessProfile: { select: { name: true } } } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.invoice.count({ where }),
+    ]);
+    return { data, total };
   }
 
   async findOne(organizationId: string, id: string) {

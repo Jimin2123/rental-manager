@@ -100,5 +100,11 @@ describe('AuditLogService', () => {
 
       expect(prisma.auditLog.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }));
     });
+
+    it('행위자(actor)를 include 한다', async () => {
+      await service.findAll('org-1', {});
+      const arg = prisma.auditLog.findMany.mock.calls.at(-1)?.[0];
+      expect(arg.include).toEqual({ actor: { select: { id: true, name: true } } });
+    });
   });
 });

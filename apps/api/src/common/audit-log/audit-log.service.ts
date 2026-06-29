@@ -45,6 +45,7 @@ export class AuditLogService {
         ...(dto.targetId && { targetId: dto.targetId }),
         ...(dto.action && { action: dto.action }),
       },
+      include: { actor: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,

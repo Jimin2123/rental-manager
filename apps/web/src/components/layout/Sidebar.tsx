@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/products', label: '제품', icon: '📦' },
   { to: '/business-partners', label: '거래처', icon: '🏢' },
   { to: '/customers', label: '고객', icon: '👤' },
+  { to: '/audit-logs', label: '감사로그', icon: '📜' },
 ] as const;
 
 export function Sidebar() {

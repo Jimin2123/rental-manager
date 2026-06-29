@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -55,18 +56,14 @@ export function BusinessForm() {
           <p className="text-sm font-medium">
             거래처 <span className="text-destructive">*</span>
           </p>
-          <select
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
-            value={businessPartnerId}
-            onChange={(e) => setBusinessPartnerId(e.target.value)}
-          >
+          <NativeSelect value={businessPartnerId} onChange={(e) => setBusinessPartnerId(e.target.value)}>
             <option value="">거래처를 선택하세요</option>
             {partners.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.businessProfile.name} ({p.businessProfile.businessRegistrationNo})
               </option>
             ))}
-          </select>
+          </NativeSelect>
           {partners.length === 0 && (
             <p className="text-xs text-muted-foreground">
               등록된 매출 거래처가 없습니다. 거래처를 매출 역할로 먼저 등록하세요.

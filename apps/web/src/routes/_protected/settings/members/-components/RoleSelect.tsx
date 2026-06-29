@@ -1,4 +1,5 @@
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
+import { NativeSelect } from '@/components/ui/native-select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ASSIGNABLE_ROLES, ROLE_LABEL } from '../-types';
 
@@ -11,8 +12,8 @@ export function RoleSelect<T extends FieldValues>({ control, name }: { control: 
         <FormItem>
           <FormLabel>역할</FormLabel>
           <FormControl>
-            <select
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none"
+            <NativeSelect
+              className="shadow-xs"
               value={field.value ?? ''}
               onChange={(e) => field.onChange(e.target.value)}
             >
@@ -21,7 +22,7 @@ export function RoleSelect<T extends FieldValues>({ control, name }: { control: 
                   {ROLE_LABEL[r]}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </FormControl>
           <FormMessage />
         </FormItem>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,9 +9,6 @@ import { api } from '@/lib/api';
 import type { ServiceVisitResult, AssetStatus } from '../-types';
 import { VISIT_RESULT_LABEL, ASSET_STATUS_LABEL } from '../-types';
 import { invalidateServiceRequest } from '../-api';
-
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function VisitCompleteForm({
   visitId,
@@ -53,19 +51,14 @@ export function VisitCompleteForm({
     <div className="space-y-2 border-t p-3">
       <p className="text-xs font-medium text-muted-foreground">방문 완료 처리</p>
       <div className="grid grid-cols-2 gap-2">
-        <select
-          className={selectClass}
-          value={result}
-          onChange={(e) => setResult(e.target.value as ServiceVisitResult)}
-        >
+        <NativeSelect value={result} onChange={(e) => setResult(e.target.value as ServiceVisitResult)}>
           {(Object.keys(VISIT_RESULT_LABEL) as ServiceVisitResult[]).map((r) => (
             <option key={r} value={r}>
               {VISIT_RESULT_LABEL[r]}
             </option>
           ))}
-        </select>
-        <select
-          className={selectClass}
+        </NativeSelect>
+        <NativeSelect
           value={assetStatusAfter}
           onChange={(e) => setAssetStatusAfter(e.target.value as AssetStatus | '')}
         >
@@ -75,7 +68,7 @@ export function VisitCompleteForm({
               자산→{ASSET_STATUS_LABEL[s]}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         <Input
           type="number"
           min={0}

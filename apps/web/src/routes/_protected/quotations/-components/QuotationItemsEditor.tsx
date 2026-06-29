@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Input } from '@/components/ui/input';
 import { ProductSelect, AssetSelect } from '@/components/option-select';
 import type { QuotationType } from '../-types';
@@ -91,14 +92,13 @@ function ItemRowEditor({
             />
           </Field>
           <Field label="부가세">
-            <select
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
+            <NativeSelect
               value={item.vatType}
               onChange={(e) => onUpdate(index, { vatType: e.target.value as ItemRow['vatType'] })}
             >
               <option value="INCLUDED">부가세 포함(10%)</option>
               <option value="NONE">부가세 없음</option>
-            </select>
+            </NativeSelect>
           </Field>
         </div>
       ) : (

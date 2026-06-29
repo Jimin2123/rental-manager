@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -15,9 +16,6 @@ import type { Member } from '../../settings/members/-types';
 import type { MaintenanceIntervalUnit } from '../-types';
 import { INTERVAL_UNIT_LABEL } from '../-types';
 import { scheduleKeys } from '../-api';
-
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function ScheduleForm() {
   const navigate = useNavigate();
@@ -72,25 +70,20 @@ export function ScheduleForm() {
           <p className="text-sm font-medium">
             계약 <span className="text-destructive">*</span>
           </p>
-          <select
-            className={selectClass}
-            value={rentalContractId}
-            onChange={(e) => setRentalContractId(e.target.value)}
-          >
+          <NativeSelect value={rentalContractId} onChange={(e) => setRentalContractId(e.target.value)}>
             <option value="">계약을 선택하세요</option>
             {contracts.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.contractNo} · {customerNameOf(c.rentalOrder.order.customer)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">
             주기 단위 <span className="text-destructive">*</span>
           </p>
-          <select
-            className={selectClass}
+          <NativeSelect
             value={intervalUnit}
             onChange={(e) => setIntervalUnit(e.target.value as MaintenanceIntervalUnit)}
           >
@@ -99,7 +92,7 @@ export function ScheduleForm() {
                 {INTERVAL_UNIT_LABEL[u]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">
@@ -115,14 +108,14 @@ export function ScheduleForm() {
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">담당자</p>
-          <select className={selectClass} value={assignedStaffId} onChange={(e) => setAssignedStaffId(e.target.value)}>
+          <NativeSelect value={assignedStaffId} onChange={(e) => setAssignedStaffId(e.target.value)}>
             <option value="">담당자 미지정</option>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1 col-span-2">
           <p className="text-sm font-medium">메모</p>

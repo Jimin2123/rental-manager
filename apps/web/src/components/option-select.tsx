@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchProductOptions, fetchAssetOptions } from '@/lib/options-api';
 import type { ProductOption, AssetOption } from '@/lib/options-api';
-
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
+import { NativeSelect } from '@/components/ui/native-select';
 
 // 제품 native select — 옵션은 쿼리 키 캐싱으로 행이 여러 개여도 네트워크 1회.
 export function ProductSelect({ value, onChange }: { value: string; onChange: (productId: string) => void }) {
@@ -12,14 +10,14 @@ export function ProductSelect({ value, onChange }: { value: string; onChange: (p
     queryFn: fetchProductOptions,
   });
   return (
-    <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
+    <NativeSelect value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">제품 선택</option>
       {products.map((p) => (
         <option key={p.id} value={p.id}>
           {p.name}
         </option>
       ))}
-    </select>
+    </NativeSelect>
   );
 }
 
@@ -42,8 +40,7 @@ export function AssetSelect({
     enabled: productId !== '',
   });
   return (
-    <select
-      className={selectClass}
+    <NativeSelect
       value={value}
       disabled={productId === ''}
       onChange={(e) =>
@@ -59,6 +56,6 @@ export function AssetSelect({
           {a.serialNumber}
         </option>
       ))}
-    </select>
+    </NativeSelect>
   );
 }

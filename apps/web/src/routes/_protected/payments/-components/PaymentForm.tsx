@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -15,9 +16,6 @@ import { paymentKeys } from '../-api';
 function customerLabel(c: CustomerListItem): string {
   return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '(이름 없음)';
 }
-
-const selectClass =
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function PaymentForm() {
   const navigate = useNavigate();
@@ -64,14 +62,14 @@ export function PaymentForm() {
           <p className="text-sm font-medium">
             고객 <span className="text-destructive">*</span>
           </p>
-          <select className={selectClass} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+          <NativeSelect value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
             <option value="">고객을 선택하세요</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {customerLabel(c)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">
@@ -83,27 +81,23 @@ export function PaymentForm() {
           <p className="text-sm font-medium">
             방법 <span className="text-destructive">*</span>
           </p>
-          <select className={selectClass} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+          <NativeSelect value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
             {(Object.keys(PAYMENT_METHOD_LABEL) as PaymentMethod[]).map((m) => (
               <option key={m} value={m}>
                 {PAYMENT_METHOD_LABEL[m]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">채널</p>
-          <select
-            className={selectClass}
-            value={provider}
-            onChange={(e) => setProvider(e.target.value as PaymentProvider)}
-          >
+          <NativeSelect value={provider} onChange={(e) => setProvider(e.target.value as PaymentProvider)}>
             {(Object.keys(PAYMENT_PROVIDER_LABEL) as PaymentProvider[]).map((p) => (
               <option key={p} value={p}>
                 {PAYMENT_PROVIDER_LABEL[p]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">

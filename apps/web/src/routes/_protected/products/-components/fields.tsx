@@ -1,4 +1,5 @@
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
+import { NativeSelect } from '@/components/ui/native-select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { Supplier } from '../-types';
 
@@ -21,8 +22,8 @@ export function SupplierField<T extends FieldValues>({ control, name, suppliers 
         <FormItem>
           <FormLabel>매입처</FormLabel>
           <FormControl>
-            <select
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none"
+            <NativeSelect
+              className="shadow-xs"
               value={field.value ?? ''}
               onChange={(e) => field.onChange(e.target.value || undefined)}
             >
@@ -32,7 +33,7 @@ export function SupplierField<T extends FieldValues>({ control, name, suppliers 
                   {s.businessProfile.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </FormControl>
           <FormMessage />
         </FormItem>

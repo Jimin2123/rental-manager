@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
@@ -72,18 +73,14 @@ export function QuotationForm() {
           <p className="text-sm font-medium">
             고객 <span className="text-destructive">*</span>
           </p>
-          <select
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none"
-            value={state.customerId}
-            onChange={(e) => patch({ customerId: e.target.value })}
-          >
+          <NativeSelect value={state.customerId} onChange={(e) => patch({ customerId: e.target.value })}>
             <option value="">고객을 선택하세요</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {customerLabel(c)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">유효기간</p>

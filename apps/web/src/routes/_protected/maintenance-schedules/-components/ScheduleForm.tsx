@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -58,12 +58,11 @@ export function ScheduleForm() {
       toast.success('점검 일정이 등록되었습니다.');
       void navigate({ to: '/maintenance-schedules/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      if (s === 403) toast.error('점검 일정 등록 권한이 없습니다.');
-      else if (s === 404) toast.error('계약 또는 담당자를 찾을 수 없습니다.');
-      else toast.error('점검 일정 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '점검 일정 등록 중 오류가 발생했습니다.', {
+        403: '점검 일정 등록 권한이 없습니다.',
+        404: '계약 또는 담당자를 찾을 수 없습니다.',
+      }),
   });
 
   return (

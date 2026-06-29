@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -39,11 +39,8 @@ export function MemberTable({ orgId }: { orgId: string }) {
       toast.success('직원이 비활성화되었습니다.');
       setDeactivating(null);
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 403) toast.error('이 직원은 비활성화할 수 없습니다.');
-      else toast.error('비활성화 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '비활성화 중 오류가 발생했습니다.', { 403: '이 직원은 비활성화할 수 없습니다.' }),
   });
 
   return (

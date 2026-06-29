@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -25,14 +25,10 @@ export function SocialIdentityCard() {
       invalidateIdentities(queryClient);
       toast.success('연동이 해제되었습니다.');
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) {
-        toast.error('비밀번호를 설정하거나 다른 소셜 계정을 연동한 후 해제할 수 있습니다.');
-      } else {
-        toast.error('연동 해제 중 오류가 발생했습니다.');
-      }
-    },
+    onError: (err) =>
+      toastApiError(err, '연동 해제 중 오류가 발생했습니다.', {
+        409: '비밀번호를 설정하거나 다른 소셜 계정을 연동한 후 해제할 수 있습니다.',
+      }),
   });
 
   const isProviderLinked = (provider: OAuthProvider) => linked.some((i) => i.provider === provider);

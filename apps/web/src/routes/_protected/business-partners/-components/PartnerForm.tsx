@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -66,14 +66,8 @@ export function PartnerForm() {
       toast.success('거래처가 등록되었습니다.');
       void navigate({ to: '/business-partners/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) {
-        toast.error('이미 등록된 사업자번호입니다.');
-      } else {
-        toast.error('거래처 등록 중 오류가 발생했습니다.');
-      }
-    },
+    onError: (err) =>
+      toastApiError(err, '거래처 등록 중 오류가 발생했습니다.', { 409: '이미 등록된 사업자번호입니다.' }),
   });
 
   const handleVerifyBrn = async () => {

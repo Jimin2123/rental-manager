@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,11 +53,8 @@ export function AddAssetDialog({ productId }: { productId: string }) {
       setOpen(false);
       form.reset({ initialStatus: 'AVAILABLE' });
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) toast.error('이미 등록된 시리얼 번호입니다.');
-      else toast.error('자산 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '자산 등록 중 오류가 발생했습니다.', { 409: '이미 등록된 시리얼 번호입니다.' }),
   });
 
   return (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,10 +50,7 @@ export function ScheduleDetailView({ schedule }: { schedule: MaintenanceSchedule
       toast.success('점검 일정을 수정했습니다.');
       setEditing(false);
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 403 ? '수정 권한이 없습니다.' : '수정 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '수정 중 오류가 발생했습니다.', { 403: '수정 권한이 없습니다.' }),
   });
 
   const deactivateMutation = useMutation({
@@ -62,10 +59,7 @@ export function ScheduleDetailView({ schedule }: { schedule: MaintenanceSchedule
       invalidateSchedule(queryClient, schedule.id);
       toast.success('점검 일정을 비활성화했습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 403 ? '비활성화 권한이 없습니다.' : '비활성화 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '비활성화 중 오류가 발생했습니다.', { 403: '비활성화 권한이 없습니다.' }),
   });
 
   return (

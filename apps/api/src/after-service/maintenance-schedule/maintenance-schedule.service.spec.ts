@@ -82,4 +82,29 @@ describe('MaintenanceScheduleService', () => {
       expect(prisma.maintenanceSchedule.update).not.toHaveBeenCalled();
     });
   });
+
+  describe('findAll (목록 include)', () => {
+    it('계약·담당자를 include 한다', async () => {
+      prisma.maintenanceSchedule.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.maintenanceSchedule.findMany.mock.calls[0][0];
+      expect(arg.include.assignedStaff).toEqual({ select: { id: true, name: true } });
+      expect(arg.include.rentalContract.select.contractNo).toBe(true);
+      expect(arg.include.rentalContract.select.rentalOrder.select.order.select.customer.select).toEqual({
+        id: true,
+        individualProfile: { select: { name: true } },
+        businessPartner: { select: { businessProfile: { select: { name: true } } } },
+      });
+    });
+  });
+
+  describe('findOne (상세 include)', () => {
+    it('계약·담당자를 include 한다', async () => {
+      prisma.maintenanceSchedule.findUnique.mockResolvedValue({ id: 'ms-1' });
+      await service.findOne('org-1', 'ms-1');
+      const arg = prisma.maintenanceSchedule.findUnique.mock.calls[0][0];
+      expect(arg.include.assignedStaff).toEqual({ select: { id: true, name: true } });
+      expect(arg.include.rentalContract.select.contractNo).toBe(true);
+    });
+  });
 });

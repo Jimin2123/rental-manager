@@ -41,6 +41,7 @@ export default defineConfig({
       '/tax-invoices': apiProxy(),
       '/service-requests': apiProxy(),
       '/service-visits': apiProxy(),
+      '/maintenance-schedules': apiProxy(),
     },
   },
 });

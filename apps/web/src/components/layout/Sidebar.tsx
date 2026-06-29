@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/refunds', label: '환불', icon: '↩' },
   { to: '/tax-invoices', label: '세금계산서', icon: '🧾' },
   { to: '/service-requests', label: 'AS', icon: '🛠' },
+  { to: '/maintenance-schedules', label: '점검', icon: '🔧' },
   { to: '/products', label: '제품', icon: '📦' },
   { to: '/business-partners', label: '거래처', icon: '🏢' },
   { to: '/customers', label: '고객', icon: '👤' },

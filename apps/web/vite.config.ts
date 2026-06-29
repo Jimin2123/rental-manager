@@ -18,6 +18,8 @@ const apiProxy = (target = 'http://localhost:3000') => ({
   },
 });
 
+const API_TARGET = 'http://localhost:3000';
+
 export default defineConfig({
   plugins: [TanStackRouterVite({ routesDirectory: './src/routes' }), react(), tailwindcss()],
   resolve: {
@@ -25,24 +27,16 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/auth': apiProxy(),
-      '/organizations': apiProxy(),
-      '/invitations': apiProxy(),
-      '/assets': apiProxy(),
-      '/business-partners': apiProxy(),
-      '/products': apiProxy(),
-      '/customers': apiProxy(),
-      '/orders': apiProxy(),
-      '/quotations': apiProxy(),
-      '/rental-contracts': apiProxy(),
-      '/invoices': apiProxy(),
-      '/payments': apiProxy(),
-      '/refunds': apiProxy(),
-      '/tax-invoices': apiProxy(),
-      '/service-requests': apiProxy(),
-      '/service-visits': apiProxy(),
-      '/maintenance-schedules': apiProxy(),
-      '/audit-logs': apiProxy(),
+      // 모든 XHR API 호출 — dev에서 axios baseURL이 '/api'(lib/api.ts).
+      // '/api' 한 줄이 전 도메인을 자동 커버하고, rewrite로 prefix를 떼어 백엔드에 전달한다.
+      // 신규 백엔드 도메인 추가 시 프록시 수정 불필요.
+      '/api': {
+        target: API_TARGET,
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+      // 소셜 로그인 전체 페이지 리다이렉트/콜백(브라우저 네비게이션, axios 아님 → '/api' 미경유).
+      '/auth/social': apiProxy(API_TARGET),
     },
   },
 });

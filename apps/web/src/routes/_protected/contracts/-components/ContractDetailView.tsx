@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,12 +38,10 @@ export function ContractDetailView({ contract }: { contract: ContractDetail }) {
       invalidateContract(queryClient, contract.id);
       toast.success('상태가 변경되었습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(
-        s === 400 ? '허용되지 않는 상태 전환이거나 활성화할 장비가 없습니다.' : '상태 변경 중 오류가 발생했습니다.',
-      );
-    },
+    onError: (err) =>
+      toastApiError(err, '상태 변경 중 오류가 발생했습니다.', {
+        400: '허용되지 않는 상태 전환이거나 활성화할 장비가 없습니다.',
+      }),
   });
 
   const returnMutation = useMutation({

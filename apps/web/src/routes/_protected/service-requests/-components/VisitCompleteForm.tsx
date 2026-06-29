@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,10 +46,7 @@ export function VisitCompleteForm({
       toast.success('방문을 완료 처리했습니다. (유상·비용 발생 시 AS 청구서가 생성됩니다)');
       onDone();
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '완료할 수 없는 방문입니다.' : '완료 처리 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '완료 처리 중 오류가 발생했습니다.', { 400: '완료할 수 없는 방문입니다.' }),
   });
 
   return (

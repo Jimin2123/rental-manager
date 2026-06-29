@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -54,10 +54,7 @@ export function PaymentForm() {
       toast.success('수납이 등록되었습니다.');
       void navigate({ to: '/payments/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 404 ? '고객을 찾을 수 없습니다.' : '수납 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '수납 등록 중 오류가 발생했습니다.', { 404: '고객을 찾을 수 없습니다.' }),
   });
 
   return (

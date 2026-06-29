@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -28,10 +28,7 @@ export function TaxInvoiceDetailView({ taxInvoice }: { taxInvoice: TaxInvoiceDet
       invalidateTaxInvoice(queryClient, taxInvoice.id);
       toast.success('세금계산서를 취소했습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '취소할 수 없는 상태입니다.' : '취소 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '취소 중 오류가 발생했습니다.', { 400: '취소할 수 없는 상태입니다.' }),
   });
 
   const amendMutation = useMutation({
@@ -41,10 +38,7 @@ export function TaxInvoiceDetailView({ taxInvoice }: { taxInvoice: TaxInvoiceDet
       toast.success('수정세금계산서를 발행했습니다.');
       void navigate({ to: '/tax-invoices/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '수정발행할 수 없는 상태입니다.' : '수정발행 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '수정발행 중 오류가 발생했습니다.', { 400: '수정발행할 수 없는 상태입니다.' }),
   });
 
   return (

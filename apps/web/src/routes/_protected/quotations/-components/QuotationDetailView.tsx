@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -50,10 +50,8 @@ export function QuotationDetailView({ quotation }: { quotation: QuotationDetail 
       invalidateQuotation(queryClient, quotation.id);
       toast.success('상태가 변경되었습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '허용되지 않는 상태 전환입니다.' : '상태 변경 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '상태 변경 중 오류가 발생했습니다.', { 400: '허용되지 않는 상태 전환입니다.' }),
   });
 
   const headerMutation = useMutation({
@@ -76,10 +74,8 @@ export function QuotationDetailView({ quotation }: { quotation: QuotationDetail 
       toast.success('견적이 삭제되었습니다.');
       void navigate({ to: '/quotations' });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '작성중 상태의 견적만 삭제할 수 있습니다.' : '삭제 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '삭제 중 오류가 발생했습니다.', { 400: '작성중 상태의 견적만 삭제할 수 있습니다.' }),
   });
 
   const convertMutation = useMutation({
@@ -90,12 +86,11 @@ export function QuotationDetailView({ quotation }: { quotation: QuotationDetail 
       toast.success('주문으로 전환되었습니다.');
       void navigate({ to: '/orders/$id', params: { id: res.data.orderId } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      if (s === 409) toast.error('이미 주문으로 전환된 견적입니다.');
-      else if (s === 400) toast.error('수락 가능한 상태의 견적만 전환할 수 있습니다.');
-      else toast.error('주문 전환 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '주문 전환 중 오류가 발생했습니다.', {
+        409: '이미 주문으로 전환된 견적입니다.',
+        400: '수락 가능한 상태의 견적만 전환할 수 있습니다.',
+      }),
   });
 
   return (

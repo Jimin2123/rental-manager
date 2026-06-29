@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,7 @@ export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
       invalidateInvoice(queryClient, invoice.id);
       toast.success('청구서를 발행했습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '발행할 수 없는 상태입니다.' : '발행 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '발행 중 오류가 발생했습니다.', { 400: '발행할 수 없는 상태입니다.' }),
   });
 
   const cancelMutation = useMutation({
@@ -47,10 +44,8 @@ export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
       invalidateInvoice(queryClient, invoice.id);
       toast.success('청구서를 취소했습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '취소할 수 없는 상태이거나 수납 내역이 있습니다.' : '취소 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '취소 중 오류가 발생했습니다.', { 400: '취소할 수 없는 상태이거나 수납 내역이 있습니다.' }),
   });
 
   // 세금계산서: 발행된(ISSUED) 사업자 고객 청구서이며 아직 미발행일 때만 발행 가능.
@@ -65,12 +60,11 @@ export function InvoiceDetailView({ invoice }: { invoice: InvoiceDetail }) {
       toast.success('세금계산서를 발행했습니다.');
       void navigate({ to: '/tax-invoices/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      if (s === 409) toast.error('이미 세금계산서가 발행된 청구서입니다.');
-      else if (s === 400) toast.error('세금계산서를 발행할 수 없는 청구서입니다.');
-      else toast.error('세금계산서 발행 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '세금계산서 발행 중 오류가 발생했습니다.', {
+        409: '이미 세금계산서가 발행된 청구서입니다.',
+        400: '세금계산서를 발행할 수 없는 청구서입니다.',
+      }),
   });
 
   return (

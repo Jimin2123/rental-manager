@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,10 +46,8 @@ export function ServiceRequestDetailView({ request }: { request: ServiceRequestD
       invalidateServiceRequest(queryClient, request.id);
       toast.success('상태를 변경했습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '허용되지 않는 상태 전환입니다.' : '상태 변경 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '상태 변경 중 오류가 발생했습니다.', { 400: '허용되지 않는 상태 전환입니다.' }),
   });
 
   const cancelVisitMutation = useMutation({
@@ -212,10 +210,10 @@ function AddVisitForm({ requestId, members }: { requestId: string; members: Memb
       setScheduledAt('');
       setMemo('');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '완료/취소된 접수에는 방문을 추가할 수 없습니다.' : '방문 추가 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '방문 추가 중 오류가 발생했습니다.', {
+        400: '완료/취소된 접수에는 방문을 추가할 수 없습니다.',
+      }),
   });
 
   return (

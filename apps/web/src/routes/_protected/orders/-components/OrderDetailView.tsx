@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -34,10 +34,8 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
       invalidateOrder(queryClient, order.id);
       toast.success('상태가 변경되었습니다.');
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '허용되지 않는 상태 전환입니다.' : '상태 변경 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '상태 변경 중 오류가 발생했습니다.', { 400: '허용되지 않는 상태 전환입니다.' }),
   });
 
   const memoMutation = useMutation({
@@ -56,10 +54,8 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
       toast.success('거래가 삭제되었습니다.');
       void navigate({ to: '/orders' });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      toast.error(s === 400 ? '등록 상태의 거래만 삭제할 수 있습니다.' : '삭제 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '삭제 중 오류가 발생했습니다.', { 400: '등록 상태의 거래만 삭제할 수 있습니다.' }),
   });
 
   const nextStatuses = ORDER_TRANSITIONS[order.status];
@@ -234,12 +230,11 @@ function ContractCreateCard({
       toast.success('계약이 생성되었습니다.');
       void navigate({ to: '/contracts/$id', params: { id: contractId } });
     },
-    onError: (err) => {
-      const s = (err as AxiosError).response?.status;
-      if (s === 409) toast.error('이미 이 주문에 연결된 계약이 있습니다.');
-      else if (s === 400) toast.error('계약 정보를 확인해주세요. (날짜·자산 상태)');
-      else toast.error('계약 생성 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '계약 생성 중 오류가 발생했습니다.', {
+        409: '이미 이 주문에 연결된 계약이 있습니다.',
+        400: '계약 정보를 확인해주세요. (날짜·자산 상태)',
+      }),
   });
 
   return (

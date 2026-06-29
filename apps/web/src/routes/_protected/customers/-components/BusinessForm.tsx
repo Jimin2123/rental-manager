@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -35,12 +35,11 @@ export function BusinessForm() {
       toast.success('법인 고객이 등록되었습니다.');
       void navigate({ to: '/customers/$id', params: { id: res.data.id } });
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) toast.error('이미 고객으로 등록된 거래처입니다.');
-      else if (status === 404) toast.error('거래처를 찾을 수 없습니다.');
-      else toast.error('법인 고객 등록 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '법인 고객 등록 중 오류가 발생했습니다.', {
+        409: '이미 고객으로 등록된 거래처입니다.',
+        404: '거래처를 찾을 수 없습니다.',
+      }),
   });
 
   return (

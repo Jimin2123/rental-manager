@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -59,11 +59,8 @@ export function EditMemberDialog({
       toast.success('직원 정보가 수정되었습니다.');
       onOpenChange(false);
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 403) toast.error('이 직원의 정보는 변경할 수 없습니다.');
-      else toast.error('수정 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '수정 중 오류가 발생했습니다.', { 403: '이 직원의 정보는 변경할 수 없습니다.' }),
   });
 
   return (

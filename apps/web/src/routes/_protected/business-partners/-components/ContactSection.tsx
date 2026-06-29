@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -61,14 +61,10 @@ export function ContactSection({
       toast.success('담당자가 삭제되었습니다.');
       onChanged();
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) {
-        toast.error('해당 담당자를 참조하는 배정이 있어 삭제할 수 없습니다.');
-      } else {
-        toast.error('담당자 삭제 중 오류가 발생했습니다.');
-      }
-    },
+    onError: (err) =>
+      toastApiError(err, '담당자 삭제 중 오류가 발생했습니다.', {
+        409: '해당 담당자를 참조하는 배정이 있어 삭제할 수 없습니다.',
+      }),
   });
 
   return (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -61,11 +61,8 @@ export function ProductInfoCard({ product, onDeleted }: { product: Product; onDe
       toast.success('제품이 삭제되었습니다.');
       onDeleted();
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) toast.error('연결된 자산이 있어 삭제할 수 없습니다.');
-      else toast.error('삭제 중 오류가 발생했습니다.');
-    },
+    onError: (err) =>
+      toastApiError(err, '삭제 중 오류가 발생했습니다.', { 409: '연결된 자산이 있어 삭제할 수 없습니다.' }),
   });
 
   return (

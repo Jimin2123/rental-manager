@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { type AxiosError } from 'axios';
+import { toastApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -49,11 +49,7 @@ export function AddMemberDialog({ orgId }: { orgId: string }) {
       setOpen(false);
       reset();
     },
-    onError: (err) => {
-      const status = (err as AxiosError).response?.status;
-      if (status === 409) toast.error('이미 조직의 활성 직원입니다.');
-      else toast.error('초대 발송 중 오류가 발생했습니다.');
-    },
+    onError: (err) => toastApiError(err, '초대 발송 중 오류가 발생했습니다.', { 409: '이미 조직의 활성 직원입니다.' }),
   });
 
   return (

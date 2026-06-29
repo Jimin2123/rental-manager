@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
+import { won } from '@/lib/format';
 import { fetchCustomers, customerKeys } from '../../customers/-api';
 import type { CustomerListItem } from '../../customers/-types';
 import { fetchPayments, paymentKeys } from '../../payments/-api';
@@ -103,7 +104,7 @@ export function RefundForm() {
             <option value="">{customerId === '' ? '고객 먼저 선택' : '수납을 선택하세요'}</option>
             {payments.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.paymentNo} ({p.amount.toLocaleString('ko-KR')}원)
+                {p.paymentNo} ({won(p.amount)})
               </option>
             ))}
           </select>

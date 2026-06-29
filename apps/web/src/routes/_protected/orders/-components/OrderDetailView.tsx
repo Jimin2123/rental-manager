@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { won } from '@/lib/format';
 import { DetailRow } from '@/components/ui/detail-row';
 import { useAuthStore } from '@/store/auth.store';
 import type { OrderDetail, OrderStatus } from '../-types';
@@ -112,7 +113,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           <DetailRow label="고객" value={customerNameOf(order.customer)} />
           <DetailRow label="담당자" value={order.manager?.name ?? '-'} />
           <DetailRow label="주문일" value={new Date(order.orderDate).toLocaleDateString('ko-KR')} />
-          <DetailRow label="합계" value={`${orderTotal(order).toLocaleString('ko-KR')}원`} />
+          <DetailRow label="합계" value={won(orderTotal(order))} />
         </div>
 
         {/* 상태 전환 */}

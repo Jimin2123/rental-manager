@@ -14,7 +14,7 @@ import type { MaintenanceScheduleDetail, MaintenanceIntervalUnit } from '../-typ
 import { INTERVAL_UNIT_LABEL, intervalLabel, contractCustomerName } from '../-types';
 import { invalidateSchedule } from '../-api';
 
-const date = (s: string | null) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
+import { date } from '@/lib/format';
 const selectClass =
   'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 

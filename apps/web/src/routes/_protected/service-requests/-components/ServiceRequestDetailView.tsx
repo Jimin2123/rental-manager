@@ -23,8 +23,7 @@ import {
 import { invalidateServiceRequest } from '../-api';
 import { VisitCompleteForm } from './VisitCompleteForm';
 
-const won = (n: number | null) => (n == null ? '-' : `${n.toLocaleString('ko-KR')}원`);
-const date = (s: string | null) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
+import { won, date } from '@/lib/format';
 const selectClass = 'flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function ServiceRequestDetailView({ request }: { request: ServiceRequestDetail }) {

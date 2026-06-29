@@ -9,7 +9,7 @@ import type { RefundDetail } from '../-types';
 import { REFUND_STATUS_LABEL, REFUND_REASON_LABEL, PAYMENT_METHOD_LABEL, customerNameOf } from '../-types';
 import { invalidateRefund } from '../-api';
 
-const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
+import { won } from '@/lib/format';
 
 export function RefundDetailView({ refund }: { refund: RefundDetail }) {
   const queryClient = useQueryClient();

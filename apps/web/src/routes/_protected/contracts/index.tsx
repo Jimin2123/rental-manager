@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { ContractListItem, ContractStatus } from './-types';
 import { CONTRACT_STATUS_LABEL, customerNameOf, contractMonthlyTotal } from './-types';
 import { contractKeys, fetchContracts } from './-api';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/contracts/')({
   component: ContractsPage,
@@ -82,9 +83,7 @@ function ContractsPage() {
                     {new Date(c.endDate).toLocaleDateString('ko-KR')}
                   </TableCell>
                   <TableCell className="text-right">{c.items.length}</TableCell>
-                  <TableCell className="text-right">
-                    {contractMonthlyTotal(c.items).toLocaleString('ko-KR')}원
-                  </TableCell>
+                  <TableCell className="text-right">{won(contractMonthlyTotal(c.items))}</TableCell>
                 </TableRow>
               ))
             )}

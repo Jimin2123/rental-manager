@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { QuotationListItem, QuotationType, QuotationStatus } from './-types';
 import { QUOTATION_TYPE_LABEL, QUOTATION_STATUS_LABEL, customerNameOf, quotationTotal } from './-types';
 import { quotationKeys, fetchQuotations } from './-api';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/quotations/')({
   component: QuotationsPage,
@@ -92,7 +93,7 @@ function QuotationsPage() {
                   <TableCell>{customerNameOf(q.customer)}</TableCell>
                   <TableCell>{QUOTATION_STATUS_LABEL[q.status]}</TableCell>
                   <TableCell>{q.validUntil ? new Date(q.validUntil).toLocaleDateString('ko-KR') : '-'}</TableCell>
-                  <TableCell className="text-right">{quotationTotal(q).toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{won(quotationTotal(q))}</TableCell>
                 </TableRow>
               ))
             )}

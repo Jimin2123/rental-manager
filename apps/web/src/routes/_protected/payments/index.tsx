@@ -8,6 +8,8 @@ import type { PaymentListItem, PaymentMethod, PaymentStatus } from './-types';
 import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL, customerNameOf } from './-types';
 import type { PaymentFilters } from './-api';
 import { paymentKeys, fetchPayments } from './-api';
+import { FilterRow } from '@/components/ui/filter-row';
+import { won } from '@/lib/format';
 
 export const Route = createFileRoute('/_protected/payments/')({
   component: PaymentsPage,
@@ -98,38 +100,13 @@ function PaymentsPage() {
                       {PAYMENT_STATUS_LABEL[p.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{p.amount.toLocaleString('ko-KR')}원</TableCell>
+                  <TableCell className="text-right">{won(p.amount)}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-}
-
-function FilterRow<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  labelOf,
-}: {
-  label: string;
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  labelOf: (v: T) => string;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="mr-1 w-10 text-xs text-muted-foreground">{label}</span>
-      {options.map((o) => (
-        <Button key={o} variant={value === o ? 'default' : 'outline'} size="sm" onClick={() => onChange(o)}>
-          {labelOf(o)}
-        </Button>
-      ))}
     </div>
   );
 }

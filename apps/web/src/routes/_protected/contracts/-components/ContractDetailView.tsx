@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { won } from '@/lib/format';
 import { DetailRow } from '@/components/ui/detail-row';
 import { ProductSelect, AssetSelect } from '@/components/option-select';
 import type { ContractDetail, ContractStatus } from '../-types';
@@ -83,7 +84,7 @@ export function ContractDetailView({ contract }: { contract: ContractDetail }) {
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
           <DetailRow label="고객" value={customerNameOf(contract.rentalOrder.order.customer)} />
-          <DetailRow label="월 렌탈료" value={`${contractMonthlyTotal(contract.items).toLocaleString('ko-KR')}원`} />
+          <DetailRow label="월 렌탈료" value={won(contractMonthlyTotal(contract.items))} />
           <DetailRow
             label="기간"
             value={`${new Date(contract.startDate).toLocaleDateString('ko-KR')} ~ ${new Date(

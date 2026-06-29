@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { won } from '@/lib/format';
 import { DetailRow } from '@/components/ui/detail-row';
 import { useAuthStore } from '@/store/auth.store';
 import type { QuotationDetail, QuotationStatus } from '../-types';
@@ -140,7 +141,7 @@ export function QuotationDetailView({ quotation }: { quotation: QuotationDetail 
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
           <DetailRow label="고객" value={customerNameOf(quotation.customer)} />
-          <DetailRow label="합계" value={`${quotationTotal(quotation).toLocaleString('ko-KR')}원`} />
+          <DetailRow label="합계" value={won(quotationTotal(quotation))} />
         </div>
 
         {nextStatuses.length > 0 && (

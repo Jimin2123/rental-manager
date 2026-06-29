@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { DetailRow } from '@/components/ui/detail-row';
 import { useAuthStore } from '@/store/auth.store';
-import { fetchMembers } from '../../settings/members/-api';
+import { fetchMembers, memberKeys } from '../../settings/members/-api';
 import type { Member } from '../../settings/members/-types';
 import type { MaintenanceScheduleDetail, MaintenanceIntervalUnit } from '../-types';
 import { INTERVAL_UNIT_LABEL, intervalLabel, contractCustomerName } from '../-types';
@@ -25,7 +25,7 @@ export function ScheduleDetailView({ schedule }: { schedule: MaintenanceSchedule
   const [editing, setEditing] = useState(false);
 
   const { data: members = [] } = useQuery<Member[]>({
-    queryKey: ['members', org?.id],
+    queryKey: memberKeys.list(org?.id ?? ''),
     queryFn: () => fetchMembers(org!.id),
     enabled: !!org && editing,
   });

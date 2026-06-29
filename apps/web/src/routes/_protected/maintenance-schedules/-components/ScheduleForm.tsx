@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { fetchContracts, contractKeys } from '../../contracts/-api';
 import type { ContractListItem } from '../../contracts/-types';
 import { customerNameOf } from '../../contracts/-types';
-import { fetchMembers } from '../../settings/members/-api';
+import { fetchMembers, memberKeys } from '../../settings/members/-api';
 import type { Member } from '../../settings/members/-types';
 import type { MaintenanceIntervalUnit } from '../-types';
 import { INTERVAL_UNIT_LABEL } from '../-types';
@@ -36,7 +36,7 @@ export function ScheduleForm() {
     queryFn: fetchContracts,
   });
   const { data: members = [] } = useQuery<Member[]>({
-    queryKey: ['members', org?.id],
+    queryKey: memberKeys.list(org?.id ?? ''),
     queryFn: () => fetchMembers(org!.id),
     enabled: !!org,
   });

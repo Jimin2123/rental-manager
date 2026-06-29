@@ -48,6 +48,16 @@ export const VISIT_RESULT_LABEL: Record<ServiceVisitResult, string> = {
   ETC: '기타',
 };
 
+// 백엔드 상태전이 트리거(assert_status_transition) 미러 — 현재 상태에서 허용되는 다음 상태.
+export const REQUEST_TRANSITIONS: Record<ServiceRequestStatus, ServiceRequestStatus[]> = {
+  RECEIVED: ['SCHEDULED', 'IN_PROGRESS', 'CANCELED'],
+  SCHEDULED: ['IN_PROGRESS', 'WAITING_FOR_PARTS', 'COMPLETED', 'CANCELED'],
+  IN_PROGRESS: ['WAITING_FOR_PARTS', 'COMPLETED', 'CANCELED'],
+  WAITING_FOR_PARTS: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'],
+  COMPLETED: [],
+  CANCELED: [],
+};
+
 export const ASSET_STATUS_LABEL: Record<AssetStatus, string> = {
   INCOMING: '입고예정',
   AVAILABLE: '가용',

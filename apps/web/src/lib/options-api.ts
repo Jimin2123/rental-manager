@@ -18,9 +18,7 @@ export const fetchAssetOptions = (productId: string) =>
     .then((r) => r.data.map((a) => ({ id: a.id, serialNumber: a.serialNumber })));
 
 // AS 등 전체 자산(상태 무관) 선택용 — 제품명·시리얼·상태.
-export type AssetFull = { id: string; serialNumber: string; status: string; product: { name: string } };
-
 export const fetchAllAssets = () =>
   api
     .get<Array<{ id: string; serialNumber: string; status: string; product: { name: string } }>>('/assets')
-    .then((r) => r.data.map((a) => ({ id: a.id, serialNumber: a.serialNumber, status: a.status, product: a.product })));
+    .then((r) => r.data);

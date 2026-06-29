@@ -15,6 +15,7 @@ import type { ServiceRequestDetail, ServiceRequestStatus } from '../-types';
 import {
   REQUEST_STATUS_LABEL,
   REQUEST_TYPE_LABEL,
+  REQUEST_TRANSITIONS,
   VISIT_STATUS_LABEL,
   VISIT_RESULT_LABEL,
   customerNameOf,
@@ -24,21 +25,15 @@ import { VisitCompleteForm } from './VisitCompleteForm';
 
 const won = (n: number | null) => (n == null ? '-' : `${n.toLocaleString('ko-KR')}원`);
 const date = (s: string | null) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
-const ALL_STATUSES: ServiceRequestStatus[] = [
-  'RECEIVED',
-  'SCHEDULED',
-  'IN_PROGRESS',
-  'WAITING_FOR_PARTS',
-  'COMPLETED',
-  'CANCELED',
-];
 const selectClass = 'flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none';
 
 export function ServiceRequestDetailView({ request }: { request: ServiceRequestDetail }) {
   const queryClient = useQueryClient();
   const org = useAuthStore((s) => s.currentOrganization);
-  const [nextStatus, setNextStatus] = useState<ServiceRequestStatus>(request.status);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  // 현재 상태 + 백엔드 트리거가 허용하는 다음 상태만 드롭다운에 노출.
+  const nextStatuses = REQUEST_TRANSITIONS[request.status];
+  const [nextStatus, setNextStatus] = useState<ServiceRequestStatus>(request.status);
 
   const { data: members = [] } = useQuery<Member[]>({
     queryKey: ['members', org?.id],
@@ -78,27 +73,29 @@ export function ServiceRequestDetailView({ request }: { request: ServiceRequestD
               {REQUEST_STATUS_LABEL[request.status]}
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              className={selectClass}
-              value={nextStatus}
-              onChange={(e) => setNextStatus(e.target.value as ServiceRequestStatus)}
-            >
-              {ALL_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {REQUEST_STATUS_LABEL[s]}
-                </option>
-              ))}
-            </select>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={nextStatus === request.status || statusMutation.isPending}
-              onClick={() => statusMutation.mutate(nextStatus)}
-            >
-              상태 변경
-            </Button>
-          </div>
+          {nextStatuses.length > 0 && (
+            <div className="flex items-center gap-2">
+              <select
+                className={selectClass}
+                value={nextStatus}
+                onChange={(e) => setNextStatus(e.target.value as ServiceRequestStatus)}
+              >
+                {[request.status, ...nextStatuses].map((s) => (
+                  <option key={s} value={s}>
+                    {REQUEST_STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={nextStatus === request.status || statusMutation.isPending}
+                onClick={() => statusMutation.mutate(nextStatus)}
+              >
+                상태 변경
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">

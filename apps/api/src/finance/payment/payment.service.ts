@@ -10,7 +10,6 @@ import {
 import { AuditLogService } from '../../common/audit-log/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FinanceDocumentSequenceService } from '../common/document-sequence.service';
-import { computeSettlementStatus } from '../common/settlement.util';
 import type { CreatePaymentDto } from './dto/create-payment.dto';
 import type { QueryPaymentDto } from './dto/query-payment.dto';
 
@@ -90,19 +89,8 @@ export class PaymentService {
       await tx.paymentAllocation.create({
         data: { organizationId, paymentId, invoiceId: invoice.id, amount: allocate },
       });
-
-      const newPaidAmount = invoice.paidAmount + allocate;
-      const newSettlementStatus = computeSettlementStatus(newPaidAmount, invoice.finalAmount, invoice.refundedAmount);
-      const newOutstandingAmount = invoice.finalAmount - newPaidAmount + invoice.refundedAmount;
-
-      await tx.invoice.update({
-        where: { id_organizationId: { id: invoice.id, organizationId } },
-        data: {
-          paidAmount: newPaidAmount,
-          outstandingAmount: newOutstandingAmount,
-          settlementStatus: newSettlementStatus,
-        },
-      });
+      // 청구서 정산필드(paidAmount/outstanding/settlementStatus)는 PaymentAllocation 변경 시
+      // DB 트리거가 자동 재계산한다. 앱이 수동 update하면 가드 트리거와 충돌하므로 쓰지 않는다.
 
       remaining -= allocate;
     }
@@ -159,32 +147,9 @@ export class PaymentService {
     if (before.status === PaymentStatus.CANCELED) throw new BadRequestException('이미 취소된 수납입니다.');
 
     await this.prisma.$transaction(async (tx) => {
-      const allocations = await tx.paymentAllocation.findMany({
-        where: { paymentId: id, organizationId },
-      });
-
+      // 배분을 삭제하면 DB 트리거가 청구서 정산필드를 자동 재계산한다.
+      // (정산필드 수동 update는 가드 트리거가 금지 — #114)
       await tx.paymentAllocation.deleteMany({ where: { paymentId: id, organizationId } });
-
-      for (const alloc of allocations) {
-        const invoice = await tx.invoice.findUnique({
-          where: { id_organizationId: { id: alloc.invoiceId, organizationId } },
-          select: { paidAmount: true, finalAmount: true, refundedAmount: true },
-        });
-        if (!invoice) continue;
-
-        const newPaidAmount = invoice.paidAmount - alloc.amount;
-        const newSettlementStatus = computeSettlementStatus(newPaidAmount, invoice.finalAmount, invoice.refundedAmount);
-        const newOutstandingAmount = invoice.finalAmount - newPaidAmount + invoice.refundedAmount;
-
-        await tx.invoice.update({
-          where: { id_organizationId: { id: alloc.invoiceId, organizationId } },
-          data: {
-            paidAmount: newPaidAmount,
-            outstandingAmount: newOutstandingAmount,
-            settlementStatus: newSettlementStatus,
-          },
-        });
-      }
 
       await tx.payment.update({
         where: { id_organizationId: { id, organizationId } },

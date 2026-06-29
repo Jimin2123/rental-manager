@@ -66,3 +66,34 @@ test('수납 취소 - 취소하면 액션 버튼이 사라진다', async ({ page
   await expect(page.getByText('수납을 취소했습니다.')).toBeVisible();
   await expect(page.getByRole('button', { name: '취소' })).toHaveCount(0);
 });
+
+// 회귀: 미수 청구서에 배분된 수납을 취소 — invoice 정산필드는 DB가 재계산하므로
+// 앱이 수동 update하면 가드 트리거와 충돌해 500이 났었다(#114). 배분이 있어야 재현된다.
+test('수납 취소 - 청구서에 배분된 수납도 취소된다 (#114)', async ({ page }) => {
+  await login(page);
+  const customerId = await firstCustomerId(page);
+
+  // 항목 있는 ISSUED 청구서 생성 → 미수 발생
+  const invRes = await page.request.post(`${API}/invoices`, { data: { type: 'MANUAL', customerId } });
+  expect(invRes.ok()).toBeTruthy();
+  const invoiceId = (await invRes.json()).id as string;
+  const itemRes = await page.request.post(`${API}/invoices/${invoiceId}/items`, {
+    data: { type: 'ETC', quantity: 1, unitPrice: 50000, description: '회귀 테스트 항목' },
+  });
+  expect(itemRes.ok()).toBeTruthy();
+  expect((await page.request.post(`${API}/invoices/${invoiceId}/issue`, { data: {} })).ok()).toBeTruthy();
+
+  // 같은 고객으로 수납 → FIFO로 위 청구서에 배분됨
+  const payRes = await page.request.post(`${API}/payments`, {
+    data: { customerId, method: 'CASH', amount: 50000, paidAt: new Date().toISOString() },
+  });
+  expect(payRes.ok()).toBeTruthy();
+  const paymentId = (await payRes.json()).id as string;
+
+  await page.goto(`/payments/${paymentId}`);
+  // 배분 내역이 보이는지 확인(= 배분된 수납임)
+  await expect(page.getByText(/배분/).first()).toBeVisible();
+  await page.getByRole('button', { name: '취소' }).click();
+  await expect(page.getByText('수납을 취소했습니다.')).toBeVisible();
+  await expect(page.getByRole('button', { name: '취소' })).toHaveCount(0);
+});

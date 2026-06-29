@@ -92,7 +92,7 @@ describe('RefundService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('invoiceId 지정 → Invoice refundedAmount 업데이트', async () => {
+    it('invoiceId 지정 → Refund 생성, 정산필드는 DB가 재계산(invoice.update 안 함)', async () => {
       prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice());
 
@@ -103,11 +103,8 @@ describe('RefundService', () => {
         amount: 50000,
       });
 
-      expect(prisma.invoice.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ refundedAmount: 50000 }),
-        }),
-      );
+      // 정산필드(refundedAmount 등)는 Refund 트리거가 재계산 — 서비스는 invoice.update 하지 않는다 (#114).
+      expect(prisma.invoice.update).not.toHaveBeenCalled();
       expect(docSeq.generateNo).toHaveBeenCalledWith('org-1', DocumentSequenceType.REFUND, prisma);
     });
 
@@ -198,11 +195,8 @@ describe('RefundService', () => {
 
       await service.cancel('org-1', 'ref-1', 'mem-1');
 
-      expect(prisma.invoice.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ refundedAmount: 0 }),
-        }),
-      );
+      // 정산필드는 Refund 상태변경 트리거가 재계산 — 서비스는 invoice.update 하지 않는다 (#114).
+      expect(prisma.invoice.update).not.toHaveBeenCalled();
       expect(prisma.refund.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: RefundStatus.CANCELED } }),
       );

@@ -26,6 +26,7 @@ import { Route as ProtectedQuotationsIndexRouteImport } from './routes/_protecte
 import { Route as ProtectedProductsIndexRouteImport } from './routes/_protected/products/index'
 import { Route as ProtectedPaymentsIndexRouteImport } from './routes/_protected/payments/index'
 import { Route as ProtectedOrdersIndexRouteImport } from './routes/_protected/orders/index'
+import { Route as ProtectedMaintenanceSchedulesIndexRouteImport } from './routes/_protected/maintenance-schedules/index'
 import { Route as ProtectedInvoicesIndexRouteImport } from './routes/_protected/invoices/index'
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
 import { Route as ProtectedContractsIndexRouteImport } from './routes/_protected/contracts/index'
@@ -44,6 +45,8 @@ import { Route as ProtectedPaymentsNewRouteImport } from './routes/_protected/pa
 import { Route as ProtectedPaymentsIdRouteImport } from './routes/_protected/payments/$id'
 import { Route as ProtectedOrdersNewRouteImport } from './routes/_protected/orders/new'
 import { Route as ProtectedOrdersIdRouteImport } from './routes/_protected/orders/$id'
+import { Route as ProtectedMaintenanceSchedulesNewRouteImport } from './routes/_protected/maintenance-schedules/new'
+import { Route as ProtectedMaintenanceSchedulesIdRouteImport } from './routes/_protected/maintenance-schedules/$id'
 import { Route as ProtectedInvoicesIdRouteImport } from './routes/_protected/invoices/$id'
 import { Route as ProtectedCustomersNewRouteImport } from './routes/_protected/customers/new'
 import { Route as ProtectedCustomersIdRouteImport } from './routes/_protected/customers/$id'
@@ -138,6 +141,12 @@ const ProtectedOrdersIndexRoute = ProtectedOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedMaintenanceSchedulesIndexRoute =
+  ProtectedMaintenanceSchedulesIndexRouteImport.update({
+    id: '/maintenance-schedules/',
+    path: '/maintenance-schedules/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedInvoicesIndexRoute = ProtectedInvoicesIndexRouteImport.update({
   id: '/invoices/',
   path: '/invoices/',
@@ -232,6 +241,18 @@ const ProtectedOrdersIdRoute = ProtectedOrdersIdRouteImport.update({
   path: '/orders/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedMaintenanceSchedulesNewRoute =
+  ProtectedMaintenanceSchedulesNewRouteImport.update({
+    id: '/maintenance-schedules/new',
+    path: '/maintenance-schedules/new',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ProtectedMaintenanceSchedulesIdRoute =
+  ProtectedMaintenanceSchedulesIdRouteImport.update({
+    id: '/maintenance-schedules/$id',
+    path: '/maintenance-schedules/$id',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedInvoicesIdRoute = ProtectedInvoicesIdRouteImport.update({
   id: '/invoices/$id',
   path: '/invoices/$id',
@@ -286,6 +307,8 @@ export interface FileRoutesByFullPath {
   '/customers/$id': typeof ProtectedCustomersIdRoute
   '/customers/new': typeof ProtectedCustomersNewRoute
   '/invoices/$id': typeof ProtectedInvoicesIdRoute
+  '/maintenance-schedules/$id': typeof ProtectedMaintenanceSchedulesIdRoute
+  '/maintenance-schedules/new': typeof ProtectedMaintenanceSchedulesNewRoute
   '/orders/$id': typeof ProtectedOrdersIdRoute
   '/orders/new': typeof ProtectedOrdersNewRoute
   '/payments/$id': typeof ProtectedPaymentsIdRoute
@@ -304,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/contracts/': typeof ProtectedContractsIndexRoute
   '/customers/': typeof ProtectedCustomersIndexRoute
   '/invoices/': typeof ProtectedInvoicesIndexRoute
+  '/maintenance-schedules/': typeof ProtectedMaintenanceSchedulesIndexRoute
   '/orders/': typeof ProtectedOrdersIndexRoute
   '/payments/': typeof ProtectedPaymentsIndexRoute
   '/products/': typeof ProtectedProductsIndexRoute
@@ -328,6 +352,8 @@ export interface FileRoutesByTo {
   '/customers/$id': typeof ProtectedCustomersIdRoute
   '/customers/new': typeof ProtectedCustomersNewRoute
   '/invoices/$id': typeof ProtectedInvoicesIdRoute
+  '/maintenance-schedules/$id': typeof ProtectedMaintenanceSchedulesIdRoute
+  '/maintenance-schedules/new': typeof ProtectedMaintenanceSchedulesNewRoute
   '/orders/$id': typeof ProtectedOrdersIdRoute
   '/orders/new': typeof ProtectedOrdersNewRoute
   '/payments/$id': typeof ProtectedPaymentsIdRoute
@@ -346,6 +372,7 @@ export interface FileRoutesByTo {
   '/contracts': typeof ProtectedContractsIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
   '/invoices': typeof ProtectedInvoicesIndexRoute
+  '/maintenance-schedules': typeof ProtectedMaintenanceSchedulesIndexRoute
   '/orders': typeof ProtectedOrdersIndexRoute
   '/payments': typeof ProtectedPaymentsIndexRoute
   '/products': typeof ProtectedProductsIndexRoute
@@ -373,6 +400,8 @@ export interface FileRoutesById {
   '/_protected/customers/$id': typeof ProtectedCustomersIdRoute
   '/_protected/customers/new': typeof ProtectedCustomersNewRoute
   '/_protected/invoices/$id': typeof ProtectedInvoicesIdRoute
+  '/_protected/maintenance-schedules/$id': typeof ProtectedMaintenanceSchedulesIdRoute
+  '/_protected/maintenance-schedules/new': typeof ProtectedMaintenanceSchedulesNewRoute
   '/_protected/orders/$id': typeof ProtectedOrdersIdRoute
   '/_protected/orders/new': typeof ProtectedOrdersNewRoute
   '/_protected/payments/$id': typeof ProtectedPaymentsIdRoute
@@ -391,6 +420,7 @@ export interface FileRoutesById {
   '/_protected/contracts/': typeof ProtectedContractsIndexRoute
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
   '/_protected/invoices/': typeof ProtectedInvoicesIndexRoute
+  '/_protected/maintenance-schedules/': typeof ProtectedMaintenanceSchedulesIndexRoute
   '/_protected/orders/': typeof ProtectedOrdersIndexRoute
   '/_protected/payments/': typeof ProtectedPaymentsIndexRoute
   '/_protected/products/': typeof ProtectedProductsIndexRoute
@@ -417,6 +447,8 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/customers/new'
     | '/invoices/$id'
+    | '/maintenance-schedules/$id'
+    | '/maintenance-schedules/new'
     | '/orders/$id'
     | '/orders/new'
     | '/payments/$id'
@@ -435,6 +467,7 @@ export interface FileRouteTypes {
     | '/contracts/'
     | '/customers/'
     | '/invoices/'
+    | '/maintenance-schedules/'
     | '/orders/'
     | '/payments/'
     | '/products/'
@@ -459,6 +492,8 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/customers/new'
     | '/invoices/$id'
+    | '/maintenance-schedules/$id'
+    | '/maintenance-schedules/new'
     | '/orders/$id'
     | '/orders/new'
     | '/payments/$id'
@@ -477,6 +512,7 @@ export interface FileRouteTypes {
     | '/contracts'
     | '/customers'
     | '/invoices'
+    | '/maintenance-schedules'
     | '/orders'
     | '/payments'
     | '/products'
@@ -503,6 +539,8 @@ export interface FileRouteTypes {
     | '/_protected/customers/$id'
     | '/_protected/customers/new'
     | '/_protected/invoices/$id'
+    | '/_protected/maintenance-schedules/$id'
+    | '/_protected/maintenance-schedules/new'
     | '/_protected/orders/$id'
     | '/_protected/orders/new'
     | '/_protected/payments/$id'
@@ -521,6 +559,7 @@ export interface FileRouteTypes {
     | '/_protected/contracts/'
     | '/_protected/customers/'
     | '/_protected/invoices/'
+    | '/_protected/maintenance-schedules/'
     | '/_protected/orders/'
     | '/_protected/payments/'
     | '/_protected/products/'
@@ -659,6 +698,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedOrdersIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/maintenance-schedules/': {
+      id: '/_protected/maintenance-schedules/'
+      path: '/maintenance-schedules'
+      fullPath: '/maintenance-schedules/'
+      preLoaderRoute: typeof ProtectedMaintenanceSchedulesIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/invoices/': {
       id: '/_protected/invoices/'
       path: '/invoices'
@@ -785,6 +831,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedOrdersIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/maintenance-schedules/new': {
+      id: '/_protected/maintenance-schedules/new'
+      path: '/maintenance-schedules/new'
+      fullPath: '/maintenance-schedules/new'
+      preLoaderRoute: typeof ProtectedMaintenanceSchedulesNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/maintenance-schedules/$id': {
+      id: '/_protected/maintenance-schedules/$id'
+      path: '/maintenance-schedules/$id'
+      fullPath: '/maintenance-schedules/$id'
+      preLoaderRoute: typeof ProtectedMaintenanceSchedulesIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/invoices/$id': {
       id: '/_protected/invoices/$id'
       path: '/invoices/$id'
@@ -863,6 +923,8 @@ interface ProtectedRouteChildren {
   ProtectedCustomersIdRoute: typeof ProtectedCustomersIdRoute
   ProtectedCustomersNewRoute: typeof ProtectedCustomersNewRoute
   ProtectedInvoicesIdRoute: typeof ProtectedInvoicesIdRoute
+  ProtectedMaintenanceSchedulesIdRoute: typeof ProtectedMaintenanceSchedulesIdRoute
+  ProtectedMaintenanceSchedulesNewRoute: typeof ProtectedMaintenanceSchedulesNewRoute
   ProtectedOrdersIdRoute: typeof ProtectedOrdersIdRoute
   ProtectedOrdersNewRoute: typeof ProtectedOrdersNewRoute
   ProtectedPaymentsIdRoute: typeof ProtectedPaymentsIdRoute
@@ -881,6 +943,7 @@ interface ProtectedRouteChildren {
   ProtectedContractsIndexRoute: typeof ProtectedContractsIndexRoute
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
   ProtectedInvoicesIndexRoute: typeof ProtectedInvoicesIndexRoute
+  ProtectedMaintenanceSchedulesIndexRoute: typeof ProtectedMaintenanceSchedulesIndexRoute
   ProtectedOrdersIndexRoute: typeof ProtectedOrdersIndexRoute
   ProtectedPaymentsIndexRoute: typeof ProtectedPaymentsIndexRoute
   ProtectedProductsIndexRoute: typeof ProtectedProductsIndexRoute
@@ -899,6 +962,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedCustomersIdRoute: ProtectedCustomersIdRoute,
   ProtectedCustomersNewRoute: ProtectedCustomersNewRoute,
   ProtectedInvoicesIdRoute: ProtectedInvoicesIdRoute,
+  ProtectedMaintenanceSchedulesIdRoute: ProtectedMaintenanceSchedulesIdRoute,
+  ProtectedMaintenanceSchedulesNewRoute: ProtectedMaintenanceSchedulesNewRoute,
   ProtectedOrdersIdRoute: ProtectedOrdersIdRoute,
   ProtectedOrdersNewRoute: ProtectedOrdersNewRoute,
   ProtectedPaymentsIdRoute: ProtectedPaymentsIdRoute,
@@ -917,6 +982,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedContractsIndexRoute: ProtectedContractsIndexRoute,
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
   ProtectedInvoicesIndexRoute: ProtectedInvoicesIndexRoute,
+  ProtectedMaintenanceSchedulesIndexRoute:
+    ProtectedMaintenanceSchedulesIndexRoute,
   ProtectedOrdersIndexRoute: ProtectedOrdersIndexRoute,
   ProtectedPaymentsIndexRoute: ProtectedPaymentsIndexRoute,
   ProtectedProductsIndexRoute: ProtectedProductsIndexRoute,

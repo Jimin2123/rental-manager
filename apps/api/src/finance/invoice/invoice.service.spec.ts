@@ -23,6 +23,7 @@ describe('InvoiceService', () => {
       findMany: jest.Mock;
       findUnique: jest.Mock;
       update: jest.Mock;
+      count: jest.Mock;
     };
     invoiceItem: { create: jest.Mock; findFirst: jest.Mock; delete: jest.Mock };
     invoiceAdjustment: { create: jest.Mock };
@@ -57,6 +58,7 @@ describe('InvoiceService', () => {
         findMany: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
       },
       invoiceItem: { create: jest.fn(), findFirst: jest.fn(), delete: jest.fn() },
       invoiceAdjustment: { create: jest.fn() },

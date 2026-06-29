@@ -24,7 +24,13 @@ describe('ServiceRequestService', () => {
       asset: { findUnique: jest.fn() },
       maintenanceSchedule: { findUnique: jest.fn() },
       rentalContractItem: { findFirst: jest.fn().mockResolvedValue(null) },
-      serviceRequest: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+      serviceRequest: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
+      },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260624-0001') };
 

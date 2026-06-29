@@ -8,7 +8,7 @@ describe('AuditLogService', () => {
   let prisma: { auditLog: { findMany: jest.Mock } };
 
   beforeEach(async () => {
-    prisma = { auditLog: { findMany: jest.fn().mockResolvedValue([]) } };
+    prisma = { auditLog: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) } };
 
     const module = await Test.createTestingModule({
       providers: [AuditLogService, { provide: PrismaService, useValue: prisma }],

@@ -72,29 +72,34 @@ export class RefundService {
     });
   }
 
-  findAll(organizationId: string, dto: QueryRefundDto) {
+  async findAll(organizationId: string, dto: QueryRefundDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
-    return this.prisma.refund.findMany({
-      where: {
-        organizationId,
-        ...(dto.customerId && { customerId: dto.customerId }),
-        ...(dto.status && { status: dto.status }),
-        ...(dto.reason && { reason: dto.reason }),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            individualProfile: { select: { name: true } },
-            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+    const where = {
+      organizationId,
+      ...(dto.customerId && { customerId: dto.customerId }),
+      ...(dto.status && { status: dto.status }),
+      ...(dto.reason && { reason: dto.reason }),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.refund.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              individualProfile: { select: { name: true } },
+              businessPartner: { select: { businessProfile: { select: { name: true } } } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.refund.count({ where }),
+    ]);
+    return { data, total };
   }
 
   async findOne(organizationId: string, id: string) {

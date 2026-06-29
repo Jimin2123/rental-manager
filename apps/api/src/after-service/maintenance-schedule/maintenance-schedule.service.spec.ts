@@ -16,7 +16,13 @@ describe('MaintenanceScheduleService', () => {
     prisma = {
       rentalContract: { findUnique: jest.fn() },
       organizationMember: { findUnique: jest.fn() },
-      maintenanceSchedule: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+      maintenanceSchedule: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
+      },
     };
     const module = await Test.createTestingModule({
       providers: [MaintenanceScheduleService, { provide: PrismaService, useValue: prisma }],

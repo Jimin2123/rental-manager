@@ -64,31 +64,36 @@ export class ServiceRequestService {
     });
   }
 
-  findAll(organizationId: string, query: QueryServiceRequestDto) {
+  async findAll(organizationId: string, query: QueryServiceRequestDto) {
     const { status, type, customerId, assetId, page = 1, limit = 20 } = query;
-    return this.prisma.serviceRequest.findMany({
-      where: {
-        organizationId,
-        deletedAt: null,
-        ...(status && { status }),
-        ...(type && { type }),
-        ...(customerId && { customerId }),
-        ...(assetId && { assetId }),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            individualProfile: { select: { name: true } },
-            businessPartner: { select: { businessProfile: { select: { name: true } } } },
+    const where = {
+      organizationId,
+      deletedAt: null,
+      ...(status && { status }),
+      ...(type && { type }),
+      ...(customerId && { customerId }),
+      ...(assetId && { assetId }),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.serviceRequest.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              individualProfile: { select: { name: true } },
+              businessPartner: { select: { businessProfile: { select: { name: true } } } },
+            },
           },
+          asset: { select: { id: true, serialNumber: true, status: true, product: { select: { name: true } } } },
         },
-        asset: { select: { id: true, serialNumber: true, status: true, product: { select: { name: true } } } },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.serviceRequest.count({ where }),
+    ]);
+    return { data, total };
   }
 
   async findOne(organizationId: string, id: string) {

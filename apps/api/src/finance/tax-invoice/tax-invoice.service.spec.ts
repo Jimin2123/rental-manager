@@ -46,6 +46,7 @@ describe('TaxInvoiceService', () => {
         findUnique: jest.fn(),
         findMany: jest.fn().mockResolvedValue([]),
         update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
       },
       invoice: { findUnique: jest.fn() },
       customer: { findUnique: jest.fn() },

@@ -1,0 +1,120 @@
+name: CI
+
+# 독립 2앱(apps/api, apps/web) 모노레포 — 루트 워크스페이스 없음.
+# 각 앱을 따로 cd 해서 --frozen-lockfile 로 설치하고, 변경된 앱의 잡만 실행한다.
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24.16.0
+
+jobs:
+  # 변경 경로 감지: 웹만 바뀌면 api 잡을 건너뛴다(워크플로 자체 변경 시 둘 다 실행).
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'apps/web/**'
+              - '.github/workflows/ci.yml'
+
+  # T1 — web: lint + build(tsc -b + vite). tsc -b 가 라우트 파일 타입 오류까지 잡는다.
+  web:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+
+  # T1 — api: prisma generate → lint(--fix 없이) → build → 유닛 테스트(DB 불필요).
+  api:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      # prisma generate 와 ConfigService 가 변수 존재를 요구한다(유닛 테스트는 실제 연결 안 함).
+      DATABASE_URL: postgresql://rental_manager:rental_manager_password@localhost:5432/rental_manager
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: apps/api/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      # package.json 의 lint 는 --fix 라 CI에서 오류를 자동수정해 숨긴다. 검사 전용으로 직접 실행.
+      - run: pnpm exec eslint "{src,apps,libs,test}/**/*.ts"
+      - run: pnpm build
+      - run: pnpm test
+
+  # T2 — api DB 통합(*.db-spec.ts). 하네스가 throwaway DB를 직접 만들고 migrate deploy 한다.
+  # 하네스는 127.0.0.1:5432 / rental_manager 자격증명을 사용하므로 서비스를 동일하게 맞춘다.
+  api-db:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: rental_manager
+          POSTGRES_PASSWORD: rental_manager_password
+          POSTGRES_DB: rental_manager
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rental_manager -d rental_manager"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://rental_manager:rental_manager_password@127.0.0.1:5432/rental_manager
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: apps/api/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - run: pnpm test:db

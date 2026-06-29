@@ -9,4 +9,5 @@ export class CreateRefundDto {
   @IsInt() @Min(1) amount: number;
   @IsEnum(PaymentMethod) @IsOptional() method?: PaymentMethod;
   @IsString() @IsOptional() memo?: string;
+  @IsString() @IsOptional() depositAccountId?: string;
 }

@@ -368,7 +368,10 @@ describe('RentalContractService', () => {
         expect.objectContaining({ data: { status: AssetStatus.AVAILABLE } }),
       );
       expect(prisma.maintenanceSchedule.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ rentalContractId: 'rc-1', isActive: true }), data: { isActive: false } }),
+        expect.objectContaining({
+          where: expect.objectContaining({ rentalContractId: 'rc-1', isActive: true }),
+          data: { isActive: false },
+        }),
       );
     });
 
@@ -387,7 +390,10 @@ describe('RentalContractService', () => {
         expect.objectContaining({ data: { status: RentalContractStatus.CANCELED } }),
       );
       expect(prisma.maintenanceSchedule.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ rentalContractId: 'rc-1', isActive: true }), data: { isActive: false } }),
+        expect.objectContaining({
+          where: expect.objectContaining({ rentalContractId: 'rc-1', isActive: true }),
+          data: { isActive: false },
+        }),
       );
     });
 

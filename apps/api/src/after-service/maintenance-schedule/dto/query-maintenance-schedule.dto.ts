@@ -13,7 +13,7 @@ export class QueryMaintenanceScheduleDto {
   @IsBoolean()
   @IsOptional()
   @Transform(({ obj, key }) => {
-    const raw = (obj as Record<string, unknown>)[key as string];
+    const raw = (obj as Record<string, unknown>)[key];
     if (raw === 'true') return true;
     if (raw === 'false') return false;
     if (typeof raw === 'boolean') return raw;

@@ -349,8 +349,8 @@ export interface FileRoutesByFullPath {
   '/refunds/': typeof ProtectedRefundsIndexRoute
   '/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
-  '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
   '/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
+  '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
@@ -396,8 +396,8 @@ export interface FileRoutesByTo {
   '/refunds': typeof ProtectedRefundsIndexRoute
   '/service-requests': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices': typeof ProtectedTaxInvoicesIndexRoute
-  '/settings/members': typeof ProtectedSettingsMembersIndexRoute
   '/settings/deposit-accounts': typeof ProtectedSettingsDepositAccountsIndexRoute
+  '/settings/members': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -446,8 +446,8 @@ export interface FileRoutesById {
   '/_protected/refunds/': typeof ProtectedRefundsIndexRoute
   '/_protected/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/_protected/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
-  '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
   '/_protected/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
+  '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -495,8 +495,8 @@ export interface FileRouteTypes {
     | '/refunds/'
     | '/service-requests/'
     | '/tax-invoices/'
-    | '/settings/members/'
     | '/settings/deposit-accounts/'
+    | '/settings/members/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -542,8 +542,8 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/service-requests'
     | '/tax-invoices'
-    | '/settings/members'
     | '/settings/deposit-accounts'
+    | '/settings/members'
   id:
     | '__root__'
     | '/_auth'
@@ -591,8 +591,8 @@ export interface FileRouteTypes {
     | '/_protected/refunds/'
     | '/_protected/service-requests/'
     | '/_protected/tax-invoices/'
-    | '/_protected/settings/members/'
     | '/_protected/settings/deposit-accounts/'
+    | '/_protected/settings/members/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -991,8 +991,8 @@ interface ProtectedRouteChildren {
   ProtectedRefundsIndexRoute: typeof ProtectedRefundsIndexRoute
   ProtectedServiceRequestsIndexRoute: typeof ProtectedServiceRequestsIndexRoute
   ProtectedTaxInvoicesIndexRoute: typeof ProtectedTaxInvoicesIndexRoute
-  ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
   ProtectedSettingsDepositAccountsIndexRoute: typeof ProtectedSettingsDepositAccountsIndexRoute
+  ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -1033,8 +1033,9 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedRefundsIndexRoute: ProtectedRefundsIndexRoute,
   ProtectedServiceRequestsIndexRoute: ProtectedServiceRequestsIndexRoute,
   ProtectedTaxInvoicesIndexRoute: ProtectedTaxInvoicesIndexRoute,
+  ProtectedSettingsDepositAccountsIndexRoute:
+    ProtectedSettingsDepositAccountsIndexRoute,
   ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,
-  ProtectedSettingsDepositAccountsIndexRoute: ProtectedSettingsDepositAccountsIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

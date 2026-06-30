@@ -56,7 +56,10 @@ async function mockApi(page: Page, role: Role = 'OWNER', seed = false) {
   await page.route(/\/invitations\/sent\/recent$/, (route) => json(route, 200, []));
 
   // 입금계좌 컬렉션: GET 목록 / POST 생성(첫 계좌는 자동 기본)
+  // 이 정규식은 vite 모듈 스크립트도 매칭할 수 있으므로 xhr/fetch만 모킹하고 나머지는 통과시킨다.
   await page.route(/\/deposit-accounts(\?.*)?$/, (route) => {
+    const rt = route.request().resourceType();
+    if (rt !== 'xhr' && rt !== 'fetch') return route.continue();
     const req = route.request();
     if (req.method() === 'POST') {
       const b = req.postDataJSON() as Partial<DepositAccount>;
@@ -79,7 +82,10 @@ async function mockApi(page: Page, role: Role = 'OWNER', seed = false) {
   });
 
   // 입금계좌 단건: PATCH 수정 / DELETE 소프트 삭제
+  // 이 정규식은 /deposit-accounts/index.tsx 등 vite 모듈 경로와도 매칭되므로 xhr/fetch만 모킹한다.
   await page.route(/\/deposit-accounts\/[^/?]+$/, (route) => {
+    const rt = route.request().resourceType();
+    if (rt !== 'xhr' && rt !== 'fetch') return route.continue();
     const req = route.request();
     const id = req.url().split('/').pop()!.split('?')[0];
     const idx = accounts.findIndex((a) => a.id === id);

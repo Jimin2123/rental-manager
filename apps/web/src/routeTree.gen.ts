@@ -55,6 +55,7 @@ import { Route as ProtectedContractsIdRouteImport } from './routes/_protected/co
 import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
 import { Route as ProtectedBusinessPartnersIdRouteImport } from './routes/_protected/business-partners/$id'
 import { Route as ProtectedSettingsMembersIndexRouteImport } from './routes/_protected/settings/members/index'
+import { Route as ProtectedSettingsDepositAccountsIndexRouteImport } from './routes/_protected/settings/deposit-accounts/index'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -297,6 +298,12 @@ const ProtectedSettingsMembersIndexRoute =
     path: '/settings/members/',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedSettingsDepositAccountsIndexRoute =
+  ProtectedSettingsDepositAccountsIndexRouteImport.update({
+    id: '/settings/deposit-accounts/',
+    path: '/settings/deposit-accounts/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
@@ -342,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/refunds/': typeof ProtectedRefundsIndexRoute
   '/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
+  '/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
   '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -388,6 +396,7 @@ export interface FileRoutesByTo {
   '/refunds': typeof ProtectedRefundsIndexRoute
   '/service-requests': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices': typeof ProtectedTaxInvoicesIndexRoute
+  '/settings/deposit-accounts': typeof ProtectedSettingsDepositAccountsIndexRoute
   '/settings/members': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRoutesById {
@@ -437,6 +446,7 @@ export interface FileRoutesById {
   '/_protected/refunds/': typeof ProtectedRefundsIndexRoute
   '/_protected/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/_protected/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
+  '/_protected/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
   '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
 export interface FileRouteTypes {
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/refunds/'
     | '/service-requests/'
     | '/tax-invoices/'
+    | '/settings/deposit-accounts/'
     | '/settings/members/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/service-requests'
     | '/tax-invoices'
+    | '/settings/deposit-accounts'
     | '/settings/members'
   id:
     | '__root__'
@@ -579,6 +591,7 @@ export interface FileRouteTypes {
     | '/_protected/refunds/'
     | '/_protected/service-requests/'
     | '/_protected/tax-invoices/'
+    | '/_protected/settings/deposit-accounts/'
     | '/_protected/settings/members/'
   fileRoutesById: FileRoutesById
 }
@@ -913,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSettingsMembersIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/settings/deposit-accounts/': {
+      id: '/_protected/settings/deposit-accounts/'
+      path: '/settings/deposit-accounts'
+      fullPath: '/settings/deposit-accounts/'
+      preLoaderRoute: typeof ProtectedSettingsDepositAccountsIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
@@ -971,6 +991,7 @@ interface ProtectedRouteChildren {
   ProtectedRefundsIndexRoute: typeof ProtectedRefundsIndexRoute
   ProtectedServiceRequestsIndexRoute: typeof ProtectedServiceRequestsIndexRoute
   ProtectedTaxInvoicesIndexRoute: typeof ProtectedTaxInvoicesIndexRoute
+  ProtectedSettingsDepositAccountsIndexRoute: typeof ProtectedSettingsDepositAccountsIndexRoute
   ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
 }
 
@@ -1012,6 +1033,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedRefundsIndexRoute: ProtectedRefundsIndexRoute,
   ProtectedServiceRequestsIndexRoute: ProtectedServiceRequestsIndexRoute,
   ProtectedTaxInvoicesIndexRoute: ProtectedTaxInvoicesIndexRoute,
+  ProtectedSettingsDepositAccountsIndexRoute:
+    ProtectedSettingsDepositAccountsIndexRoute,
   ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,
 }
 

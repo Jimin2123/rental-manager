@@ -20,6 +20,13 @@ export class RefundService {
     });
     if (!customer) throw new NotFoundException('고객을 찾을 수 없습니다.');
 
+    if (dto.depositAccountId) {
+      const account = await this.prisma.depositAccount.findFirst({
+        where: { id: dto.depositAccountId, organizationId, deletedAt: null, isActive: true },
+      });
+      if (!account) throw new NotFoundException('입금계좌를 찾을 수 없습니다.');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       if (dto.invoiceId) {
         const invoice = await tx.invoice.findUnique({
@@ -52,6 +59,7 @@ export class RefundService {
           amount: dto.amount,
           method: dto.method,
           memo: dto.memo,
+          depositAccountId: dto.depositAccountId,
           createdById: memberId,
         },
       });

@@ -26,6 +26,10 @@ model Payment {
 
   memo String?
 
+  // 입금받은 자사 계좌 (현금 등 계좌 무관 수납은 null)
+  depositAccountId String?
+  depositAccount DepositAccount? @relation(fields: [depositAccountId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   allocations PaymentAllocation[]
   refunds     Refund[]
 
@@ -40,4 +44,5 @@ model Payment {
   @@index([organizationId, paidAt])
   @@index([organizationId, method])
   @@index([organizationId, customerId, paidAt])
+  @@index([organizationId, depositAccountId])
 }

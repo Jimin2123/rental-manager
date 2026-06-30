@@ -18,7 +18,7 @@ describe('ServiceVisitService', () => {
     $transaction: jest.Mock;
     serviceRequest: { findFirst: jest.Mock; update: jest.Mock };
     serviceVisit: { create: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; update: jest.Mock; count: jest.Mock };
-    maintenanceSchedule: { update: jest.Mock };
+    maintenanceSchedule: { update: jest.Mock; findFirst?: jest.Mock };
   };
   let assetService: { changeStatus: jest.Mock };
   let invoiceService: { createServiceFeeInvoice: jest.Mock };

@@ -10,10 +10,11 @@ describe('PaymentService', () => {
   let service: PaymentService;
   let prisma: {
     $transaction: jest.Mock;
-    payment: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    payment: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock; count: jest.Mock };
     paymentAllocation: { create: jest.Mock; findMany: jest.Mock; deleteMany: jest.Mock };
     invoice: { findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     customer: { findUnique: jest.Mock };
+    depositAccount: { findFirst: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
   let auditLog: { log: jest.Mock };
@@ -53,6 +54,7 @@ describe('PaymentService', () => {
         update: jest.fn(),
       },
       customer: { findUnique: jest.fn() },
+      depositAccount: { findFirst: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
     auditLog = { log: jest.fn() };
@@ -79,6 +81,20 @@ describe('PaymentService', () => {
           amount: 50000,
           paidAt: '2026-06-23',
         } as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('미존재/타조직 depositAccountId면 NotFoundException', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'c-1' });
+      prisma.depositAccount.findFirst.mockResolvedValue(null);
+      await expect(
+        service.create('org-1', 'm-1', {
+          customerId: 'c-1',
+          method: 'BANK_TRANSFER',
+          amount: 1000,
+          paidAt: '2026-06-30T00:00:00.000Z',
+          depositAccountId: 'bad',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 

@@ -9,4 +9,5 @@ export class CreatePaymentDto {
   @IsDateString() paidAt: string;
   @IsString() @IsOptional() externalRef?: string;
   @IsString() @IsOptional() memo?: string;
+  @IsString() @IsOptional() depositAccountId?: string;
 }

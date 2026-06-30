@@ -11,6 +11,8 @@ import { RefundController } from './refund/refund.controller';
 import { TaxInvoiceService } from './tax-invoice/tax-invoice.service';
 import { TaxInvoiceController } from './tax-invoice/tax-invoice.controller';
 import { InvoiceGenerationCron } from './cron/invoice-generation.cron';
+import { DepositAccountService } from './deposit-account/deposit-account.service';
+import { DepositAccountController } from './deposit-account/deposit-account.controller';
 
 @Module({
   imports: [OrganizationModule, CommonModule],
@@ -21,8 +23,9 @@ import { InvoiceGenerationCron } from './cron/invoice-generation.cron';
     RefundService,
     TaxInvoiceService,
     InvoiceGenerationCron,
+    DepositAccountService,
   ],
-  controllers: [InvoiceController, PaymentController, RefundController, TaxInvoiceController],
+  controllers: [InvoiceController, PaymentController, RefundController, TaxInvoiceController, DepositAccountController],
   exports: [InvoiceService, FinanceDocumentSequenceService],
 })
 export class FinanceModule {}

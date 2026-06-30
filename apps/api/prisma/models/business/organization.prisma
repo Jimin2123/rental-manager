@@ -32,6 +32,7 @@ model Organization {
   attachments             Attachment[]
   auditLogs               AuditLog[]
   documentSequences       DocumentSequence[]
+  depositAccounts         DepositAccount[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -739,8 +739,8 @@ describe('Prisma database integrity guards', () => {
     ).rejects.toThrow(/Invalid Order status transition: REGISTERED -> DELIVERED/);
 
     await withTransaction(client, async () => {
-      await client.query("SET LOCAL rental_manager.status_transition_override = 'on'");
-      await client.query(
+      await client!.query("SET LOCAL rental_manager.status_transition_override = 'on'");
+      await client!.query(
         `
           UPDATE "Order"
           SET "status" = 'DELIVERED',
@@ -1733,8 +1733,8 @@ describe('Prisma database integrity guards', () => {
 
     // 다시 LOST로 되돌린 후 REPAIR 시도 차단 확인
     await withTransaction(client, async () => {
-      await client.query("SET LOCAL rental_manager.status_transition_override = 'on'");
-      await client.query(`UPDATE "Asset" SET "status" = 'LOST', "updatedAt" = $1 WHERE "id" = $2`, [
+      await client!.query("SET LOCAL rental_manager.status_transition_override = 'on'");
+      await client!.query(`UPDATE "Asset" SET "status" = 'LOST', "updatedAt" = $1 WHERE "id" = $2`, [
         new Date(),
         assetId,
       ]);

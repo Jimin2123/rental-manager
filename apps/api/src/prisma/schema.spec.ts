@@ -929,4 +929,56 @@ describe('Prisma customer schema', () => {
       expect(sql).toContain('CREATE INDEX "VerificationToken_accountId_idx"');
     });
   });
+
+  describe('DepositAccount schema (입금계좌)', () => {
+    const migrationPath = join(prismaMigrationsPath, '20260630000000_deposit_account', 'migration.sql');
+
+    it('DepositAccount 모델 파일이 멀티테넌트 관례를 따른다', () => {
+      const schema = readFileSync(join(prismaModelsPath, 'finance/deposit-account.prisma'), 'utf8');
+      expect(schema).toContain('model DepositAccount');
+      expect(schema).toContain('organizationId String');
+      expect(schema).toContain(
+        'organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)',
+      );
+      expect(schema).toContain('bankName String');
+      expect(schema).toContain('accountNumber String');
+      expect(schema).toContain('accountHolder String');
+      expect(schema).toContain('isDefault Boolean @default(false)');
+      expect(schema).toContain('isActive  Boolean @default(true)');
+      expect(schema).toContain('deletedAt DateTime?');
+      expect(schema).toContain('payments Payment[]');
+      expect(schema).toContain('refunds  Refund[]');
+      expect(schema).toContain('@@unique([id, organizationId])');
+      expect(schema).toContain('@@index([organizationId, isActive])');
+    });
+
+    it('Payment/Refund가 depositAccount 복합 FK를 가진다', () => {
+      const payment = readFileSync(join(prismaModelsPath, 'finance/payment.prisma'), 'utf8');
+      const refund = readFileSync(join(prismaModelsPath, 'finance/refund.prisma'), 'utf8');
+      for (const schema of [payment, refund]) {
+        expect(schema).toContain('depositAccountId String?');
+        expect(schema).toContain(
+          'depositAccount DepositAccount? @relation(fields: [depositAccountId, organizationId], references: [id, organizationId], onDelete: Restrict)',
+        );
+        expect(schema).toContain('@@index([organizationId, depositAccountId])');
+      }
+    });
+
+    it('Organization이 depositAccounts 역관계를 가진다', () => {
+      const org = readFileSync(join(prismaModelsPath, 'business/organization.prisma'), 'utf8');
+      expect(org).toContain('depositAccounts');
+    });
+
+    it('마이그레이션이 테이블·복합 FK·부분 유니크 인덱스를 생성한다', () => {
+      expect(existsSync(migrationPath)).toBe(true);
+      const sql = readFileSync(migrationPath, 'utf8');
+      expect(sql).toContain('CREATE TABLE "DepositAccount"');
+      expect(sql).toContain('"DepositAccount_id_organizationId_key"');
+      expect(sql).toContain('"DepositAccount_organizationId_fkey"');
+      expect(sql).toContain('"DepositAccount_one_default_per_org"');
+      expect(sql).toContain('"DepositAccount_active_bank_account_unique"');
+      expect(sql).toContain('"Payment_depositAccountId_organizationId_fkey"');
+      expect(sql).toContain('"Refund_depositAccountId_organizationId_fkey"');
+    });
+  });
 });

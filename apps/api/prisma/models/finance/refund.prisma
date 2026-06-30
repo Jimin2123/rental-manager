@@ -32,6 +32,10 @@ model Refund {
 
   memo String?
 
+  // 환불 출금한 자사 계좌 (null 허용)
+  depositAccountId String?
+  depositAccount DepositAccount? @relation(fields: [depositAccountId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -42,4 +46,5 @@ model Refund {
   @@index([organizationId, invoiceId])
   @@index([organizationId, paymentId])
   @@index([organizationId, status])
+  @@index([organizationId, depositAccountId])
 }

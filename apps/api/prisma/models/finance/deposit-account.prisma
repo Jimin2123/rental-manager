@@ -1,0 +1,40 @@
+// 자사 입금계좌 — 고객 수납(Payment)/환불(Refund)이 오가는 우리 사업장의 계좌
+model DepositAccount {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // 은행명
+  bankName String
+
+  // 계좌번호
+  accountNumber String
+
+  // 예금주
+  accountHolder String
+
+  // 표시명(별칭) — 예: "주거래 통장"
+  label String?
+
+  // 기본 입금계좌 (조직당 1개, DB 부분 유니크로 강제)
+  isDefault Boolean @default(false)
+
+  // 활성 여부 (비활성 시 신규 수납/환불 선택지에서 제외)
+  isActive  Boolean @default(true)
+
+  memo String?
+
+  // 소프트 삭제
+  deletedAt DateTime?
+
+  payments Payment[]
+  refunds  Refund[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+}

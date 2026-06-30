@@ -2,6 +2,7 @@ import type { Control, FieldPath, FieldPathByValue, FieldValues } from 'react-ho
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TextField } from '@/components/form/TextField';
+import { formatPhone } from '@/lib/format';
 import type { RoleType } from '../-types';
 
 // ─── 역할 체크박스 그룹 (매출/매입) ──────────────────────────────
@@ -62,7 +63,14 @@ export function ContactFields<T extends FieldValues>({
         <TextField control={control} name={n('department')} label="부서" placeholder="영업부" />
         <TextField control={control} name={n('position')} label="직급" placeholder="과장" />
         <TextField control={control} name={n('role')} label="역할" placeholder="계약 담당자" />
-        <TextField control={control} name={n('phone')} label="전화" placeholder="010-1234-5678" />
+        <TextField
+          control={control}
+          name={n('phone')}
+          label="전화"
+          placeholder="010-1234-5678"
+          maxLength={13}
+          format={formatPhone}
+        />
         <TextField control={control} name={n('email')} label="이메일" type="email" placeholder="hong@company.com" />
       </div>
       <FormField

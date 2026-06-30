@@ -13,6 +13,7 @@ type TextFieldProps<T extends FieldValues> = {
   readOnly?: boolean;
   min?: number;
   maxLength?: number;
+  format?: (value: string) => string;
 };
 
 // 전역 입력 패턴(FormItem→Label→Control→Message)을 한곳에 모은 공용 폼 필드.
@@ -27,6 +28,7 @@ export function TextField<T extends FieldValues>({
   readOnly,
   min,
   maxLength,
+  format,
 }: TextFieldProps<T>) {
   return (
     <FormField
@@ -48,6 +50,7 @@ export function TextField<T extends FieldValues>({
               maxLength={maxLength}
               {...field}
               value={field.value ?? ''}
+              onChange={(e) => field.onChange(format ? format(e.target.value) : e.target.value)}
             />
           </FormControl>
           <FormMessage />

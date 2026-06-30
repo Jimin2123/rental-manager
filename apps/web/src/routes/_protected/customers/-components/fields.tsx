@@ -3,6 +3,7 @@ import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/f
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/form/TextField';
+import { formatPhone } from '@/lib/format';
 import type { CustomerFormValues } from '../-schemas';
 
 // ─── 개인 기본 정보 (이름/전화/이메일) ───────────────────────────
@@ -11,7 +12,14 @@ export function IndividualFields({ control }: { control: Control<CustomerFormVal
     <div className="space-y-4">
       <TextField control={control} name="name" label="이름" required placeholder="홍길동" />
       <div className="grid grid-cols-2 gap-4">
-        <TextField control={control} name="phone" label="전화" placeholder="010-1234-5678" />
+        <TextField
+          control={control}
+          name="phone"
+          label="전화"
+          placeholder="010-1234-5678"
+          maxLength={13}
+          format={formatPhone}
+        />
         <TextField control={control} name="email" label="이메일" type="email" placeholder="hong@example.com" />
       </div>
     </div>

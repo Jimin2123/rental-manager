@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
 import { openKakaoAddressSearch } from '@/lib/kakao-address';
+import { formatBrn, formatPhone } from '@/lib/format';
 import { useAuthStore } from '@/store/auth.store';
 import type { Organization } from '@/store/auth.store';
 import { inviteKeys, fetchMineInvitations, acceptMine } from './invitations/-api';
@@ -48,13 +49,6 @@ const setupSchema = z.object({
 });
 
 type SetupForm = z.infer<typeof setupSchema>;
-
-const formatBrn = (value: string) => {
-  const digits = value.replace(/\D/g, '').slice(0, 10);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-};
 
 type BrnStatus = 'idle' | 'valid' | 'invalid';
 
@@ -152,7 +146,6 @@ function SetupPage() {
     try {
       await api.post('/organizations', {
         ...values,
-        businessRegistrationNo: values.businessRegistrationNo.replace(/-/g, ''),
         orgEmail: values.orgEmail || undefined,
       });
       const { data: orgs } = await api.get<Organization[]>('/organizations/me');
@@ -340,7 +333,12 @@ function SetupPage() {
                       <FormItem>
                         <FormLabel>대표전화</FormLabel>
                         <FormControl>
-                          <Input placeholder="02-1234-5678" {...field} />
+                          <Input
+                            placeholder="02-1234-5678"
+                            maxLength={13}
+                            {...field}
+                            onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

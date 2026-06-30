@@ -55,6 +55,7 @@ import { Route as ProtectedContractsIdRouteImport } from './routes/_protected/co
 import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
 import { Route as ProtectedBusinessPartnersIdRouteImport } from './routes/_protected/business-partners/$id'
 import { Route as ProtectedSettingsMembersIndexRouteImport } from './routes/_protected/settings/members/index'
+import { Route as ProtectedSettingsDepositAccountsIndexRouteImport } from './routes/_protected/settings/deposit-accounts/index'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -297,6 +298,12 @@ const ProtectedSettingsMembersIndexRoute =
     path: '/settings/members/',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedSettingsDepositAccountsIndexRoute =
+  ProtectedSettingsDepositAccountsIndexRouteImport.update({
+    id: '/settings/deposit-accounts/',
+    path: '/settings/deposit-accounts/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
   '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
+  '/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ProtectedIndexRoute
@@ -389,6 +397,7 @@ export interface FileRoutesByTo {
   '/service-requests': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices': typeof ProtectedTaxInvoicesIndexRoute
   '/settings/members': typeof ProtectedSettingsMembersIndexRoute
+  '/settings/deposit-accounts': typeof ProtectedSettingsDepositAccountsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -438,6 +447,7 @@ export interface FileRoutesById {
   '/_protected/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/_protected/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
   '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
+  '/_protected/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/service-requests/'
     | '/tax-invoices/'
     | '/settings/members/'
+    | '/settings/deposit-accounts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/service-requests'
     | '/tax-invoices'
     | '/settings/members'
+    | '/settings/deposit-accounts'
   id:
     | '__root__'
     | '/_auth'
@@ -580,6 +592,7 @@ export interface FileRouteTypes {
     | '/_protected/service-requests/'
     | '/_protected/tax-invoices/'
     | '/_protected/settings/members/'
+    | '/_protected/settings/deposit-accounts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -913,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSettingsMembersIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/settings/deposit-accounts/': {
+      id: '/_protected/settings/deposit-accounts/'
+      path: '/settings/deposit-accounts'
+      fullPath: '/settings/deposit-accounts/'
+      preLoaderRoute: typeof ProtectedSettingsDepositAccountsIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
@@ -972,6 +992,7 @@ interface ProtectedRouteChildren {
   ProtectedServiceRequestsIndexRoute: typeof ProtectedServiceRequestsIndexRoute
   ProtectedTaxInvoicesIndexRoute: typeof ProtectedTaxInvoicesIndexRoute
   ProtectedSettingsMembersIndexRoute: typeof ProtectedSettingsMembersIndexRoute
+  ProtectedSettingsDepositAccountsIndexRoute: typeof ProtectedSettingsDepositAccountsIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -1013,6 +1034,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedServiceRequestsIndexRoute: ProtectedServiceRequestsIndexRoute,
   ProtectedTaxInvoicesIndexRoute: ProtectedTaxInvoicesIndexRoute,
   ProtectedSettingsMembersIndexRoute: ProtectedSettingsMembersIndexRoute,
+  ProtectedSettingsDepositAccountsIndexRoute: ProtectedSettingsDepositAccountsIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

@@ -108,6 +108,34 @@ describe('MaintenanceScheduleService', () => {
         businessPartner: { select: { businessProfile: { select: { name: true } } } },
       });
     });
+
+    it('isActive: true 필터를 where에 포함한다', async () => {
+      prisma.maintenanceSchedule.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', { isActive: true });
+      const arg = prisma.maintenanceSchedule.findMany.mock.calls[0][0];
+      expect(arg.where).toMatchObject({ organizationId: 'org-1', isActive: true });
+    });
+
+    it('isActive: false 필터를 where에 포함한다', async () => {
+      prisma.maintenanceSchedule.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', { isActive: false });
+      const arg = prisma.maintenanceSchedule.findMany.mock.calls[0][0];
+      expect(arg.where).toMatchObject({ organizationId: 'org-1', isActive: false });
+    });
+
+    it('isActive 미전달 시 where에 isActive 조건이 없다', async () => {
+      prisma.maintenanceSchedule.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.maintenanceSchedule.findMany.mock.calls[0][0];
+      expect(arg.where).not.toHaveProperty('isActive');
+    });
+
+    it('활성 우선, 최신 날짜순으로 정렬한다', async () => {
+      prisma.maintenanceSchedule.findMany.mockResolvedValue([]);
+      await service.findAll('org-1', {});
+      const arg = prisma.maintenanceSchedule.findMany.mock.calls[0][0];
+      expect(arg.orderBy).toEqual([{ isActive: 'desc' }, { nextScheduledAt: 'desc' }]);
+    });
   });
 
   describe('findOne (상세 include)', () => {

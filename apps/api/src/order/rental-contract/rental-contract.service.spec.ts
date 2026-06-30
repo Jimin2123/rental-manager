@@ -33,6 +33,7 @@ describe('RentalContractService', () => {
     };
     asset: { findUnique: jest.Mock; update: jest.Mock };
     assetEvent: { create: jest.Mock };
+    maintenanceSchedule: { updateMany: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
   let auditLog: { log: jest.Mock };
@@ -96,6 +97,7 @@ describe('RentalContractService', () => {
       },
       asset: { findUnique: jest.fn(), update: jest.fn() },
       assetEvent: { create: jest.fn() },
+      maintenanceSchedule: { updateMany: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
     auditLog = { log: jest.fn() };
@@ -345,7 +347,7 @@ describe('RentalContractService', () => {
       );
     });
 
-    it('ends contract: ACTIVE items → RETURNED, asset → AVAILABLE', async () => {
+    it('ends contract: ACTIVE items → RETURNED, asset → AVAILABLE, maintenance schedules → isActive false', async () => {
       const activeItem = mockItem({ status: RentalContractItemStatus.ACTIVE });
       prisma.rentalContract.findUnique.mockResolvedValue(
         mockContract({ status: RentalContractStatus.ACTIVE, items: [activeItem] }),
@@ -355,6 +357,7 @@ describe('RentalContractService', () => {
       prisma.assetEvent.create.mockResolvedValue({});
       prisma.rentalContractItem.update.mockResolvedValue({});
       prisma.rentalContract.update.mockResolvedValue({});
+      prisma.maintenanceSchedule.updateMany.mockResolvedValue({});
 
       await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.ENDED }, 'mem-1');
 
@@ -364,13 +367,20 @@ describe('RentalContractService', () => {
       expect(prisma.asset.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: AssetStatus.AVAILABLE } }),
       );
+      expect(prisma.maintenanceSchedule.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ rentalContractId: 'rc-1', isActive: true }),
+          data: { isActive: false },
+        }),
+      );
     });
 
-    it('cancels DRAFT contract: PENDING items → CANCELED, no asset change', async () => {
+    it('cancels DRAFT contract: PENDING items → CANCELED, no asset change, maintenance schedules → isActive false', async () => {
       const pendingItem = mockItem();
       prisma.rentalContract.findUnique.mockResolvedValue(mockContract({ items: [pendingItem] }));
       prisma.rentalContractItem.updateMany.mockResolvedValue({});
       prisma.rentalContract.update.mockResolvedValue({});
+      prisma.maintenanceSchedule.updateMany.mockResolvedValue({});
 
       await service.updateStatus('org-1', 'rc-1', { status: RentalContractStatus.CANCELED }, 'mem-1');
 
@@ -378,6 +388,12 @@ describe('RentalContractService', () => {
       expect(prisma.asset.update).not.toHaveBeenCalled();
       expect(prisma.rentalContract.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: RentalContractStatus.CANCELED } }),
+      );
+      expect(prisma.maintenanceSchedule.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ rentalContractId: 'rc-1', isActive: true }),
+          data: { isActive: false },
+        }),
       );
     });
 

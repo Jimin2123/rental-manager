@@ -78,7 +78,7 @@ export class MaintenanceScheduleService {
       this.prisma.maintenanceSchedule.findMany({
         where,
         include: SCHEDULE_INCLUDE,
-        orderBy: { nextScheduledAt: 'asc' },
+        orderBy: [{ isActive: 'desc' }, { nextScheduledAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),

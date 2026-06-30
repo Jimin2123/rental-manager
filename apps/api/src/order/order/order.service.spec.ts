@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { AssetEventSourceType, AssetStatus, OrderStatus, OrderType, VatType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
+import { InvoiceService } from '../../finance/invoice/invoice.service';
 import { OrderService } from './order.service';
 
 describe('OrderService', () => {
@@ -19,6 +20,7 @@ describe('OrderService', () => {
     assetEvent: { create: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
+  let invoiceService: { createForSaleOrder: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -33,12 +35,14 @@ describe('OrderService', () => {
       assetEvent: { create: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
+    invoiceService = { createForSaleOrder: jest.fn().mockResolvedValue(undefined) };
 
     const module = await Test.createTestingModule({
       providers: [
         OrderService,
         { provide: PrismaService, useValue: prisma },
         { provide: DocumentSequenceService, useValue: docSeq },
+        { provide: InvoiceService, useValue: invoiceService },
       ],
     }).compile();
     service = module.get(OrderService);
@@ -127,11 +131,24 @@ describe('OrderService', () => {
     });
 
     it('SALE 주문 DELIVERED 전환 시 assetId 있는 항목의 자산이 SOLD로 변경된다', async () => {
+      const saleItem = {
+        id: 'si-1',
+        assetId: 'a-1',
+        asset: { status: AssetStatus.AVAILABLE },
+        quantity: 1,
+        unitPrice: 100000,
+        vatType: VatType.INCLUDED,
+        supplyAmount: 90909,
+        vatAmount: 9091,
+        totalAmount: 100000,
+        product: { name: '복합기' },
+      };
       prisma.order.findUnique.mockResolvedValue({
         id: 'o-1',
         status: OrderStatus.IN_DELIVERY,
         type: OrderType.SALE,
-        saleOrder: { items: [{ assetId: 'a-1', asset: { status: AssetStatus.AVAILABLE } }] },
+        customerId: 'c-1',
+        saleOrder: { id: 'so-1', items: [saleItem] },
       });
       prisma.order.update.mockResolvedValue({});
       prisma.asset.update.mockResolvedValue({});
@@ -151,11 +168,44 @@ describe('OrderService', () => {
           data: expect.objectContaining({
             assetId: 'a-1',
             sourceType: AssetEventSourceType.SALE_ORDER,
-            sourceId: 'o-1',
+            sourceId: 'so-1',
             fromStatus: AssetStatus.AVAILABLE,
             toStatus: AssetStatus.SOLD,
           }),
         }),
+      );
+    });
+
+    it('SALE 주문 DELIVERED 전환 시 SALE 청구서가 자동 생성된다', async () => {
+      const saleItem = {
+        id: 'si-1',
+        assetId: null,
+        asset: null,
+        quantity: 2,
+        unitPrice: 50000,
+        vatType: VatType.INCLUDED,
+        supplyAmount: 90909,
+        vatAmount: 9091,
+        totalAmount: 100000,
+        product: { name: '토너' },
+      };
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1',
+        status: OrderStatus.IN_DELIVERY,
+        type: OrderType.SALE,
+        customerId: 'c-1',
+        saleOrder: { id: 'so-1', items: [saleItem] },
+      });
+      prisma.order.update.mockResolvedValue({});
+
+      await service.updateStatus('org-1', 'o-1', { status: OrderStatus.DELIVERED });
+
+      expect(invoiceService.createForSaleOrder).toHaveBeenCalledWith(
+        'org-1',
+        'c-1',
+        'so-1',
+        [saleItem],
+        prisma,
       );
     });
 
@@ -164,7 +214,8 @@ describe('OrderService', () => {
         id: 'o-1',
         status: OrderStatus.IN_DELIVERY,
         type: OrderType.SALE,
-        saleOrder: { items: [] },
+        customerId: 'c-1',
+        saleOrder: { id: 'so-1', items: [] },
       });
       prisma.order.update.mockResolvedValue({});
 
@@ -179,6 +230,7 @@ describe('OrderService', () => {
         id: 'o-1',
         status: OrderStatus.IN_DELIVERY,
         type: OrderType.RENTAL,
+        customerId: 'c-1',
         saleOrder: null,
       });
       prisma.order.update.mockResolvedValue({});

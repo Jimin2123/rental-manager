@@ -421,4 +421,63 @@ describe('InvoiceService', () => {
       await expect(service.findOne('org-1', 'nope')).rejects.toBeInstanceOf(NotFoundException);
     });
   });
+
+  describe('createForSaleOrder', () => {
+    const saleItems = [
+      {
+        id: 'si-1',
+        quantity: 1,
+        unitPrice: 110000,
+        vatType: VatType.INCLUDED,
+        supplyAmount: 100000,
+        vatAmount: 10000,
+        totalAmount: 110000,
+        product: { name: '복합기' },
+      },
+    ];
+
+    it('SALE 청구서와 품목을 트랜잭션 안에서 생성한다', async () => {
+      prisma.invoice.create.mockResolvedValue({ id: 'inv-1' });
+      prisma.invoiceItem.create.mockResolvedValue({});
+
+      await service.createForSaleOrder('org-1', 'c-1', 'so-1', saleItems, prisma as any);
+
+      expect(docSeq.generateNo).toHaveBeenCalledWith('org-1', DocumentSequenceType.INVOICE, prisma);
+      expect(prisma.invoice.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            organizationId: 'org-1',
+            type: InvoiceType.SALE,
+            customerId: 'c-1',
+            saleOrderId: 'so-1',
+          }),
+        }),
+      );
+      expect(prisma.invoiceItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            invoiceId: 'inv-1',
+            saleOrderItemId: 'si-1',
+            quantity: 1,
+            unitPrice: 110000,
+            totalAmount: 110000,
+            description: '복합기',
+          }),
+        }),
+      );
+    });
+
+    it('품목이 여러 개면 각각 InvoiceItem을 생성한다', async () => {
+      const multiItems = [
+        { ...saleItems[0] },
+        { ...saleItems[0], id: 'si-2', product: { name: '토너' } },
+      ];
+      prisma.invoice.create.mockResolvedValue({ id: 'inv-2' });
+      prisma.invoiceItem.create.mockResolvedValue({});
+
+      await service.createForSaleOrder('org-1', 'c-1', 'so-1', multiItems, prisma as any);
+
+      expect(prisma.invoiceItem.create).toHaveBeenCalledTimes(2);
+    });
+  });
 });

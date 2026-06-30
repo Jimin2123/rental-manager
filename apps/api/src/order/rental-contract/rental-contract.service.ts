@@ -295,6 +295,10 @@ export class RentalContractService {
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.ENDED },
         });
+        await tx.maintenanceSchedule.updateMany({
+          where: { rentalContractId: id, organizationId, isActive: true },
+          data: { isActive: false },
+        });
         await this.auditLog.log(tx, {
           organizationId,
           actorId: memberId,
@@ -325,6 +329,10 @@ export class RentalContractService {
         await tx.rentalContract.update({
           where: { id_organizationId: { id, organizationId } },
           data: { status: RentalContractStatus.CANCELED },
+        });
+        await tx.maintenanceSchedule.updateMany({
+          where: { rentalContractId: id, organizationId, isActive: true },
+          data: { isActive: false },
         });
         await this.auditLog.log(tx, {
           organizationId,

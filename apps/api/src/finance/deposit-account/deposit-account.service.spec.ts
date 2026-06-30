@@ -28,7 +28,7 @@ describe('DepositAccountService', () => {
     };
     prisma = {
       depositAccount,
-      $transaction: jest.fn(async (cb: (tx: unknown) => unknown) => cb({ depositAccount })),
+      $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb({ depositAccount })),
     };
     const module = await Test.createTestingModule({
       providers: [DepositAccountService, { provide: PrismaService, useValue: prisma }],

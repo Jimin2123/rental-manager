@@ -3,12 +3,7 @@ import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { toastApiError } from '@/lib/api-error';
-import {
-  depositAccountKeys,
-  fetchDepositAccounts,
-  deleteDepositAccount,
-  invalidateDepositAccounts,
-} from '../-api';
+import { depositAccountKeys, fetchDepositAccounts, deleteDepositAccount, invalidateDepositAccounts } from '../-api';
 import type { DepositAccount } from '../-types';
 import { DepositAccountForm } from './DepositAccountForm';
 

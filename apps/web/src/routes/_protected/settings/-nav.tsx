@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 const TABS = [
   { to: '/settings/account', label: '계정 설정' },
   { to: '/settings/members', label: '직원 관리' },
+  { to: '/settings/deposit-accounts', label: '입금계좌' },
 ] as const;
 
 // 설정 영역 공용 상단 탭 네비게이션

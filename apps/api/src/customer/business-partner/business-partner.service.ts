@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BusinessPartnerRoleType, CustomerType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateBusinessPartnerDto, CreateContactDto } from './dto/create-business-partner.dto';
 import type { UpdateBusinessPartnerDto, UpdateContactDto } from './dto/update-business-partner.dto';
@@ -35,6 +35,11 @@ export class BusinessPartnerService {
       if (dto.contacts?.length) {
         await tx.businessPartnerContact.createMany({
           data: dto.contacts.map((c) => ({ ...c, organizationId, businessPartnerId: partner.id })),
+        });
+      }
+      if (dto.roles.includes(BusinessPartnerRoleType.SALES)) {
+        await tx.customer.create({
+          data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: partner.id },
         });
       }
       return partner;

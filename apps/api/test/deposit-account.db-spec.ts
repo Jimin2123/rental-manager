@@ -24,7 +24,12 @@ const runMigrations = (databaseUrl: string): void => {
   } catch (error) {
     const execError = error as { message?: string; stdout?: string; stderr?: string };
     throw new Error(
-      ['Failed to apply Prisma migrations for DB integration test.', execError.message, execError.stdout, execError.stderr]
+      [
+        'Failed to apply Prisma migrations for DB integration test.',
+        execError.message,
+        execError.stdout,
+        execError.stderr,
+      ]
         .filter(Boolean)
         .join('\n'),
     );
@@ -108,9 +113,7 @@ describe('DepositAccount DB integration', () => {
     it('기본계좌는 조직당 1개만 허용한다 (두 번째 isDefault=true 삽입을 거부한다)', async () => {
       await insertDepositAccount({ isDefault: true });
 
-      await expect(
-        insertDepositAccount({ isDefault: true }),
-      ).rejects.toThrow();
+      await expect(insertDepositAccount({ isDefault: true })).rejects.toThrow();
     });
 
     it('소프트 삭제된 기본계좌가 있으면 새 기본계좌 등록을 허용한다', async () => {
@@ -124,9 +127,7 @@ describe('DepositAccount DB integration', () => {
       );
 
       // deletedAt이 있으므로 부분 유니크 인덱스 조건에서 제외 → 새 기본계좌 허용
-      await expect(
-        insertDepositAccount({ isDefault: true }),
-      ).resolves.toBeDefined();
+      await expect(insertDepositAccount({ isDefault: true })).resolves.toBeDefined();
     });
   });
 
@@ -137,9 +138,7 @@ describe('DepositAccount DB integration', () => {
 
       await insertDepositAccount({ bankName, accountNumber });
 
-      await expect(
-        insertDepositAccount({ bankName, accountNumber, accountHolder: '다른사람' }),
-      ).rejects.toThrow();
+      await expect(insertDepositAccount({ bankName, accountNumber, accountHolder: '다른사람' })).rejects.toThrow();
     });
 
     it('소프트 삭제 후 동일 계좌번호 재등록을 허용한다', async () => {
@@ -156,15 +155,10 @@ describe('DepositAccount DB integration', () => {
       );
 
       // 소프트 삭제
-      await client.query(
-        `UPDATE "DepositAccount" SET "deletedAt"=$1, "updatedAt"=$1 WHERE "id"=$2`,
-        [new Date(), id],
-      );
+      await client.query(`UPDATE "DepositAccount" SET "deletedAt"=$1, "updatedAt"=$1 WHERE "id"=$2`, [new Date(), id]);
 
       // deletedAt이 있으므로 부분 유니크 인덱스 조건에서 제외 → 동일 (bankName, accountNumber) 재삽입 허용
-      await expect(
-        insertDepositAccount({ bankName, accountNumber }),
-      ).resolves.toBeDefined();
+      await expect(insertDepositAccount({ bankName, accountNumber })).resolves.toBeDefined();
     });
   });
 });

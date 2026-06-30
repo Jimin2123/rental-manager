@@ -144,9 +144,16 @@ export class BusinessPartnerService {
       select: { id: true, deletedAt: true },
     });
     if (!partner || partner.deletedAt) throw new NotFoundException('거래처를 찾을 수 없습니다.');
-    await this.prisma.businessPartner.update({
-      where: { id_organizationId: { id, organizationId } },
-      data: { deletedAt: new Date(), isActive: false },
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.businessPartner.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: { deletedAt: now, isActive: false },
+      });
+      await tx.customer.updateMany({
+        where: { organizationId, businessPartnerId: id, deletedAt: null },
+        data: { deletedAt: now },
+      });
     });
   }
 

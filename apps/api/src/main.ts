@@ -42,6 +42,6 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 
-  process.on('SIGTERM', () => app.close());
+  process.on('SIGTERM', () => void app.close());
 }
 void bootstrap();

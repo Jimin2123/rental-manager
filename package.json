@@ -8,6 +8,7 @@
     "pnpm": "11.6.0"
   },
   "scripts": {
+    "predev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; lsof -ti:5173 | xargs kill -9 2>/dev/null; true",
     "dev": "pnpm -r --parallel --if-present dev",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",

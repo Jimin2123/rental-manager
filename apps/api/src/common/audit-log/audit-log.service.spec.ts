@@ -5,7 +5,7 @@ import { AuditLogService } from './audit-log.service';
 
 describe('AuditLogService', () => {
   let service: AuditLogService;
-  let prisma: { auditLog: { findMany: jest.Mock } };
+  let prisma: { auditLog: { findMany: jest.Mock; count: jest.Mock } };
 
   beforeEach(async () => {
     prisma = { auditLog: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) } };

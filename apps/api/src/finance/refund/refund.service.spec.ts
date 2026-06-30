@@ -10,9 +10,10 @@ describe('RefundService', () => {
   let service: RefundService;
   let prisma: {
     $transaction: jest.Mock;
-    refund: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    refund: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock; count: jest.Mock };
     invoice: { findUnique: jest.Mock; update: jest.Mock };
     customer: { findUnique: jest.Mock };
+    payment?: { findUnique: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
   let auditLog: { log: jest.Mock };
@@ -82,7 +83,7 @@ describe('RefundService', () => {
 
     it('paymentId 지정 시 amount 초과 환불 불가', async () => {
       prisma.customer.findUnique.mockResolvedValue({ id: 'cust-1' });
-      prisma.payment = { findUnique: jest.fn().mockResolvedValue({ amount: 30000 }) } as any;
+      prisma.payment = { findUnique: jest.fn().mockResolvedValue({ amount: 30000 }) };
       await expect(
         service.create('org-1', 'mem-1', {
           customerId: 'cust-1',

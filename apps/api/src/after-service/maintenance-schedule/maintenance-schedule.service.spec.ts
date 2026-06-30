@@ -9,7 +9,13 @@ describe('MaintenanceScheduleService', () => {
   let prisma: {
     rentalContract: { findUnique: jest.Mock };
     organizationMember: { findUnique: jest.Mock };
-    maintenanceSchedule: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    maintenanceSchedule: {
+      create: jest.Mock;
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+      update: jest.Mock;
+      count: jest.Mock;
+    };
   };
 
   beforeEach(async () => {

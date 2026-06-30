@@ -10,7 +10,7 @@ describe('PaymentService', () => {
   let service: PaymentService;
   let prisma: {
     $transaction: jest.Mock;
-    payment: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    payment: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock; count: jest.Mock };
     paymentAllocation: { create: jest.Mock; findMany: jest.Mock; deleteMany: jest.Mock };
     invoice: { findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     customer: { findUnique: jest.Mock };

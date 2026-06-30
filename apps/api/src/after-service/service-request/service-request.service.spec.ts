@@ -13,7 +13,13 @@ describe('ServiceRequestService', () => {
     asset: { findUnique: jest.Mock };
     maintenanceSchedule: { findUnique: jest.Mock };
     rentalContractItem: { findFirst: jest.Mock };
-    serviceRequest: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    serviceRequest: {
+      create: jest.Mock;
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+      update: jest.Mock;
+      count: jest.Mock;
+    };
   };
   let docSeq: { generateNo: jest.Mock };
 

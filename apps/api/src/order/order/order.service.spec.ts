@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { OrderStatus, OrderType, VatType } from '@prisma/client';
+import { AssetEventSourceType, AssetStatus, OrderStatus, OrderType, VatType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
 import { OrderService } from './order.service';
@@ -15,6 +15,8 @@ describe('OrderService', () => {
     saleOrderItem: { create: jest.Mock; deleteMany: jest.Mock };
     rentalOrder: { create: jest.Mock; delete: jest.Mock };
     rentalOrderItem: { create: jest.Mock; deleteMany: jest.Mock };
+    asset: { update: jest.Mock };
+    assetEvent: { create: jest.Mock };
   };
   let docSeq: { generateNo: jest.Mock };
 
@@ -27,6 +29,8 @@ describe('OrderService', () => {
       saleOrderItem: { create: jest.fn(), deleteMany: jest.fn() },
       rentalOrder: { create: jest.fn(), delete: jest.fn() },
       rentalOrderItem: { create: jest.fn(), deleteMany: jest.fn() },
+      asset: { update: jest.fn() },
+      assetEvent: { create: jest.fn() },
     };
     docSeq = { generateNo: jest.fn().mockResolvedValue('20260623-0001') };
 
@@ -120,6 +124,71 @@ describe('OrderService', () => {
       await expect(service.updateStatus('org-1', 'o-1', { status: OrderStatus.CONFIRMED })).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('SALE 주문 DELIVERED 전환 시 assetId 있는 항목의 자산이 SOLD로 변경된다', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1',
+        status: OrderStatus.IN_DELIVERY,
+        type: OrderType.SALE,
+        saleOrder: { items: [{ assetId: 'a-1', asset: { status: AssetStatus.AVAILABLE } }] },
+      });
+      prisma.order.update.mockResolvedValue({});
+      prisma.asset.update.mockResolvedValue({});
+      prisma.assetEvent.create.mockResolvedValue({});
+
+      await service.updateStatus('org-1', 'o-1', { status: OrderStatus.DELIVERED });
+
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(prisma.asset.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id_organizationId: { id: 'a-1', organizationId: 'org-1' } },
+          data: { status: AssetStatus.SOLD },
+        }),
+      );
+      expect(prisma.assetEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            assetId: 'a-1',
+            sourceType: AssetEventSourceType.SALE_ORDER,
+            sourceId: 'o-1',
+            fromStatus: AssetStatus.AVAILABLE,
+            toStatus: AssetStatus.SOLD,
+          }),
+        }),
+      );
+    });
+
+    it('SALE 주문 DELIVERED 전환 시 assetId 없는 항목만 있으면 자산 변경 없음', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1',
+        status: OrderStatus.IN_DELIVERY,
+        type: OrderType.SALE,
+        saleOrder: { items: [] },
+      });
+      prisma.order.update.mockResolvedValue({});
+
+      await service.updateStatus('org-1', 'o-1', { status: OrderStatus.DELIVERED });
+
+      expect(prisma.asset.update).not.toHaveBeenCalled();
+      expect(prisma.assetEvent.create).not.toHaveBeenCalled();
+    });
+
+    it('RENTAL 주문 DELIVERED 전환 시 자산 변경 없이 order.update만 호출된다', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1',
+        status: OrderStatus.IN_DELIVERY,
+        type: OrderType.RENTAL,
+        saleOrder: null,
+      });
+      prisma.order.update.mockResolvedValue({});
+
+      await service.updateStatus('org-1', 'o-1', { status: OrderStatus.DELIVERED });
+
+      expect(prisma.order.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: OrderStatus.DELIVERED } }),
+      );
+      expect(prisma.asset.update).not.toHaveBeenCalled();
     });
   });
 

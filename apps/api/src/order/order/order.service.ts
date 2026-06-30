@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentSequenceType, OrderStatus, OrderType } from '@prisma/client';
+import { AssetEventSourceType, AssetStatus, DocumentSequenceType, OrderStatus, OrderType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
 import { calculateAmounts } from '../common/amount.util';
@@ -187,12 +187,48 @@ export class OrderService {
   async updateStatus(organizationId: string, id: string, dto: UpdateOrderStatusDto): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        type: true,
+        saleOrder: {
+          select: {
+            items: {
+              where: { assetId: { not: null } },
+              select: { assetId: true, asset: { select: { status: true } } },
+            },
+          },
+        },
+      },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
 
     if (!ORDER_TRANSITIONS[order.status].includes(dto.status)) {
       throw new BadRequestException(`${order.status} 상태에서 ${dto.status}로 전환할 수 없습니다.`);
+    }
+
+    if (dto.status === OrderStatus.DELIVERED && order.type === OrderType.SALE) {
+      const assetItems = (order.saleOrder?.items ?? []).filter((item) => item.assetId && item.asset);
+      await this.prisma.$transaction(async (tx) => {
+        await tx.order.update({ where: { id_organizationId: { id, organizationId } }, data: { status: dto.status } });
+        for (const item of assetItems) {
+          await tx.asset.update({
+            where: { id_organizationId: { id: item.assetId!, organizationId } },
+            data: { status: AssetStatus.SOLD },
+          });
+          await tx.assetEvent.create({
+            data: {
+              organizationId,
+              assetId: item.assetId!,
+              sourceType: AssetEventSourceType.SALE_ORDER,
+              sourceId: id,
+              fromStatus: item.asset!.status,
+              toStatus: AssetStatus.SOLD,
+            },
+          });
+        }
+      });
+      return;
     }
 
     await this.prisma.order.update({

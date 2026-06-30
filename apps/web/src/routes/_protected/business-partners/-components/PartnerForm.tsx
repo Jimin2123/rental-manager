@@ -11,18 +11,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { TextField } from '@/components/form/TextField';
 import { api } from '@/lib/api';
 import { openKakaoAddressSearch } from '@/lib/kakao-address';
+import { formatBrn, formatPhone } from '@/lib/format';
 import { partnerKeys } from '../-api';
 import { partnerCreateSchema, type PartnerCreateValues } from '../-schemas';
 import { RolesField, ContactFields } from './fields';
 
 type BrnStatus = 'idle' | 'valid' | 'invalid';
-
-const formatBrn = (value: string) => {
-  const digits = value.replace(/\D/g, '').slice(0, 10);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-};
 
 export function PartnerForm() {
   const navigate = useNavigate();
@@ -117,7 +111,6 @@ export function PartnerForm() {
       ...values,
       businessProfile: {
         ...values.businessProfile,
-        businessRegistrationNo: values.businessProfile.businessRegistrationNo.replace(/-/g, ''),
         email: values.businessProfile.email || undefined,
       },
       contacts: values.contacts?.map((c) => ({ ...c, email: c.email || undefined })) ?? [],
@@ -211,6 +204,8 @@ export function PartnerForm() {
               name="businessProfile.phone"
               label="대표전화"
               placeholder="02-1234-5678"
+              maxLength={13}
+              format={formatPhone}
             />
             <TextField
               control={form.control}

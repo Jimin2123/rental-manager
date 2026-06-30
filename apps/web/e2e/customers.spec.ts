@@ -107,6 +107,8 @@ test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) =>
   const suffix = String(Date.now()).slice(-5);
   const company = `연결거래처${suffix}`;
   const brn = `88800${suffix}`;
+  // BRN 자동포맷 결과: '8880012345' → '888-00-12345'
+  const formattedBrn = `888-00-${suffix}`;
 
   // 1) 거래처 먼저 등록
   await page.goto('/business-partners/new');
@@ -120,10 +122,10 @@ test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) =>
   await page.getByRole('button', { name: '등록' }).click();
   await page.waitForURL(/\/business-partners\/[0-9a-f-]{8,}/);
 
-  // 2) 법인 고객으로 연결 등록
+  // 2) 법인 고객으로 연결 등록 (옵션 레이블은 저장된 포맷 기준: XXX-XX-XXXXX)
   await page.goto('/customers/new');
   await page.getByRole('button', { name: '법인', exact: true }).click();
-  await page.locator('select').selectOption({ label: `${company} (${brn})` });
+  await page.locator('select').selectOption({ label: `${company} (${formattedBrn})` });
   await page.getByRole('button', { name: '등록', exact: true }).click();
 
   // 3) 상세 — 법인 표시 + 거래처 링크
@@ -134,7 +136,7 @@ test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) =>
   // 4) 같은 거래처 재연결 시 409 안내
   await page.goto('/customers/new');
   await page.getByRole('button', { name: '법인', exact: true }).click();
-  await page.locator('select').selectOption({ label: `${company} (${brn})` });
+  await page.locator('select').selectOption({ label: `${company} (${formattedBrn})` });
   await page.getByRole('button', { name: '등록', exact: true }).click();
   await expect(page.getByText('이미 고객으로 등록된 거래처입니다.')).toBeVisible({ timeout: 10000 });
 });

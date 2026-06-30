@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import { TextField } from '@/components/form/TextField';
+import { formatPhone } from '@/lib/format';
 import type { BusinessPartnerDetail } from '../-types';
 import { partnerEditSchema, type PartnerEditValues } from '../-schemas';
 import { RolesField } from './fields';
@@ -110,7 +111,13 @@ export function PartnerEditForm({
           <div className="grid grid-cols-2 gap-4">
             <TextField control={form.control} name="businessProfile.businessType" label="업태" />
             <TextField control={form.control} name="businessProfile.businessItem" label="종목" />
-            <TextField control={form.control} name="businessProfile.phone" label="대표전화" />
+            <TextField
+              control={form.control}
+              name="businessProfile.phone"
+              label="대표전화"
+              maxLength={13}
+              format={formatPhone}
+            />
             <TextField control={form.control} name="businessProfile.email" label="대표이메일" type="email" />
           </div>
         </div>

@@ -41,5 +41,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   await app.listen(process.env.PORT ?? 3000);
+
+  process.on('SIGTERM', () => void app.close());
 }
 void bootstrap();

@@ -19,6 +19,7 @@ describe('BusinessPartnerService', () => {
       update: jest.Mock;
       delete: jest.Mock;
     };
+    customer: { updateMany: jest.Mock };
   };
 
   beforeEach(async () => {
@@ -35,6 +36,7 @@ describe('BusinessPartnerService', () => {
         update: jest.fn(),
         delete: jest.fn(),
       },
+      customer: { updateMany: jest.fn() },
     };
     const module = await Test.createTestingModule({
       providers: [BusinessPartnerService, { provide: PrismaService, useValue: prisma }],
@@ -143,16 +145,32 @@ describe('BusinessPartnerService', () => {
       await expect(service.softDelete('org-1', 'p-x')).rejects.toThrow(NotFoundException);
     });
 
-    it('sets deletedAt and isActive=false', async () => {
+    it('sets deletedAt and isActive=false on partner and cascades to linked customer', async () => {
       prisma.businessPartner.findUnique.mockResolvedValue({ id: 'p-1', deletedAt: null });
       prisma.businessPartner.update.mockResolvedValue({});
+      prisma.customer.updateMany.mockResolvedValue({ count: 1 });
 
       await service.softDelete('org-1', 'p-1');
 
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(prisma.businessPartner.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ isActive: false }) }),
       );
       expect(prisma.businessPartner.update.mock.calls[0][0].data.deletedAt).toBeInstanceOf(Date);
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ organizationId: 'org-1', businessPartnerId: 'p-1', deletedAt: null }),
+          data: expect.objectContaining({ deletedAt: expect.any(Date) }),
+        }),
+      );
+    });
+
+    it('succeeds even if no linked customer exists', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({ id: 'p-1', deletedAt: null });
+      prisma.businessPartner.update.mockResolvedValue({});
+      prisma.customer.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.softDelete('org-1', 'p-1')).resolves.toBeUndefined();
     });
   });
 

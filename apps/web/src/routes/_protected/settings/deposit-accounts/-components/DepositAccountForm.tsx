@@ -27,7 +27,7 @@ export function DepositAccountForm({ editing, onDone }: Props) {
         accountNumber,
         accountHolder,
         label: label || undefined,
-        isDefault,
+        isDefault: isDefault || undefined,
         isActive,
         memo: memo || undefined,
       });

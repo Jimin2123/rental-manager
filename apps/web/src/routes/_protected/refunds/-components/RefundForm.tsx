@@ -14,6 +14,7 @@ import { fetchPayments, paymentKeys } from '../../payments/-api';
 import type { RefundReason } from '../-types';
 import { REFUND_REASON_LABEL } from '../-types';
 import { refundKeys } from '../-api';
+import { fetchDepositAccounts, depositAccountKeys } from '../../settings/deposit-accounts/-api';
 
 function customerLabel(c: CustomerListItem): string {
   return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '(이름 없음)';
@@ -28,10 +29,16 @@ export function RefundForm() {
   const [reason, setReason] = useState<RefundReason>('OVERPAYMENT');
   const [amount, setAmount] = useState('0');
   const [memo, setMemo] = useState('');
+  const [depositAccountId, setDepositAccountId] = useState('');
 
   const { data: customers = [] } = useQuery<CustomerListItem[]>({
     queryKey: customerKeys.list({}),
     queryFn: () => fetchCustomers({}),
+  });
+
+  const { data: depositAccounts = [] } = useQuery({
+    queryKey: depositAccountKeys.list(false),
+    queryFn: () => fetchDepositAccounts(false),
   });
 
   // 고객 선택 시 그 고객의 완료된 수납만 조회 (환불 원천은 완료 수납이어야 함). 선택용이라 1페이지.
@@ -52,6 +59,7 @@ export function RefundForm() {
         reason,
         amount: Number(amount),
         ...(memo && { memo }),
+        ...(depositAccountId && { depositAccountId }),
       }),
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: refundKeys.lists() });
@@ -117,6 +125,17 @@ export function RefundForm() {
             금액 <span className="text-destructive">*</span>
           </p>
           <Input type="number" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">출금계좌</p>
+          <NativeSelect value={depositAccountId} onChange={(e) => setDepositAccountId(e.target.value)}>
+            <option value="">선택 안 함</option>
+            {depositAccounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {(a.label ? `${a.label} · ` : '') + `${a.bankName} ${a.accountNumber}`}
+              </option>
+            ))}
+          </NativeSelect>
         </div>
         <div className="space-y-1 col-span-2">
           <p className="text-sm font-medium">메모</p>

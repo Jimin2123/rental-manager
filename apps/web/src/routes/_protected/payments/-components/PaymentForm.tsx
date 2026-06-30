@@ -12,6 +12,7 @@ import type { CustomerListItem } from '../../customers/-types';
 import type { PaymentMethod, PaymentProvider } from '../-types';
 import { PAYMENT_METHOD_LABEL, PAYMENT_PROVIDER_LABEL } from '../-types';
 import { paymentKeys } from '../-api';
+import { fetchDepositAccounts, depositAccountKeys } from '../../settings/deposit-accounts/-api';
 
 function customerLabel(c: CustomerListItem): string {
   return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '(이름 없음)';
@@ -28,10 +29,16 @@ export function PaymentForm() {
   const [paidAt, setPaidAt] = useState('');
   const [externalRef, setExternalRef] = useState('');
   const [memo, setMemo] = useState('');
+  const [depositAccountId, setDepositAccountId] = useState('');
 
   const { data: customers = [] } = useQuery<CustomerListItem[]>({
     queryKey: customerKeys.list({}),
     queryFn: () => fetchCustomers({}),
+  });
+
+  const { data: depositAccounts = [] } = useQuery({
+    queryKey: depositAccountKeys.list(false),
+    queryFn: () => fetchDepositAccounts(false),
   });
 
   const submittable = customerId !== '' && Number(amount) > 0 && paidAt !== '';
@@ -46,6 +53,7 @@ export function PaymentForm() {
         paidAt: new Date(paidAt).toISOString(),
         ...(externalRef && { externalRef }),
         ...(memo && { memo }),
+        ...(depositAccountId && { depositAccountId }),
       }),
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: paymentKeys.lists() });
@@ -104,6 +112,17 @@ export function PaymentForm() {
             수납일 <span className="text-destructive">*</span>
           </p>
           <Input type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">입금계좌</p>
+          <NativeSelect value={depositAccountId} onChange={(e) => setDepositAccountId(e.target.value)}>
+            <option value="">선택 안 함</option>
+            {depositAccounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {(a.label ? `${a.label} · ` : '') + `${a.bankName} ${a.accountNumber}`}
+              </option>
+            ))}
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <p className="text-sm font-medium">외부참조</p>

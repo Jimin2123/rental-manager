@@ -38,7 +38,7 @@ describe('OrganizationService', () => {
 
       const result = await service.create('user-1', {
         name: '테스트 주식회사',
-        businessRegistrationNo: '1234567890',
+        businessRegistrationNo: '123-45-67890',
         representativeName: '홍길동',
         zonecode: '06234',
         address: '서울시 강남구',
@@ -63,14 +63,14 @@ describe('OrganizationService', () => {
           role: 'OWNER',
           organization: {
             id: 'org-1',
-            businessProfile: { name: '테스트 주식회사', businessRegistrationNo: '1234567890' },
+            businessProfile: { name: '테스트 주식회사', businessRegistrationNo: '123-45-67890' },
           },
         },
       ]);
 
       const result = await service.findMyOrganizations('user-1');
       expect(result).toEqual([
-        { id: 'org-1', name: '테스트 주식회사', businessRegistrationNo: '1234567890', role: 'OWNER' },
+        { id: 'org-1', name: '테스트 주식회사', businessRegistrationNo: '123-45-67890', role: 'OWNER' },
       ]);
     });
   });

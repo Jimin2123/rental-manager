@@ -131,3 +131,23 @@ test('거래처 상세 - 수정 버튼 클릭 시 편집 모드로 전환된다'
   await expect(page.getByRole('button', { name: '저장' })).toBeVisible();
   await expect(page.getByRole('button', { name: '취소' })).toBeVisible();
 });
+
+test('거래처 등록 - 사업자번호 입력 시 XXX-XX-XXXXX 형식으로 자동 포맷된다', async ({ page }) => {
+  await login(page);
+  await page.goto('/business-partners/new');
+  const brnInput = page.getByPlaceholder('123-45-67890');
+  await brnInput.fill('1234567890');
+  await expect(brnInput).toHaveValue('123-45-67890');
+});
+
+test('거래처 등록 - 대표전화 입력 시 전화번호 형식으로 자동 포맷된다', async ({ page }) => {
+  await login(page);
+  await page.goto('/business-partners/new');
+  const phoneInput = page.getByPlaceholder('02-1234-5678');
+  await phoneInput.fill('01012345678');
+  await expect(phoneInput).toHaveValue('010-1234-5678');
+  await phoneInput.fill('021234567');
+  await expect(phoneInput).toHaveValue('02-123-4567');
+  await phoneInput.fill('0212345678');
+  await expect(phoneInput).toHaveValue('02-1234-5678');
+});

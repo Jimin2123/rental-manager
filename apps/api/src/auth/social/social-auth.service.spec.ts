@@ -410,13 +410,13 @@ describe('SocialAuthService', () => {
           role: 'OWNER',
           organization: {
             id: 'org-1',
-            businessProfile: { name: '테스트회사', businessRegistrationNo: '1234567890' },
+            businessProfile: { name: '테스트회사', businessRegistrationNo: '123-45-67890' },
           },
         },
       ]);
       const result = await service.getOrganizations('user-1');
       expect(result).toEqual([
-        { id: 'org-1', name: '테스트회사', businessRegistrationNo: '1234567890', role: 'OWNER' },
+        { id: 'org-1', name: '테스트회사', businessRegistrationNo: '123-45-67890', role: 'OWNER' },
       ]);
     });
   });

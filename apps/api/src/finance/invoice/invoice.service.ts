@@ -451,4 +451,44 @@ export class InvoiceService {
 
     return { id: invoice.id };
   }
+
+  async createForSaleOrder(
+    organizationId: string,
+    customerId: string,
+    saleOrderId: string,
+    items: Array<{
+      id: string;
+      quantity: number;
+      unitPrice: number;
+      vatType: VatType;
+      supplyAmount: number;
+      vatAmount: number;
+      totalAmount: number;
+      product: { name: string };
+    }>,
+    tx: PrismaTransaction,
+  ): Promise<void> {
+    const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
+    const invoice = await tx.invoice.create({
+      data: { organizationId, invoiceNo, type: InvoiceType.SALE, customerId, saleOrderId },
+      select: { id: true },
+    });
+    for (const item of items) {
+      await tx.invoiceItem.create({
+        data: {
+          organizationId,
+          invoiceId: invoice.id,
+          type: InvoiceItemType.SALE_PRICE,
+          description: item.product.name,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          vatType: item.vatType,
+          supplyAmount: item.supplyAmount,
+          vatAmount: item.vatAmount,
+          totalAmount: item.totalAmount,
+          saleOrderItemId: item.id,
+        },
+      });
+    }
+  }
 }

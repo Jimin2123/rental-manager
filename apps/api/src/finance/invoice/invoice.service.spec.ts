@@ -157,6 +157,13 @@ describe('InvoiceService', () => {
       await expect(service.cancel('org-1', 'inv-1', 'mem-1')).rejects.toThrow(BadRequestException);
     });
 
+    it('saleOrderId가 있으면 단독 취소 불가 BadRequestException', async () => {
+      prisma.invoice.findUnique.mockResolvedValue(
+        mockInvoice({ status: InvoiceStatus.ISSUED, paidAmount: 0, saleOrderId: 'so-1' }),
+      );
+      await expect(service.cancel('org-1', 'inv-1', 'mem-1')).rejects.toThrow(BadRequestException);
+    });
+
     it('paidAmount > 0이면 BadRequestException', async () => {
       prisma.invoice.findUnique.mockResolvedValue(mockInvoice({ status: InvoiceStatus.ISSUED, paidAmount: 50000 }));
       await expect(service.cancel('org-1', 'inv-1', 'mem-1')).rejects.toThrow(BadRequestException);

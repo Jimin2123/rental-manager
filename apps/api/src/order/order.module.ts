@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ProductModule } from '../product/product.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { CommonModule } from '../common/common.module';
+import { FinanceModule } from '../finance/finance.module';
 import { DocumentSequenceService } from './common/document-sequence.service';
 import { QuotationService } from './quotation/quotation.service';
 import { QuotationController } from './quotation/quotation.controller';
@@ -16,7 +17,7 @@ import { RentalContractController } from './rental-contract/rental-contract.cont
 import { QuotationExpiryCron } from './cron/quotation-expiry.cron';
 
 @Module({
-  imports: [OrganizationModule, ProductModule, CommonModule],
+  imports: [OrganizationModule, ProductModule, CommonModule, FinanceModule],
   providers: [
     DocumentSequenceService,
     QuotationService,

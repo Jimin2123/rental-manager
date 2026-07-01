@@ -188,6 +188,8 @@ export class InvoiceService {
     if (!before) throw new NotFoundException('청구서를 찾을 수 없습니다.');
     if (before.status !== InvoiceStatus.ISSUED)
       throw new BadRequestException('ISSUED 상태의 청구서만 취소할 수 있습니다.');
+    if (before.saleOrderId)
+      throw new BadRequestException('판매 청구서는 단독 취소할 수 없습니다. 판매 주문을 취소하세요.');
     if (before.paidAmount > 0)
       throw new BadRequestException('수납된 금액이 있어 취소할 수 없습니다. 환불 처리 후 취소하세요.');
 
@@ -450,5 +452,49 @@ export class InvoiceService {
     });
 
     return { id: invoice.id };
+  }
+
+  async createForSaleOrder(
+    organizationId: string,
+    customerId: string,
+    saleOrderId: string,
+    items: Array<{
+      id: string;
+      quantity: number;
+      unitPrice: number;
+      vatType: VatType;
+      supplyAmount: number;
+      vatAmount: number;
+      totalAmount: number;
+      product: { name: string };
+    }>,
+    tx: PrismaTransaction,
+  ): Promise<void> {
+    const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
+    const invoice = await tx.invoice.create({
+      data: { organizationId, invoiceNo, type: InvoiceType.SALE, customerId, saleOrderId },
+      select: { id: true },
+    });
+    for (const item of items) {
+      await tx.invoiceItem.create({
+        data: {
+          organizationId,
+          invoiceId: invoice.id,
+          type: InvoiceItemType.SALE_PRICE,
+          description: item.product.name,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          vatType: item.vatType,
+          supplyAmount: item.supplyAmount,
+          vatAmount: item.vatAmount,
+          totalAmount: item.totalAmount,
+          saleOrderItemId: item.id,
+        },
+      });
+    }
+    await tx.invoice.update({
+      where: { id_organizationId: { id: invoice.id, organizationId } },
+      data: { status: InvoiceStatus.ISSUED, issuedAt: new Date() },
+    });
   }
 }

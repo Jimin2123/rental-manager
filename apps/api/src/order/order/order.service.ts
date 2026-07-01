@@ -3,6 +3,7 @@ import { AssetEventSourceType, AssetStatus, DocumentSequenceType, OrderStatus, O
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentSequenceService } from '../common/document-sequence.service';
 import { calculateAmounts } from '../common/amount.util';
+import { InvoiceService } from '../../finance/invoice/invoice.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
 import type { QueryOrderDto } from './dto/query-order.dto';
@@ -21,6 +22,7 @@ export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docSeq: DocumentSequenceService,
+    private readonly invoiceService: InvoiceService,
   ) {}
 
   async create(organizationId: string, dto: CreateOrderDto): Promise<{ orderId: string }> {
@@ -191,11 +193,23 @@ export class OrderService {
         id: true,
         status: true,
         type: true,
+        customerId: true,
         saleOrder: {
           select: {
+            id: true,
             items: {
-              where: { assetId: { not: null } },
-              select: { assetId: true, asset: { select: { status: true } } },
+              select: {
+                id: true,
+                assetId: true,
+                asset: { select: { status: true } },
+                quantity: true,
+                unitPrice: true,
+                vatType: true,
+                supplyAmount: true,
+                vatAmount: true,
+                totalAmount: true,
+                product: { select: { name: true } },
+              },
             },
           },
         },
@@ -208,7 +222,8 @@ export class OrderService {
     }
 
     if (dto.status === OrderStatus.DELIVERED && order.type === OrderType.SALE) {
-      const assetItems = (order.saleOrder?.items ?? []).filter((item) => item.assetId && item.asset);
+      const saleItems = order.saleOrder?.items ?? [];
+      const assetItems = saleItems.filter((item) => item.assetId && item.asset);
       await this.prisma.$transaction(async (tx) => {
         await tx.order.update({ where: { id_organizationId: { id, organizationId } }, data: { status: dto.status } });
         for (const item of assetItems) {
@@ -221,12 +236,19 @@ export class OrderService {
               organizationId,
               assetId: item.assetId!,
               sourceType: AssetEventSourceType.SALE_ORDER,
-              sourceId: id,
+              sourceId: order.saleOrder!.id,
               fromStatus: item.asset!.status,
               toStatus: AssetStatus.SOLD,
             },
           });
         }
+        await this.invoiceService.createForSaleOrder(
+          organizationId,
+          order.customerId,
+          order.saleOrder!.id,
+          saleItems,
+          tx,
+        );
       });
       return;
     }

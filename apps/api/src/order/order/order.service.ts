@@ -25,14 +25,14 @@ export class OrderService {
     private readonly invoiceService: InvoiceService,
   ) {}
 
-  async create(organizationId: string, dto: CreateOrderDto): Promise<{ orderId: string }> {
+  async create(organizationId: string, dto: CreateOrderDto): Promise<{ orderId: string; rentalOrderId?: string }> {
     const customer = await this.prisma.customer.findUnique({
       where: { id_organizationId: { id: dto.customerId, organizationId } },
       select: { id: true },
     });
     if (!customer) throw new NotFoundException('고객을 찾을 수 없습니다.');
 
-    const orderId = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const orderNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.ORDER, tx);
       const order = await tx.order.create({
         data: {
@@ -78,6 +78,7 @@ export class OrderService {
         }
       }
 
+      let rentalOrderId: string | undefined;
       if (dto.type === OrderType.RENTAL && dto.rentalOrder) {
         const rentalOrder = await tx.rentalOrder.create({
           data: {
@@ -88,6 +89,7 @@ export class OrderService {
             contractDate: dto.rentalOrder.contractDate ? new Date(dto.rentalOrder.contractDate) : new Date(),
           },
         });
+        rentalOrderId = rentalOrder.id;
         for (const item of dto.rentalOrder.items) {
           await tx.rentalOrderItem.create({
             data: {
@@ -109,10 +111,10 @@ export class OrderService {
         }
       }
 
-      return order.id;
+      return { orderId: order.id, rentalOrderId };
     });
 
-    return { orderId };
+    return result;
   }
 
   async findAll(organizationId: string, query: QueryOrderDto) {

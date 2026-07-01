@@ -30,3 +30,7 @@ export function invalidateOrder(qc: QueryClient, id: string): void {
   void qc.invalidateQueries({ queryKey: orderKeys.detail(id) });
   void qc.invalidateQueries({ queryKey: orderKeys.lists() });
 }
+
+// ─── 수정 함수 ────────────────────────────────────────────────────
+export const updateOrder = (id: string, body: object) =>
+  api.patch(`/orders/${id}`, body).then((r) => r.data);

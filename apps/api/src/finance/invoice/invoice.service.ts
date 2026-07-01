@@ -470,7 +470,7 @@ export class InvoiceService {
   ): Promise<void> {
     const invoiceNo = await this.docSeq.generateNo(organizationId, DocumentSequenceType.INVOICE, tx);
     const invoice = await tx.invoice.create({
-      data: { organizationId, invoiceNo, type: InvoiceType.SALE, status: InvoiceStatus.ISSUED, issuedAt: new Date(), customerId, saleOrderId },
+      data: { organizationId, invoiceNo, type: InvoiceType.SALE, customerId, saleOrderId },
       select: { id: true },
     });
     for (const item of items) {
@@ -490,5 +490,9 @@ export class InvoiceService {
         },
       });
     }
+    await tx.invoice.update({
+      where: { id_organizationId: { id: invoice.id, organizationId } },
+      data: { status: InvoiceStatus.ISSUED, issuedAt: new Date() },
+    });
   }
 }

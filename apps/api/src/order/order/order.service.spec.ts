@@ -104,6 +104,88 @@ describe('OrderService', () => {
     });
   });
 
+  describe('update', () => {
+    it('주문이 없으면 NotFoundException', async () => {
+      prisma.order.findUnique.mockResolvedValue(null);
+      await expect(service.update('org-1', 'o-x', {})).rejects.toThrow(NotFoundException);
+    });
+
+    it('REGISTERED 아닌 주문 수정 시 BadRequestException', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1', status: OrderStatus.CONFIRMED, type: OrderType.SALE,
+        saleOrder: null, rentalOrder: null,
+      });
+      await expect(service.update('org-1', 'o-1', { memo: '테스트' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('계약 있는 RENTAL 주문의 rentalItems 수정 시 BadRequestException', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1', status: OrderStatus.REGISTERED, type: OrderType.RENTAL,
+        saleOrder: null,
+        rentalOrder: { id: 'ro-1', contract: { id: 'c-1' } },
+      });
+      await expect(
+        service.update('org-1', 'o-1', { rentalItems: [{ productId: 'p-1', monthlyRentalPrice: 50000 }] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('헤더 필드만 수정 시 order.update 호출', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1', status: OrderStatus.REGISTERED, type: OrderType.SALE,
+        saleOrder: { id: 'so-1' }, rentalOrder: null,
+      });
+      prisma.order.update.mockResolvedValue({});
+
+      await service.update('org-1', 'o-1', { memo: '수정메모' });
+
+      expect(prisma.order.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ memo: '수정메모' }) }),
+      );
+      expect(prisma.saleOrderItem.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('SALE 품목 replace-all — deleteMany 후 create 호출', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1', status: OrderStatus.REGISTERED, type: OrderType.SALE,
+        saleOrder: { id: 'so-1' }, rentalOrder: null,
+      });
+      prisma.order.update.mockResolvedValue({});
+      prisma.saleOrderItem.deleteMany.mockResolvedValue({});
+      prisma.saleOrderItem.create.mockResolvedValue({});
+
+      await service.update('org-1', 'o-1', {
+        saleItems: [{ productId: 'p-1', quantity: 2, unitPrice: 10000, vatType: VatType.INCLUDED }],
+      });
+
+      expect(prisma.saleOrderItem.deleteMany).toHaveBeenCalledWith({ where: { saleOrderId: 'so-1' } });
+      expect(prisma.saleOrderItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ productId: 'p-1', quantity: 2, supplyAmount: 20000 }),
+        }),
+      );
+    });
+
+    it('RENTAL 품목 replace-all (계약 없음)', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: 'o-1', status: OrderStatus.REGISTERED, type: OrderType.RENTAL,
+        saleOrder: null,
+        rentalOrder: { id: 'ro-1', contract: null },
+      });
+      prisma.order.update.mockResolvedValue({});
+      prisma.rentalOrderItem.deleteMany.mockResolvedValue({});
+      prisma.rentalOrderItem.create.mockResolvedValue({});
+
+      await service.update('org-1', 'o-1', {
+        rentalItems: [{ productId: 'p-1', monthlyRentalPrice: 50000 }],
+      });
+
+      expect(prisma.rentalOrderItem.deleteMany).toHaveBeenCalledWith({ where: { rentalOrderId: 'ro-1' } });
+      expect(prisma.rentalOrderItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ productId: 'p-1', monthlyRentalPrice: 50000 }) }),
+      );
+    });
+  });
+
   describe('updateStatus', () => {
     it('throws NotFoundException when order not found', async () => {
       prisma.order.findUnique.mockResolvedValue(null);

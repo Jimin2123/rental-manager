@@ -174,17 +174,76 @@ export class OrderService {
   async update(organizationId: string, id: string, dto: UpdateOrderDto): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id_organizationId: { id, organizationId } },
-      select: { id: true },
+      select: {
+        id: true,
+        status: true,
+        type: true,
+        saleOrder: { select: { id: true } },
+        rentalOrder: { select: { id: true, contract: { select: { id: true } } } },
+      },
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.status !== OrderStatus.REGISTERED)
+      throw new BadRequestException('등록 상태의 주문만 수정할 수 있습니다.');
+    if (dto.rentalItems !== undefined && order.rentalOrder?.contract)
+      throw new BadRequestException('계약이 연결된 주문의 품목은 수정할 수 없습니다.');
 
-    await this.prisma.order.update({
-      where: { id_organizationId: { id, organizationId } },
-      data: {
-        ...(dto.managerId !== undefined && { managerId: dto.managerId }),
-        ...(dto.orderDate !== undefined && { orderDate: new Date(dto.orderDate) }),
-        ...(dto.memo !== undefined && { memo: dto.memo }),
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id_organizationId: { id, organizationId } },
+        data: {
+          ...(dto.managerId !== undefined && { managerId: dto.managerId }),
+          ...(dto.orderDate !== undefined && { orderDate: new Date(dto.orderDate) }),
+          ...(dto.memo !== undefined && { memo: dto.memo }),
+        },
+      });
+
+      if (dto.saleItems !== undefined && order.saleOrder) {
+        await tx.saleOrderItem.deleteMany({ where: { saleOrderId: order.saleOrder.id } });
+        for (const item of dto.saleItems) {
+          await tx.saleOrderItem.create({
+            data: {
+              organizationId,
+              saleOrderId: order.saleOrder.id,
+              productId: item.productId,
+              assetId: item.assetId,
+              serialNumber: item.serialNumber,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              vatType: item.vatType,
+              isUsedAssetShipment: item.isUsedAssetShipment ?? false,
+              warrantyStartDate: item.warrantyStartDate ? new Date(item.warrantyStartDate) : undefined,
+              warrantyEndDate: item.warrantyEndDate ? new Date(item.warrantyEndDate) : undefined,
+              marginAmount: item.marginAmount,
+              memo: item.memo,
+              ...calculateAmounts(item.quantity, item.unitPrice, item.vatType),
+            },
+          });
+        }
+      }
+
+      if (dto.rentalItems !== undefined && order.rentalOrder) {
+        await tx.rentalOrderItem.deleteMany({ where: { rentalOrderId: order.rentalOrder.id } });
+        for (const item of dto.rentalItems) {
+          await tx.rentalOrderItem.create({
+            data: {
+              organizationId,
+              rentalOrderId: order.rentalOrder.id,
+              productId: item.productId,
+              assetId: item.assetId,
+              serialNumber: item.serialNumber,
+              monthlyRentalPrice: item.monthlyRentalPrice,
+              depositAmount: item.depositAmount,
+              installationLocation: item.installationLocation,
+              specialTerms: item.specialTerms,
+              isUsedAssetShipment: item.isUsedAssetShipment ?? false,
+              purchaseAmount: item.purchaseAmount,
+              warrantyExpiresAt: item.warrantyExpiresAt ? new Date(item.warrantyExpiresAt) : undefined,
+              memo: item.memo,
+            },
+          });
+        }
+      }
     });
   }
 

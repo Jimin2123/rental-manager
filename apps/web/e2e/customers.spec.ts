@@ -97,7 +97,7 @@ test('고객 전체 플로우 - 등록→상세→배정 섹션→수정모드',
   await expect(page.getByText(name).first()).toBeVisible({ timeout: 10000 });
 });
 
-test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) => {
+test('법인 고객 - 매출 거래처 등록 시 자동 생성된다', async ({ page }) => {
   await login(page);
   await mockKakaoPostcode(page);
   await page.route('**/organizations/brn/verify', (route) =>
@@ -105,12 +105,10 @@ test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) =>
   );
 
   const suffix = String(Date.now()).slice(-5);
-  const company = `연결거래처${suffix}`;
+  const company = `자동생성거래처${suffix}`;
   const brn = `88800${suffix}`;
-  // BRN 자동포맷 결과: '8880012345' → '888-00-12345'
-  const formattedBrn = `888-00-${suffix}`;
 
-  // 1) 거래처 먼저 등록
+  // 매출 거래처 등록
   await page.goto('/business-partners/new');
   await page.getByLabel('매출 거래처').check();
   await page.getByPlaceholder('(주)거래처명').fill(company);
@@ -122,26 +120,12 @@ test('법인 고객 - 기존 거래처를 연결해 등록', async ({ page }) =>
   await page.getByRole('button', { name: '등록' }).click();
   await page.waitForURL(/\/business-partners\/[0-9a-f-]{8,}/);
 
-  // 2) 법인 고객으로 연결 등록 (옵션 레이블은 저장된 포맷 기준: XXX-XX-XXXXX)
-  await page.goto('/customers/new');
-  await page.getByRole('button', { name: '법인', exact: true }).click();
-  await page.locator('select').selectOption({ label: `${company} (${formattedBrn})` });
-  await page.getByRole('button', { name: '등록', exact: true }).click();
-
-  // 3) 상세 — 법인 표시 + 거래처 링크
-  await page.waitForURL(/\/customers\/[0-9a-f-]{8,}/);
-  await expect(page.getByRole('heading', { name: company }).first()).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole('link', { name: '거래처에서 관리 →' })).toBeVisible();
-
-  // 4) 같은 거래처 재연결 시 409 안내
-  await page.goto('/customers/new');
-  await page.getByRole('button', { name: '법인', exact: true }).click();
-  await page.locator('select').selectOption({ label: `${company} (${formattedBrn})` });
-  await page.getByRole('button', { name: '등록', exact: true }).click();
-  await expect(page.getByText('이미 고객으로 등록된 거래처입니다.')).toBeVisible({ timeout: 10000 });
+  // 고객 목록에 법인 고객이 자동 생성됐는지 확인
+  await page.goto('/customers');
+  await expect(page.getByText(company).first()).toBeVisible({ timeout: 10000 });
 });
 
-test('법인 고객 - 매입 전용 거래처는 선택 목록에 없다', async ({ page }) => {
+test('법인 고객 - 매입 전용 거래처는 고객이 자동 생성되지 않는다', async ({ page }) => {
   await login(page);
   await mockKakaoPostcode(page);
   await page.route('**/organizations/brn/verify', (route) =>
@@ -164,9 +148,7 @@ test('법인 고객 - 매입 전용 거래처는 선택 목록에 없다', async
   await page.getByRole('button', { name: '등록' }).click();
   await page.waitForURL(/\/business-partners\/[0-9a-f-]{8,}/);
 
-  // 법인 고객 등록 화면 — 드롭다운에 매입 전용 거래처는 없어야 한다
-  await page.goto('/customers/new');
-  await page.getByRole('button', { name: '법인', exact: true }).click();
-  await expect(page.locator('select')).toBeVisible();
-  await expect(page.locator('select option', { hasText: supplier })).toHaveCount(0);
+  // 고객 목록에 매입 전용 거래처명이 없어야 한다
+  await page.goto('/customers');
+  await expect(page.getByText(supplier)).toHaveCount(0);
 });

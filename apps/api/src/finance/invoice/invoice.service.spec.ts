@@ -448,6 +448,8 @@ describe('InvoiceService', () => {
           data: expect.objectContaining({
             organizationId: 'org-1',
             type: InvoiceType.SALE,
+            status: InvoiceStatus.ISSUED,
+            issuedAt: expect.any(Date),
             customerId: 'c-1',
             saleOrderId: 'so-1',
           }),

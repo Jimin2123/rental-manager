@@ -96,6 +96,15 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
             <Badge variant="outline">{ORDER_STATUS_LABEL[order.status]}</Badge>
           </div>
           <div className="flex gap-2">
+            {order.status === 'REGISTERED' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void navigate({ to: '/orders/$id/edit', params: { id: order.id } })}
+              >
+                수정
+              </Button>
+            )}
             {order.type === 'RENTAL' && !existingContract && (
               <Button size="sm" onClick={() => setShowContractForm((v) => !v)}>
                 계약 생성

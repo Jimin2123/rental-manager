@@ -42,6 +42,13 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 
-  process.on('SIGTERM', () => void app.close());
+  const server = app.getHttpServer();
+  const shutdown = async () => {
+    server.closeAllConnections();
+    await app.close();
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => void shutdown());
+  process.on('SIGINT', () => void shutdown());
 }
 void bootstrap();

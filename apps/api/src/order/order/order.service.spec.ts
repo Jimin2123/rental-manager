@@ -200,13 +200,7 @@ describe('OrderService', () => {
 
       await service.updateStatus('org-1', 'o-1', { status: OrderStatus.DELIVERED });
 
-      expect(invoiceService.createForSaleOrder).toHaveBeenCalledWith(
-        'org-1',
-        'c-1',
-        'so-1',
-        [saleItem],
-        prisma,
-      );
+      expect(invoiceService.createForSaleOrder).toHaveBeenCalledWith('org-1', 'c-1', 'so-1', [saleItem], prisma);
     });
 
     it('SALE 주문 DELIVERED 전환 시 assetId 없는 항목만 있으면 자산 변경 없음', async () => {

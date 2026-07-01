@@ -480,10 +480,7 @@ describe('InvoiceService', () => {
     });
 
     it('품목이 여러 개면 각각 InvoiceItem을 생성한다', async () => {
-      const multiItems = [
-        { ...saleItems[0] },
-        { ...saleItems[0], id: 'si-2', product: { name: '토너' } },
-      ];
+      const multiItems = [{ ...saleItems[0] }, { ...saleItems[0], id: 'si-2', product: { name: '토너' } }];
       prisma.invoice.create.mockResolvedValue({ id: 'inv-2' });
       prisma.invoiceItem.create.mockResolvedValue({});
 

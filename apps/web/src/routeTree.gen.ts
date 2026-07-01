@@ -29,7 +29,6 @@ import { Route as ProtectedOrdersIndexRouteImport } from './routes/_protected/or
 import { Route as ProtectedMaintenanceSchedulesIndexRouteImport } from './routes/_protected/maintenance-schedules/index'
 import { Route as ProtectedInvoicesIndexRouteImport } from './routes/_protected/invoices/index'
 import { Route as ProtectedCustomersIndexRouteImport } from './routes/_protected/customers/index'
-import { Route as ProtectedContractsIndexRouteImport } from './routes/_protected/contracts/index'
 import { Route as ProtectedBusinessPartnersIndexRouteImport } from './routes/_protected/business-partners/index'
 import { Route as ProtectedAuditLogsIndexRouteImport } from './routes/_protected/audit-logs/index'
 import { Route as ProtectedTaxInvoicesIdRouteImport } from './routes/_protected/tax-invoices/$id'
@@ -51,11 +50,11 @@ import { Route as ProtectedMaintenanceSchedulesIdRouteImport } from './routes/_p
 import { Route as ProtectedInvoicesIdRouteImport } from './routes/_protected/invoices/$id'
 import { Route as ProtectedCustomersNewRouteImport } from './routes/_protected/customers/new'
 import { Route as ProtectedCustomersIdRouteImport } from './routes/_protected/customers/$id'
-import { Route as ProtectedContractsIdRouteImport } from './routes/_protected/contracts/$id'
 import { Route as ProtectedBusinessPartnersNewRouteImport } from './routes/_protected/business-partners/new'
 import { Route as ProtectedBusinessPartnersIdRouteImport } from './routes/_protected/business-partners/$id'
 import { Route as ProtectedSettingsMembersIndexRouteImport } from './routes/_protected/settings/members/index'
 import { Route as ProtectedSettingsDepositAccountsIndexRouteImport } from './routes/_protected/settings/deposit-accounts/index'
+import { Route as ProtectedOrdersIdEditRouteImport } from './routes/_protected/orders/$id.edit'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -157,11 +156,6 @@ const ProtectedInvoicesIndexRoute = ProtectedInvoicesIndexRouteImport.update({
 const ProtectedCustomersIndexRoute = ProtectedCustomersIndexRouteImport.update({
   id: '/customers/',
   path: '/customers/',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedContractsIndexRoute = ProtectedContractsIndexRouteImport.update({
-  id: '/contracts/',
-  path: '/contracts/',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedBusinessPartnersIndexRoute =
@@ -275,11 +269,6 @@ const ProtectedCustomersIdRoute = ProtectedCustomersIdRouteImport.update({
   path: '/customers/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedContractsIdRoute = ProtectedContractsIdRouteImport.update({
-  id: '/contracts/$id',
-  path: '/contracts/$id',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 const ProtectedBusinessPartnersNewRoute =
   ProtectedBusinessPartnersNewRouteImport.update({
     id: '/business-partners/new',
@@ -304,6 +293,11 @@ const ProtectedSettingsDepositAccountsIndexRoute =
     path: '/settings/deposit-accounts/',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedOrdersIdEditRoute = ProtectedOrdersIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ProtectedOrdersIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
@@ -316,13 +310,12 @@ export interface FileRoutesByFullPath {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
-  '/contracts/$id': typeof ProtectedContractsIdRoute
   '/customers/$id': typeof ProtectedCustomersIdRoute
   '/customers/new': typeof ProtectedCustomersNewRoute
   '/invoices/$id': typeof ProtectedInvoicesIdRoute
   '/maintenance-schedules/$id': typeof ProtectedMaintenanceSchedulesIdRoute
   '/maintenance-schedules/new': typeof ProtectedMaintenanceSchedulesNewRoute
-  '/orders/$id': typeof ProtectedOrdersIdRoute
+  '/orders/$id': typeof ProtectedOrdersIdRouteWithChildren
   '/orders/new': typeof ProtectedOrdersNewRoute
   '/payments/$id': typeof ProtectedPaymentsIdRoute
   '/payments/new': typeof ProtectedPaymentsNewRoute
@@ -338,7 +331,6 @@ export interface FileRoutesByFullPath {
   '/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
   '/audit-logs/': typeof ProtectedAuditLogsIndexRoute
   '/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
-  '/contracts/': typeof ProtectedContractsIndexRoute
   '/customers/': typeof ProtectedCustomersIndexRoute
   '/invoices/': typeof ProtectedInvoicesIndexRoute
   '/maintenance-schedules/': typeof ProtectedMaintenanceSchedulesIndexRoute
@@ -349,6 +341,7 @@ export interface FileRoutesByFullPath {
   '/refunds/': typeof ProtectedRefundsIndexRoute
   '/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
+  '/orders/$id/edit': typeof ProtectedOrdersIdEditRoute
   '/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
   '/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
@@ -363,13 +356,12 @@ export interface FileRoutesByTo {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
-  '/contracts/$id': typeof ProtectedContractsIdRoute
   '/customers/$id': typeof ProtectedCustomersIdRoute
   '/customers/new': typeof ProtectedCustomersNewRoute
   '/invoices/$id': typeof ProtectedInvoicesIdRoute
   '/maintenance-schedules/$id': typeof ProtectedMaintenanceSchedulesIdRoute
   '/maintenance-schedules/new': typeof ProtectedMaintenanceSchedulesNewRoute
-  '/orders/$id': typeof ProtectedOrdersIdRoute
+  '/orders/$id': typeof ProtectedOrdersIdRouteWithChildren
   '/orders/new': typeof ProtectedOrdersNewRoute
   '/payments/$id': typeof ProtectedPaymentsIdRoute
   '/payments/new': typeof ProtectedPaymentsNewRoute
@@ -385,7 +377,6 @@ export interface FileRoutesByTo {
   '/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
   '/audit-logs': typeof ProtectedAuditLogsIndexRoute
   '/business-partners': typeof ProtectedBusinessPartnersIndexRoute
-  '/contracts': typeof ProtectedContractsIndexRoute
   '/customers': typeof ProtectedCustomersIndexRoute
   '/invoices': typeof ProtectedInvoicesIndexRoute
   '/maintenance-schedules': typeof ProtectedMaintenanceSchedulesIndexRoute
@@ -396,6 +387,7 @@ export interface FileRoutesByTo {
   '/refunds': typeof ProtectedRefundsIndexRoute
   '/service-requests': typeof ProtectedServiceRequestsIndexRoute
   '/tax-invoices': typeof ProtectedTaxInvoicesIndexRoute
+  '/orders/$id/edit': typeof ProtectedOrdersIdEditRoute
   '/settings/deposit-accounts': typeof ProtectedSettingsDepositAccountsIndexRoute
   '/settings/members': typeof ProtectedSettingsMembersIndexRoute
 }
@@ -413,13 +405,12 @@ export interface FileRoutesById {
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/business-partners/$id': typeof ProtectedBusinessPartnersIdRoute
   '/_protected/business-partners/new': typeof ProtectedBusinessPartnersNewRoute
-  '/_protected/contracts/$id': typeof ProtectedContractsIdRoute
   '/_protected/customers/$id': typeof ProtectedCustomersIdRoute
   '/_protected/customers/new': typeof ProtectedCustomersNewRoute
   '/_protected/invoices/$id': typeof ProtectedInvoicesIdRoute
   '/_protected/maintenance-schedules/$id': typeof ProtectedMaintenanceSchedulesIdRoute
   '/_protected/maintenance-schedules/new': typeof ProtectedMaintenanceSchedulesNewRoute
-  '/_protected/orders/$id': typeof ProtectedOrdersIdRoute
+  '/_protected/orders/$id': typeof ProtectedOrdersIdRouteWithChildren
   '/_protected/orders/new': typeof ProtectedOrdersNewRoute
   '/_protected/payments/$id': typeof ProtectedPaymentsIdRoute
   '/_protected/payments/new': typeof ProtectedPaymentsNewRoute
@@ -435,7 +426,6 @@ export interface FileRoutesById {
   '/_protected/tax-invoices/$id': typeof ProtectedTaxInvoicesIdRoute
   '/_protected/audit-logs/': typeof ProtectedAuditLogsIndexRoute
   '/_protected/business-partners/': typeof ProtectedBusinessPartnersIndexRoute
-  '/_protected/contracts/': typeof ProtectedContractsIndexRoute
   '/_protected/customers/': typeof ProtectedCustomersIndexRoute
   '/_protected/invoices/': typeof ProtectedInvoicesIndexRoute
   '/_protected/maintenance-schedules/': typeof ProtectedMaintenanceSchedulesIndexRoute
@@ -446,6 +436,7 @@ export interface FileRoutesById {
   '/_protected/refunds/': typeof ProtectedRefundsIndexRoute
   '/_protected/service-requests/': typeof ProtectedServiceRequestsIndexRoute
   '/_protected/tax-invoices/': typeof ProtectedTaxInvoicesIndexRoute
+  '/_protected/orders/$id/edit': typeof ProtectedOrdersIdEditRoute
   '/_protected/settings/deposit-accounts/': typeof ProtectedSettingsDepositAccountsIndexRoute
   '/_protected/settings/members/': typeof ProtectedSettingsMembersIndexRoute
 }
@@ -462,7 +453,6 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/business-partners/$id'
     | '/business-partners/new'
-    | '/contracts/$id'
     | '/customers/$id'
     | '/customers/new'
     | '/invoices/$id'
@@ -484,7 +474,6 @@ export interface FileRouteTypes {
     | '/tax-invoices/$id'
     | '/audit-logs/'
     | '/business-partners/'
-    | '/contracts/'
     | '/customers/'
     | '/invoices/'
     | '/maintenance-schedules/'
@@ -495,6 +484,7 @@ export interface FileRouteTypes {
     | '/refunds/'
     | '/service-requests/'
     | '/tax-invoices/'
+    | '/orders/$id/edit'
     | '/settings/deposit-accounts/'
     | '/settings/members/'
   fileRoutesByTo: FileRoutesByTo
@@ -509,7 +499,6 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/business-partners/$id'
     | '/business-partners/new'
-    | '/contracts/$id'
     | '/customers/$id'
     | '/customers/new'
     | '/invoices/$id'
@@ -531,7 +520,6 @@ export interface FileRouteTypes {
     | '/tax-invoices/$id'
     | '/audit-logs'
     | '/business-partners'
-    | '/contracts'
     | '/customers'
     | '/invoices'
     | '/maintenance-schedules'
@@ -542,6 +530,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/service-requests'
     | '/tax-invoices'
+    | '/orders/$id/edit'
     | '/settings/deposit-accounts'
     | '/settings/members'
   id:
@@ -558,7 +547,6 @@ export interface FileRouteTypes {
     | '/_protected/'
     | '/_protected/business-partners/$id'
     | '/_protected/business-partners/new'
-    | '/_protected/contracts/$id'
     | '/_protected/customers/$id'
     | '/_protected/customers/new'
     | '/_protected/invoices/$id'
@@ -580,7 +568,6 @@ export interface FileRouteTypes {
     | '/_protected/tax-invoices/$id'
     | '/_protected/audit-logs/'
     | '/_protected/business-partners/'
-    | '/_protected/contracts/'
     | '/_protected/customers/'
     | '/_protected/invoices/'
     | '/_protected/maintenance-schedules/'
@@ -591,6 +578,7 @@ export interface FileRouteTypes {
     | '/_protected/refunds/'
     | '/_protected/service-requests/'
     | '/_protected/tax-invoices/'
+    | '/_protected/orders/$id/edit'
     | '/_protected/settings/deposit-accounts/'
     | '/_protected/settings/members/'
   fileRoutesById: FileRoutesById
@@ -744,13 +732,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedCustomersIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/contracts/': {
-      id: '/_protected/contracts/'
-      path: '/contracts'
-      fullPath: '/contracts/'
-      preLoaderRoute: typeof ProtectedContractsIndexRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/_protected/business-partners/': {
       id: '/_protected/business-partners/'
       path: '/business-partners'
@@ -898,13 +879,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedCustomersIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/contracts/$id': {
-      id: '/_protected/contracts/$id'
-      path: '/contracts/$id'
-      fullPath: '/contracts/$id'
-      preLoaderRoute: typeof ProtectedContractsIdRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/_protected/business-partners/new': {
       id: '/_protected/business-partners/new'
       path: '/business-partners/new'
@@ -933,6 +907,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSettingsDepositAccountsIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/orders/$id/edit': {
+      id: '/_protected/orders/$id/edit'
+      path: '/edit'
+      fullPath: '/orders/$id/edit'
+      preLoaderRoute: typeof ProtectedOrdersIdEditRouteImport
+      parentRoute: typeof ProtectedOrdersIdRoute
+    }
   }
 }
 
@@ -954,17 +935,27 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface ProtectedOrdersIdRouteChildren {
+  ProtectedOrdersIdEditRoute: typeof ProtectedOrdersIdEditRoute
+}
+
+const ProtectedOrdersIdRouteChildren: ProtectedOrdersIdRouteChildren = {
+  ProtectedOrdersIdEditRoute: ProtectedOrdersIdEditRoute,
+}
+
+const ProtectedOrdersIdRouteWithChildren =
+  ProtectedOrdersIdRoute._addFileChildren(ProtectedOrdersIdRouteChildren)
+
 interface ProtectedRouteChildren {
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedBusinessPartnersIdRoute: typeof ProtectedBusinessPartnersIdRoute
   ProtectedBusinessPartnersNewRoute: typeof ProtectedBusinessPartnersNewRoute
-  ProtectedContractsIdRoute: typeof ProtectedContractsIdRoute
   ProtectedCustomersIdRoute: typeof ProtectedCustomersIdRoute
   ProtectedCustomersNewRoute: typeof ProtectedCustomersNewRoute
   ProtectedInvoicesIdRoute: typeof ProtectedInvoicesIdRoute
   ProtectedMaintenanceSchedulesIdRoute: typeof ProtectedMaintenanceSchedulesIdRoute
   ProtectedMaintenanceSchedulesNewRoute: typeof ProtectedMaintenanceSchedulesNewRoute
-  ProtectedOrdersIdRoute: typeof ProtectedOrdersIdRoute
+  ProtectedOrdersIdRoute: typeof ProtectedOrdersIdRouteWithChildren
   ProtectedOrdersNewRoute: typeof ProtectedOrdersNewRoute
   ProtectedPaymentsIdRoute: typeof ProtectedPaymentsIdRoute
   ProtectedPaymentsNewRoute: typeof ProtectedPaymentsNewRoute
@@ -980,7 +971,6 @@ interface ProtectedRouteChildren {
   ProtectedTaxInvoicesIdRoute: typeof ProtectedTaxInvoicesIdRoute
   ProtectedAuditLogsIndexRoute: typeof ProtectedAuditLogsIndexRoute
   ProtectedBusinessPartnersIndexRoute: typeof ProtectedBusinessPartnersIndexRoute
-  ProtectedContractsIndexRoute: typeof ProtectedContractsIndexRoute
   ProtectedCustomersIndexRoute: typeof ProtectedCustomersIndexRoute
   ProtectedInvoicesIndexRoute: typeof ProtectedInvoicesIndexRoute
   ProtectedMaintenanceSchedulesIndexRoute: typeof ProtectedMaintenanceSchedulesIndexRoute
@@ -999,13 +989,12 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedBusinessPartnersIdRoute: ProtectedBusinessPartnersIdRoute,
   ProtectedBusinessPartnersNewRoute: ProtectedBusinessPartnersNewRoute,
-  ProtectedContractsIdRoute: ProtectedContractsIdRoute,
   ProtectedCustomersIdRoute: ProtectedCustomersIdRoute,
   ProtectedCustomersNewRoute: ProtectedCustomersNewRoute,
   ProtectedInvoicesIdRoute: ProtectedInvoicesIdRoute,
   ProtectedMaintenanceSchedulesIdRoute: ProtectedMaintenanceSchedulesIdRoute,
   ProtectedMaintenanceSchedulesNewRoute: ProtectedMaintenanceSchedulesNewRoute,
-  ProtectedOrdersIdRoute: ProtectedOrdersIdRoute,
+  ProtectedOrdersIdRoute: ProtectedOrdersIdRouteWithChildren,
   ProtectedOrdersNewRoute: ProtectedOrdersNewRoute,
   ProtectedPaymentsIdRoute: ProtectedPaymentsIdRoute,
   ProtectedPaymentsNewRoute: ProtectedPaymentsNewRoute,
@@ -1021,7 +1010,6 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedTaxInvoicesIdRoute: ProtectedTaxInvoicesIdRoute,
   ProtectedAuditLogsIndexRoute: ProtectedAuditLogsIndexRoute,
   ProtectedBusinessPartnersIndexRoute: ProtectedBusinessPartnersIndexRoute,
-  ProtectedContractsIndexRoute: ProtectedContractsIndexRoute,
   ProtectedCustomersIndexRoute: ProtectedCustomersIndexRoute,
   ProtectedInvoicesIndexRoute: ProtectedInvoicesIndexRoute,
   ProtectedMaintenanceSchedulesIndexRoute:

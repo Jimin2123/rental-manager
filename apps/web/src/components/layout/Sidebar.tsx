@@ -6,7 +6,6 @@ const NAV_ITEMS = [
   { to: '/', label: '대시보드', icon: '⊞' },
   { to: '/quotations', label: '견적', icon: '📝' },
   { to: '/orders', label: '거래', icon: '🛒' },
-  { to: '/contracts', label: '계약', icon: '📋' },
   { to: '/invoices', label: '청구서', icon: '🧾' },
   { to: '/payments', label: '수납', icon: '💳' },
   { to: '/refunds', label: '환불', icon: '↩' },

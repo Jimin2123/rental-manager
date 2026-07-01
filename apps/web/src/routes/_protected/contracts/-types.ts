@@ -3,7 +3,7 @@ export type ContractItemStatus = 'PENDING' | 'ACTIVE' | 'RETURNED' | 'REPLACED' 
 
 export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
   DRAFT: '작성중',
-  ACTIVE: '진행중',
+  ACTIVE: '계약중',
   ENDED: '종료',
   CANCELED: '취소',
 };

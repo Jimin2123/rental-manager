@@ -34,6 +34,7 @@ export type SaleItem = {
   productId: string;
   product: { name: string };
   serialNumber: string | null;
+  assetId: string | null;
   quantity: number;
   unitPrice: number;
   supplyAmount: number;

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { OrderListItem, OrderType, OrderStatus } from './-types';
 import { ORDER_TYPE_LABEL, ORDER_STATUS_LABEL, customerNameOf, orderTotal } from './-types';
+import { CONTRACT_STATUS_LABEL } from '../contracts/-types';
 import { orderKeys, fetchOrders } from './-api';
 import { won } from '@/lib/format';
 
@@ -93,7 +94,12 @@ function OrdersPage() {
                   </TableCell>
                   <TableCell>{customerNameOf(o.customer)}</TableCell>
                   <TableCell>{o.manager?.name ?? '-'}</TableCell>
-                  <TableCell>{ORDER_STATUS_LABEL[o.status]}</TableCell>
+                  <TableCell>
+                    {o.type === 'RENTAL' && o.rentalOrder?.contract
+                      ? (CONTRACT_STATUS_LABEL[o.rentalOrder.contract.status as keyof typeof CONTRACT_STATUS_LABEL] ??
+                        ORDER_STATUS_LABEL[o.status])
+                      : ORDER_STATUS_LABEL[o.status]}
+                  </TableCell>
                   <TableCell>{new Date(o.orderDate).toLocaleDateString('ko-KR')}</TableCell>
                   <TableCell className="text-right">{won(orderTotal(o))}</TableCell>
                 </TableRow>

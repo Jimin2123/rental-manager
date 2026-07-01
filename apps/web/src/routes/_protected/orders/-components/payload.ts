@@ -113,7 +113,7 @@ export function isSubmittable(s: OrderFormState): boolean {
 export function saleItemsToRows(items: SaleItem[]): ItemRow[] {
   return items.map((i) => ({
     productId: i.productId,
-    assetId: '',
+    assetId: i.assetId ?? '',
     serialNumber: i.serialNumber ?? '',
     quantity: i.quantity,
     unitPrice: i.unitPrice,

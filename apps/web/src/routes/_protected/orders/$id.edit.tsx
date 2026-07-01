@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import type { OrderDetail } from './-types';
@@ -17,14 +18,13 @@ function OrderEditPage() {
     queryFn: () => fetchOrder(id),
   });
 
-  if (isLoading) {
-    return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
-  }
-  if (!order) {
-    return <div className="p-6 text-muted-foreground">거래를 찾을 수 없습니다.</div>;
-  }
-  if (order.status !== 'REGISTERED') {
-    void navigate({ to: '/orders/$id', params: { id } });
+  useEffect(() => {
+    if (order && order.status !== 'REGISTERED') {
+      void navigate({ to: '/orders/$id', params: { id } });
+    }
+  }, [order, id, navigate]);
+
+  if (isLoading || !order || order.status !== 'REGISTERED') {
     return null;
   }
 

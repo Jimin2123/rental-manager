@@ -104,9 +104,14 @@ export function buildCreateOrderBody(s: OrderFormState): CreateOrderBody {
   };
 }
 
-// 등록 가능 여부: 고객 선택 + 품목 1개 이상 + 각 품목 제품 선택됨.
+// 등록 가능 여부: 고객 선택 + 품목 1개 이상 + 각 품목 제품 선택됨. 렌탈은 자산도 필수.
 export function isSubmittable(s: OrderFormState): boolean {
-  return s.customerId !== '' && s.items.length > 0 && s.items.every((i) => i.productId !== '');
+  if (s.customerId === '' || s.items.length === 0) return false;
+  return s.items.every((i) => {
+    if (i.productId === '') return false;
+    if (s.type === 'RENTAL' && i.assetId === '') return false;
+    return true;
+  });
 }
 
 // 서버 응답 품목 → ItemRow 변환 (수정 폼 초기화에 사용)

@@ -67,7 +67,7 @@ function ItemRowEditor({
             onChange={(v) => onUpdate(index, { productId: v, assetId: '', serialNumber: '' })}
           />
         </Field>
-        <Field label="자산(시리얼)">
+        <Field label="자산(시리얼)" required={type === 'RENTAL'}>
           <AssetSelect
             productId={item.productId}
             value={item.assetId}

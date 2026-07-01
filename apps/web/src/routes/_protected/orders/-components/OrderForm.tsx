@@ -63,7 +63,10 @@ export function OrderForm() {
       const { orderId, rentalOrderId } = res.data;
       if (rentalOrderId && isContractSubmittable(contractForm)) {
         try {
-          await api.post('/rental-contracts', buildCreateContractBody(rentalOrderId, contractForm, []));
+          const contractItems = state.items
+            .filter((i) => i.assetId)
+            .map((i) => ({ assetId: i.assetId, monthlyRentalPrice: i.monthlyRentalPrice }));
+          await api.post('/rental-contracts', buildCreateContractBody(rentalOrderId, contractForm, contractItems));
         } catch {
           toast.error('계약 생성에 실패했습니다. 주문 상세에서 다시 시도하세요.');
         }

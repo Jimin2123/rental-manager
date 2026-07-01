@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { NativeSelect } from '@/components/ui/native-select';
 import { toast } from 'sonner';
 import { toastApiError } from '@/lib/api-error';
@@ -18,7 +18,8 @@ import { orderKeys, invalidateOrder } from '../-api';
 import { contractKeys, fetchContract } from '../../contracts/-api';
 import { buildCreateContractBody, emptyContractForm, isContractSubmittable } from '../../contracts/-components/payload';
 import type { ContractFormState } from '../../contracts/-components/payload';
-import type { ContractDetail } from '../../contracts/-types';
+import type { ContractDetail, ContractItemStatus } from '../../contracts/-types';
+import { CONTRACT_ITEM_STATUS_LABEL } from '../../contracts/-types';
 import { ContractDetailView } from '../../contracts/-components/ContractDetailView';
 
 export function OrderDetailView({ order }: { order: OrderDetail }) {
@@ -37,6 +38,13 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
     queryFn: () => fetchContract(contractId!),
     enabled: contractId !== null,
   });
+
+  const assetStatusMap = useMemo(
+    () => new Map<string, ContractItemStatus>(
+      (contractDetail?.items ?? []).filter((i) => i.assetId).map((i) => [i.assetId, i.status]),
+    ),
+    [contractDetail],
+  );
 
   const statusMutation = useMutation({
     mutationFn: (status: OrderStatus) => api.patch(`/orders/${order.id}/status`, { status }),
@@ -166,6 +174,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
                 <TableHead className="text-right">월 렌탈료</TableHead>
                 <TableHead className="text-right">보증금</TableHead>
                 <TableHead>설치 위치</TableHead>
+                {contractDetail && <TableHead>상태</TableHead>}
               </TableRow>
             )}
           </TableHeader>
@@ -180,15 +189,29 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
                     <TableCell className="text-right">{it.totalAmount.toLocaleString('ko-KR')}</TableCell>
                   </TableRow>
                 ))
-              : (order.rentalOrder?.items ?? []).map((it) => (
-                  <TableRow key={it.id}>
-                    <TableCell className="font-medium">{it.product.name}</TableCell>
-                    <TableCell>{it.serialNumber ?? '-'}</TableCell>
-                    <TableCell className="text-right">{it.monthlyRentalPrice.toLocaleString('ko-KR')}</TableCell>
-                    <TableCell className="text-right">{(it.depositAmount ?? 0).toLocaleString('ko-KR')}</TableCell>
-                    <TableCell>{it.installationLocation ?? '-'}</TableCell>
-                  </TableRow>
-                ))}
+              : (order.rentalOrder?.items ?? []).map((it) => {
+                  const itemStatus = it.assetId ? assetStatusMap.get(it.assetId) : undefined;
+                  return (
+                    <TableRow key={it.id}>
+                      <TableCell className="font-medium">{it.product.name}</TableCell>
+                      <TableCell>{it.serialNumber ?? '-'}</TableCell>
+                      <TableCell className="text-right">{it.monthlyRentalPrice.toLocaleString('ko-KR')}</TableCell>
+                      <TableCell className="text-right">{(it.depositAmount ?? 0).toLocaleString('ko-KR')}</TableCell>
+                      <TableCell>{it.installationLocation ?? '-'}</TableCell>
+                      {contractDetail && (
+                        <TableCell>
+                          {itemStatus ? (
+                            <Badge variant={itemStatus === 'ACTIVE' ? 'default' : 'secondary'}>
+                              {CONTRACT_ITEM_STATUS_LABEL[itemStatus]}
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
           </TableBody>
         </Table>
       </div>

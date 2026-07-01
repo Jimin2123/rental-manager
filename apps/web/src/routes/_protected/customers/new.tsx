@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { CustomerForm } from './-components/CustomerForm';
+import { IndividualForm } from './-components/IndividualForm';
 
 export const Route = createFileRoute('/_protected/customers/new')({
   component: NewCustomerPage,
@@ -17,7 +17,7 @@ function NewCustomerPage() {
         </Button>
         <h1 className="text-xl font-semibold text-foreground">고객 등록</h1>
       </div>
-      <CustomerForm />
+      <IndividualForm />
     </div>
   );
 }

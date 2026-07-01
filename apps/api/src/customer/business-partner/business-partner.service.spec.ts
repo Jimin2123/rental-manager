@@ -19,7 +19,7 @@ describe('BusinessPartnerService', () => {
       update: jest.Mock;
       delete: jest.Mock;
     };
-    customer: { updateMany: jest.Mock };
+    customer: { create: jest.Mock; updateMany: jest.Mock };
   };
 
   beforeEach(async () => {
@@ -36,7 +36,7 @@ describe('BusinessPartnerService', () => {
         update: jest.fn(),
         delete: jest.fn(),
       },
-      customer: { updateMany: jest.fn() },
+      customer: { create: jest.fn(), updateMany: jest.fn() },
     };
     const module = await Test.createTestingModule({
       providers: [BusinessPartnerService, { provide: PrismaService, useValue: prisma }],
@@ -51,6 +51,7 @@ describe('BusinessPartnerService', () => {
       prisma.businessPartner.create.mockResolvedValue({ id: 'partner-1' });
       prisma.businessPartnerRole.createMany.mockResolvedValue({ count: 1 });
       prisma.businessPartnerContact.createMany.mockResolvedValue({ count: 1 });
+      prisma.customer.create.mockResolvedValue({ id: 'cust-1' });
 
       const result = await service.create('org-1', {
         roles: ['SALES'],
@@ -77,6 +78,53 @@ describe('BusinessPartnerService', () => {
         expect.objectContaining({ data: [{ organizationId: 'org-1', businessPartnerId: 'partner-1', type: 'SALES' }] }),
       );
       expect(result).toEqual({ id: 'partner-1' });
+    });
+
+    it('SALES 역할 포함 시 고객(법인) 레코드를 자동 생성한다', async () => {
+      prisma.address.create.mockResolvedValue({ id: 'addr-1' });
+      prisma.businessProfile.create.mockResolvedValue({ id: 'bp-1' });
+      prisma.businessPartner.create.mockResolvedValue({ id: 'partner-1' });
+      prisma.businessPartnerRole.createMany.mockResolvedValue({ count: 1 });
+      prisma.customer.create.mockResolvedValue({ id: 'cust-1' });
+
+      await service.create('org-1', {
+        roles: ['SALES'],
+        businessProfile: {
+          name: '(주)ABC',
+          businessRegistrationNo: '000-00-00000',
+          representativeName: '홍길동',
+          address: { zonecode: '12345', address: '서울시 강남구' },
+        },
+      });
+
+      expect(prisma.customer.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            organizationId: 'org-1',
+            type: 'BUSINESS',
+            businessPartnerId: 'partner-1',
+          }),
+        }),
+      );
+    });
+
+    it('SALES 역할 없을 때 고객 레코드를 생성하지 않는다', async () => {
+      prisma.address.create.mockResolvedValue({ id: 'addr-1' });
+      prisma.businessProfile.create.mockResolvedValue({ id: 'bp-1' });
+      prisma.businessPartner.create.mockResolvedValue({ id: 'partner-2' });
+      prisma.businessPartnerRole.createMany.mockResolvedValue({ count: 1 });
+
+      await service.create('org-1', {
+        roles: ['PURCHASE'],
+        businessProfile: {
+          name: '(주)공급사',
+          businessRegistrationNo: '111-11-11111',
+          representativeName: '이공급',
+          address: { zonecode: '54321', address: '부산시 해운대구' },
+        },
+      });
+
+      expect(prisma.customer.create).not.toHaveBeenCalled();
     });
   });
 

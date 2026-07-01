@@ -36,15 +36,11 @@ export function OrderForm() {
     memo: '',
     items: [emptyItemRow()],
   });
-  const [includeContract, setIncludeContract] = useState(false);
   const [contractForm, setContractForm] = useState<ContractFormState>(emptyContractForm());
   const patchContract = (p: Partial<ContractFormState>) => setContractForm((s) => ({ ...s, ...p }));
 
   const patch = (p: Partial<OrderFormState>) => {
-    if (p.type && p.type !== state.type) {
-      setIncludeContract(false);
-      setContractForm(emptyContractForm());
-    }
+    if (p.type && p.type !== state.type) setContractForm(emptyContractForm());
     setState((s) => ({ ...s, ...p }));
   };
 
@@ -65,7 +61,7 @@ export function OrderForm() {
         buildCreateOrderBody(state),
       );
       const { orderId, rentalOrderId } = res.data;
-      if (includeContract && rentalOrderId && isContractSubmittable(contractForm)) {
+      if (rentalOrderId && isContractSubmittable(contractForm)) {
         try {
           await api.post('/rental-contracts', buildCreateContractBody(rentalOrderId, contractForm, []));
         } catch {
@@ -144,69 +140,55 @@ export function OrderForm() {
       {/* 품목 */}
       <ItemsEditor type={state.type} items={state.items} onChange={(items) => patch({ items })} />
 
-      {/* 계약 (렌탈만) */}
+      {/* 계약 (렌탈만, 선택 — 시작일·종료일·계약개월 입력 시 자동 생성) */}
       {state.type === 'RENTAL' && (
         <div className="rounded-lg border bg-card p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              size="sm"
-              variant={includeContract ? 'default' : 'outline'}
-              onClick={() => {
-                setIncludeContract((v) => !v);
-                if (includeContract) setContractForm(emptyContractForm());
-              }}
-            >
-              계약도 지금 작성하기
-            </Button>
-          </div>
-          {includeContract && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-xs font-medium">시작일 <span className="text-destructive">*</span></p>
-                <Input type="date" value={contractForm.startDate} onChange={(e) => patchContract({ startDate: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium">종료일 <span className="text-destructive">*</span></p>
-                <Input type="date" value={contractForm.endDate} onChange={(e) => patchContract({ endDate: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium">계약개월 <span className="text-destructive">*</span></p>
-                <Input
-                  type="number"
-                  min={1}
-                  value={contractForm.contractMonths}
-                  onChange={(e) => patchContract({ contractMonths: Number(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium">선/후불</p>
-                <NativeSelect
-                  value={contractForm.billingTiming}
-                  onChange={(e) => patchContract({ billingTiming: e.target.value as ContractFormState['billingTiming'] })}
-                >
-                  <option value="PREPAID">선불</option>
-                  <option value="POSTPAID">후불</option>
-                </NativeSelect>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium">청구일(1-31)</p>
-                <Input
-                  type="number"
-                  value={contractForm.billingDay}
-                  onChange={(e) => patchContract({ billingDay: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium">납부기한일(1-31)</p>
-                <Input
-                  type="number"
-                  value={contractForm.paymentDueDay}
-                  onChange={(e) => patchContract({ paymentDueDay: e.target.value })}
-                />
-              </div>
+          <p className="text-sm font-semibold">계약 <span className="text-xs font-normal text-muted-foreground">(선택)</span></p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium">시작일</p>
+              <Input type="date" value={contractForm.startDate} onChange={(e) => patchContract({ startDate: e.target.value })} />
             </div>
-          )}
+            <div className="space-y-1">
+              <p className="text-xs font-medium">종료일</p>
+              <Input type="date" value={contractForm.endDate} onChange={(e) => patchContract({ endDate: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium">계약개월</p>
+              <Input
+                type="number"
+                min={1}
+                value={contractForm.contractMonths}
+                onChange={(e) => patchContract({ contractMonths: Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium">선/후불</p>
+              <NativeSelect
+                value={contractForm.billingTiming}
+                onChange={(e) => patchContract({ billingTiming: e.target.value as ContractFormState['billingTiming'] })}
+              >
+                <option value="PREPAID">선불</option>
+                <option value="POSTPAID">후불</option>
+              </NativeSelect>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium">청구일(1-31)</p>
+              <Input
+                type="number"
+                value={contractForm.billingDay}
+                onChange={(e) => patchContract({ billingDay: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium">납부기한일(1-31)</p>
+              <Input
+                type="number"
+                value={contractForm.paymentDueDay}
+                onChange={(e) => patchContract({ paymentDueDay: e.target.value })}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -216,7 +198,7 @@ export function OrderForm() {
         </Button>
         <Button
           type="button"
-          disabled={!isSubmittable(state) || (includeContract && !isContractSubmittable(contractForm)) || mutation.isPending}
+          disabled={!isSubmittable(state) || mutation.isPending}
           onClick={() => void mutation.mutate()}
         >
           {mutation.isPending ? '저장 중...' : '등록'}

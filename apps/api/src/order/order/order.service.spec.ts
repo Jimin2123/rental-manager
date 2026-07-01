@@ -100,7 +100,7 @@ describe('OrderService', () => {
       expect(prisma.rentalOrderItem.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ monthlyRentalPrice: 50000 }) }),
       );
-      expect(result).toEqual({ orderId: 'o-2' });
+      expect(result).toEqual({ orderId: 'o-2', rentalOrderId: 'ro-1' });
     });
   });
 

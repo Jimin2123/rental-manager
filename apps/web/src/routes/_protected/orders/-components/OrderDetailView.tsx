@@ -15,9 +15,11 @@ import { useAuthStore } from '@/store/auth.store';
 import type { OrderDetail, OrderStatus } from '../-types';
 import { ORDER_TYPE_LABEL, ORDER_STATUS_LABEL, ORDER_TRANSITIONS, customerNameOf, orderTotal } from '../-types';
 import { orderKeys, invalidateOrder } from '../-api';
-import { contractKeys } from '../../contracts/-api';
+import { contractKeys, fetchContract } from '../../contracts/-api';
 import { buildCreateContractBody, emptyContractForm, isContractSubmittable } from '../../contracts/-components/payload';
 import type { ContractFormState } from '../../contracts/-components/payload';
+import type { ContractDetail } from '../../contracts/-types';
+import { ContractDetailView } from '../../contracts/-components/ContractDetailView';
 
 export function OrderDetailView({ order }: { order: OrderDetail }) {
   const navigate = useNavigate();
@@ -28,6 +30,13 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
   const [memo, setMemo] = useState(order.memo ?? '');
   const [showContractForm, setShowContractForm] = useState(false);
   const existingContract = order.type === 'RENTAL' ? (order.rentalOrder?.contract ?? null) : null;
+  const contractId = existingContract?.id ?? null;
+
+  const { data: contractDetail } = useQuery<ContractDetail>({
+    queryKey: contractKeys.detail(contractId!),
+    queryFn: () => fetchContract(contractId!),
+    enabled: contractId !== null,
+  });
 
   const statusMutation = useMutation({
     mutationFn: (status: OrderStatus) => api.patch(`/orders/${order.id}/status`, { status }),
@@ -79,15 +88,6 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
             <Badge variant="outline">{ORDER_STATUS_LABEL[order.status]}</Badge>
           </div>
           <div className="flex gap-2">
-            {order.type === 'RENTAL' && existingContract && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void navigate({ to: '/contracts/$id', params: { id: existingContract.id } })}
-              >
-                계약 보기
-              </Button>
-            )}
             {order.type === 'RENTAL' && !existingContract && (
               <Button size="sm" onClick={() => setShowContractForm((v) => !v)}>
                 계약 생성
@@ -192,6 +192,9 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           </TableBody>
         </Table>
       </div>
+
+      {/* 계약 섹션 */}
+      {contractDetail && <ContractDetailView contract={contractDetail} />}
     </div>
   );
 }
@@ -205,7 +208,6 @@ function ContractCreateCard({
   rentalItems: { id: string; assetId: string | null; monthlyRentalPrice: number }[];
   onClose: () => void;
 }) {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ContractFormState>(emptyContractForm());
   const patch = (p: Partial<ContractFormState>) => setForm((s) => ({ ...s, ...p }));
@@ -219,17 +221,13 @@ function ContractCreateCard({
         rentalOrderItemId: it.id,
         monthlyRentalPrice: it.monthlyRentalPrice,
       }));
-      const res = await api.post<{ id: string }>(
-        '/rental-contracts',
-        buildCreateContractBody(rentalOrderId, form, items),
-      );
-      return res.data.id;
+      await api.post('/rental-contracts', buildCreateContractBody(rentalOrderId, form, items));
     },
-    onSuccess: (contractId) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('계약이 생성되었습니다.');
-      void navigate({ to: '/contracts/$id', params: { id: contractId } });
+      onClose();
     },
     onError: (err) =>
       toastApiError(err, '계약 생성 중 오류가 발생했습니다.', {

@@ -78,11 +78,6 @@ function CustomersPartnersPage() {
     [partners],
   );
 
-  // 전체 탭 중복 제거: 두 역할(매출처+매입처)을 가진 회사는 고객 항목으로만 표시
-  const pureSuppliers = useMemo(
-    () => purchasePartners.filter((p) => !p.roles.some((r) => r.type === 'SALES')),
-    [purchasePartners],
-  );
 
   const filteredPartners = useMemo(() => {
     if (!q) return purchasePartners;
@@ -92,17 +87,15 @@ function CustomersPartnersPage() {
 
   const combinedItems = useMemo(() => {
     if (tab !== 'all') return [];
-    // 전체 탭: 두 역할 가진 회사는 고객 항목으로만 표시 (중복 제거)
-    const suppliersOnly = filteredPartners.filter((p) => !p.roles.some((r) => r.type === 'SALES'));
     return [
       ...filteredCustomers.map((c) => ({ kind: 'customer' as const, data: c })),
-      ...suppliersOnly.map((p) => ({ kind: 'partner' as const, data: p })),
+      ...filteredPartners.map((p) => ({ kind: 'partner' as const, data: p })),
     ];
   }, [tab, filteredCustomers, filteredPartners]);
 
   const tabs = useMemo(
     () => [
-      { value: 'all' as const, label: '전체', count: customers.length + pureSuppliers.length },
+      { value: 'all' as const, label: '전체', count: customers.length + purchasePartners.length },
       { value: 'business' as const, label: '사업자', count: customers.filter((c) => c.type === 'BUSINESS').length },
       { value: 'individual' as const, label: '개인', count: customers.filter((c) => c.type === 'INDIVIDUAL').length },
       { value: 'partners' as const, label: '매입처', count: purchasePartners.length },

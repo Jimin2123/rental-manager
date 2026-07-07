@@ -1,6 +1,5 @@
 import {
   Banknote,
-  Building2,
   CalendarCheck,
   CreditCard,
   FileCheck,
@@ -35,8 +34,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/service-requests', label: 'AS', icon: Wrench },
   { to: '/maintenance-schedules', label: '점검', icon: CalendarCheck },
   { to: '/products', label: '제품', icon: Package },
-  { to: '/business-partners', label: '거래처', icon: Building2 },
-  { to: '/customers', label: '고객', icon: Users },
+  { to: '/customers', label: '고객 · 거래처', icon: Users },
   { to: '/audit-logs', label: '감사로그', icon: ScrollText },
 ] as const;
 

@@ -26,7 +26,7 @@ export function FilterTabs({ tabs, activeTab, onTabChange }: Props) {
               : 'text-[#5b6472] dark:text-muted-foreground bg-white dark:bg-card border border-[#e5e8ee] dark:border-border font-medium text-[13px] px-[13px] py-[7px] rounded-lg cursor-pointer hover:bg-[#f6f7f9] dark:hover:bg-muted/30'
           }
         >
-          {t.label}{t.value !== activeTab && ` ${t.count}`}
+          {t.label} {t.count}
         </button>
       ))}
     </div>

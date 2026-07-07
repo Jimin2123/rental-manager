@@ -4,10 +4,12 @@ import { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import { TextField } from '@/components/form/TextField';
 import { formatPhone } from '@/lib/format';
+import { openKakaoAddressSearch } from '@/lib/kakao-address';
 import type { BusinessPartnerDetail } from '../-types';
 import { partnerEditSchema, type PartnerEditValues } from '../-schemas';
 import { RolesField } from './fields';
@@ -65,10 +67,7 @@ export function PartnerEditForm({
           },
         },
       }),
-    onSuccess: () => {
-      toast.success('거래처 정보가 수정되었습니다.');
-      onSaved();
-    },
+    onSuccess: () => { toast.success('거래처 정보가 수정되었습니다.'); onSaved(); },
     onError: (err) => {
       const status = (err as AxiosError).response?.status;
       const message = (err as AxiosError<{ message?: string }>).response?.data?.message;
@@ -80,11 +79,18 @@ export function PartnerEditForm({
     },
   });
 
+  const handleAddressSearch = () => {
+    openKakaoAddressSearch((result) => {
+      form.setValue('businessProfile.address.zonecode', result.zonecode, { shouldValidate: true });
+      form.setValue('businessProfile.address.address', result.address, { shouldValidate: true });
+    });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((d) => void mutation.mutate(d))} className="space-y-4">
         {/* 역할 */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <h2 className="mb-3 text-sm font-semibold">
             역할 <span className="text-destructive">*</span>
           </h2>
@@ -95,8 +101,9 @@ export function PartnerEditForm({
         </div>
 
         {/* 사업자 정보 */}
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">사업자 정보</h2>
+
           <div className="grid grid-cols-2 gap-4">
             <TextField control={form.control} name="businessProfile.name" label="상호명" required />
             <div>
@@ -107,7 +114,9 @@ export function PartnerEditForm({
               <p className="text-xs text-muted-foreground mt-1">사업자번호는 수정할 수 없습니다.</p>
             </div>
           </div>
+
           <TextField control={form.control} name="businessProfile.representativeName" label="대표자명" required />
+
           <div className="grid grid-cols-2 gap-4">
             <TextField control={form.control} name="businessProfile.businessType" label="업태" />
             <TextField control={form.control} name="businessProfile.businessItem" label="종목" />
@@ -120,20 +129,62 @@ export function PartnerEditForm({
             />
             <TextField control={form.control} name="businessProfile.email" label="대표이메일" type="email" />
           </div>
+
+          {/* 주소 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">주소</p>
+            <div className="flex gap-2">
+              <FormField
+                control={form.control}
+                name="businessProfile.address.zonecode"
+                render={({ field }) => (
+                  <FormItem className="w-28 shrink-0">
+                    <FormControl>
+                      <Input placeholder="우편번호" readOnly {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="button" variant="outline" onClick={handleAddressSearch}>주소 검색</Button>
+            </div>
+            <FormField
+              control={form.control}
+              name="businessProfile.address.address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="기본주소" readOnly {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="businessProfile.address.addressDetail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="상세주소 (선택)" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         {/* 메모 */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <TextField control={form.control} name="memo" label="메모" placeholder="내부 메모" />
         </div>
 
-        {/* 담당자 섹션 — 편집 모드에서도 항상 표시 */}
+        {/* 담당자 */}
         <ContactSection partnerId={partner.id} contacts={partner.contacts} onChanged={onContactChanged} />
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            취소
-          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>취소</Button>
           <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? '저장 중...' : '저장'}
           </Button>

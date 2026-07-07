@@ -52,7 +52,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     toast.success('로그아웃되었습니다.');
   };
 
-  const initials = currentOrganization?.name?.slice(0, 2).toUpperCase() ?? 'RM';
+  const initials = currentOrganization?.name?.slice(0, 2).toUpperCase() ?? '셀렌';
 
   return (
     <header className="flex h-14 flex-none items-center gap-3 border-b bg-card px-4 sm:h-[62px] sm:gap-4 sm:px-6">
@@ -64,9 +64,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* 로고 */}
       <div className="flex flex-none items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-extrabold text-primary-foreground">
-          RM
+          셀
         </div>
-        <span className="text-base font-bold text-foreground">렌탈 매니저</span>
+        <span className="text-base font-bold text-foreground">셀렌트</span>
       </div>
 
       {/* 구분선 — 태블릿·데스크톱 */}

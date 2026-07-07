@@ -12,7 +12,7 @@ export function Footer({ className }: FooterProps) {
         className,
       )}
     >
-      <span>© 2025 렌탈 매니저</span>
+      <span>© 2025 셀렌트</span>
       <span>·</span>
       <a href="#" className="hover:text-foreground">
         이용약관

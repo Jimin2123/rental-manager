@@ -33,7 +33,7 @@ function ProtectedLayout() {
 
   return (
     <div className="flex h-screen justify-center bg-background">
-      <div className="flex h-full w-full max-w-[1360px] flex-col overflow-hidden border-x">
+      <div className="flex h-full w-full max-w-[1440px] flex-col overflow-hidden border-x">
         <Header onMenuClick={() => setDrawerOpen(true)} />
 
         <div className="relative flex flex-1 overflow-hidden">

@@ -10,6 +10,7 @@ import type { CustomerListItem } from './-types';
 import type { BusinessPartnerListItem } from '../business-partners/-types';
 import { FilterTabs } from './-components/FilterTabs';
 import type { TabValue } from './-components/FilterTabs';
+import { CombinedTable } from './-components/CombinedTable';
 import { CustomerTable } from './-components/CustomerTable';
 import { PartnerTable } from './-components/PartnerTable';
 import { DetailPanel } from './-components/DetailPanel';
@@ -43,7 +44,6 @@ function CustomersPartnersPage() {
   const [inputValue, setInputValue] = useState(q);
   const composingRef = useRef(false);
 
-  // URL의 q가 외부에서 바뀌면 (뒤로가기 등) 인풋 동기화
   useEffect(() => {
     if (!composingRef.current) setInputValue(q);
   }, [q]);
@@ -75,27 +75,33 @@ function CustomersPartnersPage() {
   }, [customers, tab, q]);
 
   const filteredPartners = useMemo(() => {
-    let list = partners.filter((p) => p.roles.some((r) => r.type === 'PURCHASE'));
-    if (q) {
-      const lower = q.toLowerCase();
-      list = list.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
-    }
-    return list;
+    if (!q) return partners;
+    const lower = q.toLowerCase();
+    return partners.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
   }, [partners, q]);
+
+  const combinedItems = useMemo(() => {
+    if (tab !== 'all') return [];
+    return [
+      ...filteredCustomers.map((c) => ({ kind: 'customer' as const, data: c })),
+      ...filteredPartners.map((p) => ({ kind: 'partner' as const, data: p })),
+    ];
+  }, [tab, filteredCustomers, filteredPartners]);
 
   const tabs = useMemo(
     () => [
-      { value: 'all' as const, label: '전체', count: customers.length },
+      { value: 'all' as const, label: '전체', count: customers.length + partners.length },
       { value: 'business' as const, label: '사업자', count: customers.filter((c) => c.type === 'BUSINESS').length },
       { value: 'individual' as const, label: '개인', count: customers.filter((c) => c.type === 'INDIVIDUAL').length },
-      { value: 'partners' as const, label: '매입처', count: partners.filter((p) => p.roles.some((r) => r.type === 'PURCHASE')).length },
+      { value: 'partners' as const, label: '거래처', count: partners.length },
       { value: 'overdue' as const, label: '미수 있음', count: customers.filter((c) => c.isActive).length },
     ],
     [customers, partners],
   );
 
   const isPartnerTab = tab === 'partners';
-  const isLoading = isPartnerTab ? loadingPartners : loadingCustomers;
+  const isCombinedTab = tab === 'all';
+  const isLoading = loadingCustomers || loadingPartners;
 
   const handleCustomerSelect = (id: string) => {
     if (window.innerWidth < 1024) {
@@ -112,6 +118,8 @@ function CustomersPartnersPage() {
     }
     setSelectedItem((prev) => (prev?.type === 'partner' && prev.id === id ? null : { type: 'partner', id }));
   };
+
+  const combinedSelectedKey = selectedItem ? `${selectedItem.type}:${selectedItem.id}` : null;
 
   return (
     <div className="-m-6 p-6 min-h-full bg-[#f6f7f9] dark:bg-background flex flex-col gap-4">
@@ -141,7 +149,14 @@ function CustomersPartnersPage() {
 
       <div className="flex gap-[14px] items-start">
         <div className="flex-1 min-w-0">
-          {isPartnerTab ? (
+          {isCombinedTab ? (
+            <CombinedTable
+              items={combinedItems}
+              isLoading={isLoading}
+              selectedKey={combinedSelectedKey}
+              onSelect={(kind, id) => kind === 'customer' ? handleCustomerSelect(id) : handlePartnerSelect(id)}
+            />
+          ) : isPartnerTab ? (
             <PartnerTable
               items={filteredPartners}
               isLoading={isLoading}

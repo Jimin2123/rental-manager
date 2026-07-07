@@ -200,7 +200,9 @@ export function BusinessCustomerForm() {
                   </div>
                   {brnStatus !== 'idle' ? (
                     <p className={`text-xs ${brnStatus === 'valid' ? 'text-green-600' : 'text-destructive'}`}>
-                      {brnStatus === 'valid' ? `✓ ${brnMessage}` : `✗ ${brnMessage}`}
+                      {brnStatus === 'valid'
+                        ? `✓ ${brnMessage}`
+                        : `✗ 사용할 수 없는 사업자입니다. (${brnMessage})`}
                     </p>
                   ) : (
                     <FormMessage />

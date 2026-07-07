@@ -22,8 +22,8 @@ export function FilterTabs({ tabs, activeTab, onTabChange }: Props) {
           onClick={() => onTabChange(t.value)}
           className={
             t.value === activeTab
-              ? 'text-[#2456e0] bg-[#eef1f9] font-bold text-[13px] px-[13px] py-[7px] rounded-lg border-0 cursor-pointer'
-              : 'text-[#5b6472] bg-white border border-[#e5e8ee] font-medium text-[13px] px-[13px] py-[7px] rounded-lg cursor-pointer hover:bg-[#f6f7f9]'
+              ? 'text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 font-bold text-[13px] px-[13px] py-[7px] rounded-lg border-0 cursor-pointer'
+              : 'text-[#5b6472] dark:text-muted-foreground bg-white dark:bg-card border border-[#e5e8ee] dark:border-border font-medium text-[13px] px-[13px] py-[7px] rounded-lg cursor-pointer hover:bg-[#f6f7f9] dark:hover:bg-muted/30'
           }
         >
           {t.label} {t.count}

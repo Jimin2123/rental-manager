@@ -95,9 +95,9 @@ function CustomersPartnersPage() {
   };
 
   return (
-    <div className="-m-6 p-6 min-h-full bg-[#f6f7f9] flex flex-col gap-4">
+    <div className="-m-6 p-6 min-h-full bg-[#f6f7f9] dark:bg-background flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-[21px] font-extrabold text-[#1c2230] tracking-tight">고객 · 거래처</h1>
+        <h1 className="text-[21px] font-extrabold text-[#1c2230] dark:text-foreground tracking-tight">고객 · 거래처</h1>
         <Button onClick={() => void navigate({ to: isPartnerTab ? '/business-partners/new' : '/customers/new' })}>
           {isPartnerTab ? '+ 거래처 등록' : '+ 고객 등록'}
         </Button>
@@ -109,7 +109,7 @@ function CustomersPartnersPage() {
         placeholder={isPartnerTab ? '상호명 검색' : '이름 · 연락처 검색'}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className="max-w-xs bg-white"
+        className="max-w-xs bg-white dark:bg-card"
       />
 
       <div className="flex gap-[14px] items-start">

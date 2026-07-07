@@ -12,7 +12,7 @@ type Props = {
 
 function InitialAvatar({ name }: { name: string }) {
   return (
-    <div className="w-10 h-10 rounded-xl bg-[#eef1f9] text-[#2456e0] flex items-center justify-center font-bold text-[15px] flex-none">
+    <div className="w-10 h-10 rounded-xl bg-[#eef1f9] dark:bg-primary/10 text-[#2456e0] dark:text-primary flex items-center justify-center font-bold text-[15px] flex-none">
       {name.charAt(0)}
     </div>
   );
@@ -21,8 +21,8 @@ function InitialAvatar({ name }: { name: string }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2">
-      <span className="text-[#8a919e] flex-none">{label}</span>
-      <span className="text-[#2a2f3a] font-semibold text-right break-all">{value}</span>
+      <span className="text-[#8a919e] dark:text-muted-foreground flex-none">{label}</span>
+      <span className="text-[#2a2f3a] dark:text-foreground font-semibold text-right break-all">{value}</span>
     </div>
   );
 }
@@ -32,7 +32,7 @@ function EditButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="ml-auto border border-[#dce0e8] bg-white text-[#5b6472] text-[12px] font-semibold px-3 py-1.5 rounded-[7px] cursor-pointer hover:bg-[#f6f7f9] flex-none"
+      className="ml-auto border border-[#dce0e8] dark:border-border bg-white dark:bg-card text-[#5b6472] dark:text-muted-foreground text-[12px] font-semibold px-3 py-1.5 rounded-[7px] cursor-pointer hover:bg-[#f6f7f9] dark:hover:bg-muted/50 flex-none"
     >
       수정
     </button>
@@ -47,7 +47,7 @@ function CustomerPanel({ id }: { id: string }) {
   });
 
   if (isLoading) {
-    return <div className="py-8 text-center text-[13px] text-[#98a0ad]">불러오는 중...</div>;
+    return <div className="py-8 text-center text-[13px] text-[#98a0ad] dark:text-muted-foreground">불러오는 중...</div>;
   }
   if (!data) return null;
 
@@ -56,11 +56,11 @@ function CustomerPanel({ id }: { id: string }) {
 
   return (
     <>
-      <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4]">
+      <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4] dark:border-border">
         <InitialAvatar name={name} />
         <div className="min-w-0 flex-1">
-          <div className="text-[15.5px] font-bold text-[#1c2230] truncate">{name}</div>
-          <div className="text-[12px] text-[#98a0ad] mt-0.5">
+          <div className="text-[15.5px] font-bold text-[#1c2230] dark:text-foreground truncate">{name}</div>
+          <div className="text-[12px] text-[#98a0ad] dark:text-muted-foreground mt-0.5">
             {isIndividual ? '개인' : `사업자 ${data.businessPartner?.businessProfile.businessRegistrationNo ?? ''}`}
           </div>
         </div>
@@ -100,7 +100,7 @@ function PartnerPanel({ id }: { id: string }) {
   });
 
   if (isLoading) {
-    return <div className="py-8 text-center text-[13px] text-[#98a0ad]">불러오는 중...</div>;
+    return <div className="py-8 text-center text-[13px] text-[#98a0ad] dark:text-muted-foreground">불러오는 중...</div>;
   }
   if (!data) return null;
 
@@ -108,11 +108,11 @@ function PartnerPanel({ id }: { id: string }) {
 
   return (
     <>
-      <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4]">
+      <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4] dark:border-border">
         <InitialAvatar name={data.businessProfile.name} />
         <div className="min-w-0 flex-1">
-          <div className="text-[15.5px] font-bold text-[#1c2230] truncate">{data.businessProfile.name}</div>
-          <div className="text-[12px] text-[#98a0ad] mt-0.5">사업자 {data.businessProfile.businessRegistrationNo}</div>
+          <div className="text-[15.5px] font-bold text-[#1c2230] dark:text-foreground truncate">{data.businessProfile.name}</div>
+          <div className="text-[12px] text-[#98a0ad] dark:text-muted-foreground mt-0.5">사업자 {data.businessProfile.businessRegistrationNo}</div>
         </div>
         <EditButton onClick={() => void navigate({ to: '/business-partners/$id', params: { id } })} />
       </div>
@@ -122,12 +122,12 @@ function PartnerPanel({ id }: { id: string }) {
           <Row label="대표자" value={data.businessProfile.representativeName} />
         )}
         <div className="flex justify-between gap-2">
-          <span className="text-[#8a919e] flex-none">역할</span>
+          <span className="text-[#8a919e] dark:text-muted-foreground flex-none">역할</span>
           <div className="flex gap-1 flex-wrap justify-end">
             {data.roles.map((r) => (
               <span
                 key={r.type}
-                className="text-[11.5px] font-semibold text-[#5b6472] bg-[#eef0f4] px-2 py-0.5 rounded-md"
+                className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md"
               >
                 {ROLE_LABEL[r.type]}
               </span>
@@ -148,7 +148,7 @@ function PartnerPanel({ id }: { id: string }) {
 
 export function DetailPanel({ selected }: Props) {
   return (
-    <div className="w-80 flex-none bg-white border border-[#e5e8ee] rounded-xl p-5">
+    <div className="w-80 flex-none bg-white dark:bg-card border border-[#e5e8ee] dark:border-border rounded-xl p-5">
       {selected.type === 'customer' ? <CustomerPanel id={selected.id} /> : <PartnerPanel id={selected.id} />}
     </div>
   );

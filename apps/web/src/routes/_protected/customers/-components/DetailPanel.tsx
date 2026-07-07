@@ -68,11 +68,29 @@ function CustomerPanel({ id }: { id: string }) {
           </>
         ) : (
           <>
+            {data.businessPartner?.roles && data.businessPartner.roles.length > 0 && (
+              <div className="flex justify-between gap-2">
+                <span className="text-[#8a919e] dark:text-muted-foreground flex-none">역할</span>
+                <div className="flex gap-1 flex-wrap justify-end">
+                  {data.businessPartner.roles.map((r) => (
+                    <span
+                      key={r.id}
+                      className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md"
+                    >
+                      {ROLE_LABEL[r.type]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {data.businessPartner?.businessProfile.representativeName && (
               <Row label="대표자" value={data.businessPartner.businessProfile.representativeName} />
             )}
             {data.businessPartner?.businessProfile.phone && (
               <Row label="연락처" value={data.businessPartner.businessProfile.phone} />
+            )}
+            {data.businessPartner?.businessProfile.email && (
+              <Row label="이메일" value={data.businessPartner.businessProfile.email} />
             )}
             {data.businessPartner?.businessProfile.address && (
               <Row label="주소" value={data.businessPartner.businessProfile.address.address} />

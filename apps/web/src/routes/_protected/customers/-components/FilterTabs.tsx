@@ -1,4 +1,4 @@
-export type TabValue = 'all' | 'business' | 'individual' | 'partners' | 'overdue';
+export type TabValue = 'all' | 'business' | 'individual' | 'partners';
 
 type TabDef = {
   value: TabValue;

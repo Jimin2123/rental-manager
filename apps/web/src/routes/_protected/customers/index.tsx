@@ -16,7 +16,7 @@ import { PartnerTable } from './-components/PartnerTable';
 import { DetailPanel } from './-components/DetailPanel';
 
 const searchSchema = z.object({
-  tab: z.enum(['all', 'business', 'individual', 'partners', 'overdue']).catch('all'),
+  tab: z.enum(['all', 'business', 'individual', 'partners']).catch('all'),
   q: z.string().catch(''),
 });
 
@@ -62,7 +62,6 @@ function CustomersPartnersPage() {
     let list = customers;
     if (tab === 'business') list = list.filter((c) => c.type === 'BUSINESS');
     else if (tab === 'individual') list = list.filter((c) => c.type === 'INDIVIDUAL');
-    else if (tab === 'overdue') list = list.filter((c) => c.isActive);
     if (q) {
       const lower = q.toLowerCase();
       list = list.filter((c) => {
@@ -74,11 +73,16 @@ function CustomersPartnersPage() {
     return list;
   }, [customers, tab, q]);
 
+  const purchasePartners = useMemo(
+    () => partners.filter((p) => p.roles.some((r) => r.type === 'PURCHASE')),
+    [partners],
+  );
+
   const filteredPartners = useMemo(() => {
-    if (!q) return partners;
+    if (!q) return purchasePartners;
     const lower = q.toLowerCase();
-    return partners.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
-  }, [partners, q]);
+    return purchasePartners.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
+  }, [purchasePartners, q]);
 
   const combinedItems = useMemo(() => {
     if (tab !== 'all') return [];
@@ -90,13 +94,12 @@ function CustomersPartnersPage() {
 
   const tabs = useMemo(
     () => [
-      { value: 'all' as const, label: '전체', count: customers.length + partners.length },
+      { value: 'all' as const, label: '전체', count: customers.length + purchasePartners.length },
       { value: 'business' as const, label: '사업자', count: customers.filter((c) => c.type === 'BUSINESS').length },
       { value: 'individual' as const, label: '개인', count: customers.filter((c) => c.type === 'INDIVIDUAL').length },
-      { value: 'partners' as const, label: '거래처', count: partners.length },
-      { value: 'overdue' as const, label: '미수 있음', count: customers.filter((c) => c.isActive).length },
+      { value: 'partners' as const, label: '매입처', count: purchasePartners.length },
     ],
-    [customers, partners],
+    [customers, purchasePartners],
   );
 
   const isPartnerTab = tab === 'partners';

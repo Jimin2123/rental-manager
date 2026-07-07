@@ -28,17 +28,24 @@ function phoneOf(item: CombinedItem): string {
   return '—';
 }
 
-function KindBadge({ kind }: { kind: 'customer' | 'partner' }) {
-  if (kind === 'customer') {
+function KindBadge({ item }: { item: CombinedItem }) {
+  if (item.kind === 'partner') {
     return (
-      <span className="text-[11.5px] font-semibold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-2 py-0.5 rounded-md">
-        고객
+      <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md">
+        매입처
+      </span>
+    );
+  }
+  if (item.data.type === 'INDIVIDUAL') {
+    return (
+      <span className="text-[11.5px] font-semibold text-[#6d28d9] dark:text-violet-400 bg-[#ede9ff] dark:bg-violet-900/30 px-2 py-0.5 rounded-md">
+        고객(개인)
       </span>
     );
   }
   return (
-    <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md">
-      거래처
+    <span className="text-[11.5px] font-semibold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-2 py-0.5 rounded-md">
+      고객(사업자)
     </span>
   );
 }
@@ -72,7 +79,7 @@ export function CombinedTable({ items, isLoading, selectedKey, onSelect }: Props
               ].join(' ')}
             >
               <div className="font-semibold truncate">{nameOf(item)}</div>
-              <div className="hidden sm:block"><KindBadge kind={item.kind} /></div>
+              <div className="hidden sm:block"><KindBadge item={item} /></div>
               <div className="hidden sm:block text-[#5b6472] dark:text-muted-foreground">{phoneOf(item)}</div>
               <div><StatusBadge isActive={item.data.isActive} /></div>
               <div className="hidden lg:block text-[#98a0ad] dark:text-muted-foreground">

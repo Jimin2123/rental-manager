@@ -27,7 +27,7 @@ function EditButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="ml-auto border border-[#dce0e8] dark:border-border bg-white dark:bg-card text-[#5b6472] dark:text-muted-foreground text-[12px] font-semibold px-3 py-1.5 rounded-[7px] cursor-pointer hover:bg-[#f6f7f9] dark:hover:bg-muted/50 flex-none"
     >
-      수정
+      상세보기
     </button>
   );
 }

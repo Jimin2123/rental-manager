@@ -56,17 +56,14 @@ export function Header({ onMenuClick }: HeaderProps) {
   const initials = currentOrganization?.name?.slice(0, 2).toUpperCase() ?? '셀렌';
 
   return (
-    <header className="flex h-14 flex-none items-center gap-3 border-b bg-card px-4 sm:h-[62px] sm:gap-4 sm:px-6">
+    <header className="flex h-14 flex-none items-center gap-3 border-b bg-card px-2 sm:h-[62px] sm:gap-4 sm:px-4">
       {/* 햄버거 버튼 — 모바일 전용 */}
       <Button variant="ghost" size="icon" className="sm:hidden" onClick={onMenuClick} aria-label="메뉴 열기">
         <Menu className="h-5 w-5" />
       </Button>
 
       {/* 로고 */}
-      <div className="flex flex-none items-center gap-2">
-        <SelenteLogo />
-        <span className="text-base font-bold text-foreground">셀렌트</span>
-      </div>
+      <SelenteLogo />
 
       {/* 구분선 — 태블릿·데스크톱 */}
       <div className="hidden h-5 w-px bg-border sm:block" />

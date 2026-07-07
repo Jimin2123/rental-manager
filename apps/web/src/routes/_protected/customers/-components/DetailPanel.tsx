@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { fetchCustomer, customerKeys } from '../-api';
 import { fetchPartner, partnerKeys } from '../../business-partners/-api';
+import { ROLE_LABEL } from '../../business-partners/-types';
 
 type SelectedItem = { type: 'customer'; id: string } | { type: 'partner'; id: string };
 
@@ -51,10 +52,7 @@ function CustomerPanel({ id }: { id: string }) {
   if (!data) return null;
 
   const isIndividual = data.type === 'INDIVIDUAL';
-  const name =
-    data.individualProfile?.name ??
-    data.businessPartner?.businessProfile.name ??
-    '-';
+  const name = data.individualProfile?.name ?? data.businessPartner?.businessProfile.name ?? '-';
 
   return (
     <>
@@ -63,45 +61,29 @@ function CustomerPanel({ id }: { id: string }) {
         <div className="min-w-0 flex-1">
           <div className="text-[15.5px] font-bold text-[#1c2230] truncate">{name}</div>
           <div className="text-[12px] text-[#98a0ad] mt-0.5">
-            {isIndividual
-              ? '개인'
-              : `사업자 ${data.businessPartner?.businessProfile.businessRegistrationNo ?? ''}`}
+            {isIndividual ? '개인' : `사업자 ${data.businessPartner?.businessProfile.businessRegistrationNo ?? ''}`}
           </div>
         </div>
-        <EditButton
-          onClick={() => void navigate({ to: '/customers/$id', params: { id } })}
-        />
+        <EditButton onClick={() => void navigate({ to: '/customers/$id', params: { id } })} />
       </div>
 
       <div className="flex flex-col gap-[9px] pt-[14px] text-[13px]">
         {isIndividual ? (
           <>
-            {data.individualProfile?.phone && (
-              <Row label="연락처" value={data.individualProfile.phone} />
-            )}
-            {data.individualProfile?.email && (
-              <Row label="이메일" value={data.individualProfile.email} />
-            )}
-            {data.individualProfile?.address && (
-              <Row label="주소" value={data.individualProfile.address.address} />
-            )}
+            {data.individualProfile?.phone && <Row label="연락처" value={data.individualProfile.phone} />}
+            {data.individualProfile?.email && <Row label="이메일" value={data.individualProfile.email} />}
+            {data.individualProfile?.address && <Row label="주소" value={data.individualProfile.address.address} />}
           </>
         ) : (
           <>
             {data.businessPartner?.businessProfile.representativeName && (
-              <Row
-                label="대표자"
-                value={data.businessPartner.businessProfile.representativeName}
-              />
+              <Row label="대표자" value={data.businessPartner.businessProfile.representativeName} />
             )}
             {data.businessPartner?.businessProfile.phone && (
               <Row label="연락처" value={data.businessPartner.businessProfile.phone} />
             )}
             {data.businessPartner?.businessProfile.address && (
-              <Row
-                label="주소"
-                value={data.businessPartner.businessProfile.address.address}
-              />
+              <Row label="주소" value={data.businessPartner.businessProfile.address.address} />
             )}
           </>
         )}
@@ -123,23 +105,16 @@ function PartnerPanel({ id }: { id: string }) {
   if (!data) return null;
 
   const primaryContact = data.contacts.find((c) => c.isPrimary) ?? data.contacts[0];
-  const ROLE_LABEL: Record<string, string> = { SALES: '매출처', PURCHASE: '매입처' };
 
   return (
     <>
       <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4]">
         <InitialAvatar name={data.businessProfile.name} />
         <div className="min-w-0 flex-1">
-          <div className="text-[15.5px] font-bold text-[#1c2230] truncate">
-            {data.businessProfile.name}
-          </div>
-          <div className="text-[12px] text-[#98a0ad] mt-0.5">
-            사업자 {data.businessProfile.businessRegistrationNo}
-          </div>
+          <div className="text-[15.5px] font-bold text-[#1c2230] truncate">{data.businessProfile.name}</div>
+          <div className="text-[12px] text-[#98a0ad] mt-0.5">사업자 {data.businessProfile.businessRegistrationNo}</div>
         </div>
-        <EditButton
-          onClick={() => void navigate({ to: '/business-partners/$id', params: { id } })}
-        />
+        <EditButton onClick={() => void navigate({ to: '/business-partners/$id', params: { id } })} />
       </div>
 
       <div className="flex flex-col gap-[9px] pt-[14px] text-[13px]">
@@ -165,9 +140,7 @@ function PartnerPanel({ id }: { id: string }) {
             value={`${primaryContact.name}${primaryContact.phone ? ` · ${primaryContact.phone}` : ''}`}
           />
         )}
-        {data.businessProfile.address && (
-          <Row label="주소" value={data.businessProfile.address.address} />
-        )}
+        {data.businessProfile.address && <Row label="주소" value={data.businessProfile.address.address} />}
       </div>
     </>
   );
@@ -176,11 +149,7 @@ function PartnerPanel({ id }: { id: string }) {
 export function DetailPanel({ selected }: Props) {
   return (
     <div className="w-80 flex-none bg-white border border-[#e5e8ee] rounded-xl p-5">
-      {selected.type === 'customer' ? (
-        <CustomerPanel id={selected.id} />
-      ) : (
-        <PartnerPanel id={selected.id} />
-      )}
+      {selected.type === 'customer' ? <CustomerPanel id={selected.id} /> : <PartnerPanel id={selected.id} />}
     </div>
   );
 }

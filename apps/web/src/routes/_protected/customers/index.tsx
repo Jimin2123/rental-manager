@@ -24,10 +24,7 @@ export const Route = createFileRoute('/_protected/customers/')({
   component: CustomersPartnersPage,
 });
 
-type SelectedItem =
-  | { type: 'customer'; id: string }
-  | { type: 'partner'; id: string }
-  | null;
+type SelectedItem = { type: 'customer'; id: string } | { type: 'partner'; id: string } | null;
 
 function CustomersPartnersPage() {
   const navigate = useNavigate();
@@ -61,11 +58,7 @@ function CustomersPartnersPage() {
     if (q) {
       const lower = q.toLowerCase();
       list = list.filter((c) => {
-        const name = (
-          c.individualProfile?.name ??
-          c.businessPartner?.businessProfile.name ??
-          ''
-        ).toLowerCase();
+        const name = (c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '').toLowerCase();
         const phone = c.individualProfile?.phone ?? '';
         return name.includes(lower) || phone.includes(lower);
       });
@@ -76,57 +69,36 @@ function CustomersPartnersPage() {
   const filteredPartners = useMemo(() => {
     if (!q) return partners;
     const lower = q.toLowerCase();
-    return partners.filter((p) =>
-      p.businessProfile.name.toLowerCase().includes(lower),
-    );
+    return partners.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
   }, [partners, q]);
 
-  const tabs = [
-    { value: 'all' as const, label: '전체', count: customers.length },
-    {
-      value: 'business' as const,
-      label: '사업자',
-      count: customers.filter((c) => c.type === 'BUSINESS').length,
-    },
-    {
-      value: 'individual' as const,
-      label: '개인',
-      count: customers.filter((c) => c.type === 'INDIVIDUAL').length,
-    },
-    { value: 'partners' as const, label: '매입처', count: partners.length },
-    {
-      value: 'overdue' as const,
-      label: '미수 있음',
-      count: customers.filter((c) => c.isActive).length,
-    },
-  ];
+  const tabs = useMemo(
+    () => [
+      { value: 'all' as const, label: '전체', count: customers.length },
+      { value: 'business' as const, label: '사업자', count: customers.filter((c) => c.type === 'BUSINESS').length },
+      { value: 'individual' as const, label: '개인', count: customers.filter((c) => c.type === 'INDIVIDUAL').length },
+      { value: 'partners' as const, label: '매입처', count: partners.length },
+      { value: 'overdue' as const, label: '미수 있음', count: customers.filter((c) => c.isActive).length },
+    ],
+    [customers, partners],
+  );
 
   const isPartnerTab = tab === 'partners';
   const isLoading = isPartnerTab ? loadingPartners : loadingCustomers;
 
   const handleCustomerSelect = (id: string) => {
-    setSelectedItem((prev) =>
-      prev?.type === 'customer' && prev.id === id ? null : { type: 'customer', id },
-    );
+    setSelectedItem((prev) => (prev?.type === 'customer' && prev.id === id ? null : { type: 'customer', id }));
   };
 
   const handlePartnerSelect = (id: string) => {
-    setSelectedItem((prev) =>
-      prev?.type === 'partner' && prev.id === id ? null : { type: 'partner', id },
-    );
+    setSelectedItem((prev) => (prev?.type === 'partner' && prev.id === id ? null : { type: 'partner', id }));
   };
 
   return (
     <div className="-m-6 p-6 min-h-full bg-[#f6f7f9] flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-[21px] font-extrabold text-[#1c2230] tracking-tight">
-          고객 · 거래처
-        </h1>
-        <Button
-          onClick={() =>
-            void navigate({ to: isPartnerTab ? '/business-partners/new' : '/customers/new' })
-          }
-        >
+        <h1 className="text-[21px] font-extrabold text-[#1c2230] tracking-tight">고객 · 거래처</h1>
+        <Button onClick={() => void navigate({ to: isPartnerTab ? '/business-partners/new' : '/customers/new' })}>
           {isPartnerTab ? '+ 거래처 등록' : '+ 고객 등록'}
         </Button>
       </div>

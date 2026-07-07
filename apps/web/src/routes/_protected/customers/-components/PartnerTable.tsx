@@ -1,4 +1,6 @@
 import type { BusinessPartnerListItem } from '../../business-partners/-types';
+import { ROLE_LABEL } from '../../business-partners/-types';
+import { StatusBadge } from './StatusBadge';
 
 type Props = {
   items: BusinessPartnerListItem[];
@@ -6,26 +8,6 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
 };
-
-const ROLE_LABEL: Record<'SALES' | 'PURCHASE', string> = {
-  SALES: '매출처',
-  PURCHASE: '매입처',
-};
-
-function StatusBadge({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return (
-      <span className="text-[11.5px] font-bold text-[#0d8a4f] bg-[#e7f6ee] px-2 py-0.5 rounded-md">
-        활성
-      </span>
-    );
-  }
-  return (
-    <span className="text-[11.5px] font-bold text-[#c2372f] bg-[#fdeceb] px-2 py-0.5 rounded-md">
-      거래정지
-    </span>
-  );
-}
 
 export function PartnerTable({ items, isLoading, selectedId, onSelect }: Props) {
   return (
@@ -41,9 +23,7 @@ export function PartnerTable({ items, isLoading, selectedId, onSelect }: Props) 
       {isLoading ? (
         <div className="px-[18px] py-8 text-center text-[13px] text-[#98a0ad]">불러오는 중...</div>
       ) : items.length === 0 ? (
-        <div className="px-[18px] py-8 text-center text-[13px] text-[#98a0ad]">
-          등록된 거래처가 없습니다.
-        </div>
+        <div className="px-[18px] py-8 text-center text-[13px] text-[#98a0ad]">등록된 거래처가 없습니다.</div>
       ) : (
         items.map((p) => (
           <div
@@ -72,9 +52,7 @@ export function PartnerTable({ items, isLoading, selectedId, onSelect }: Props) 
             <div>
               <StatusBadge isActive={p.isActive} />
             </div>
-            <div className="text-[#98a0ad]">
-              {new Date(p.createdAt).toLocaleDateString('ko-KR')}
-            </div>
+            <div className="text-[#98a0ad]">{new Date(p.createdAt).toLocaleDateString('ko-KR')}</div>
           </div>
         ))
       )}

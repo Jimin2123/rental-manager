@@ -1,8 +1,8 @@
 export type RoleType = 'SALES' | 'PURCHASE';
 
 export const ROLE_LABEL: Record<RoleType, string> = {
-  SALES: '매출',
-  PURCHASE: '매입',
+  SALES: '매출처',
+  PURCHASE: '매입처',
 };
 
 export type BusinessPartnerListItem = {

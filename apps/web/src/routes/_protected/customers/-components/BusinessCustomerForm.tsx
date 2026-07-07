@@ -340,11 +340,6 @@ export function BusinessCustomerForm() {
           ))}
         </div>
 
-        {/* 메모 */}
-        <div className="rounded-lg border bg-card p-4">
-          <TextField control={form.control} name="memo" label="메모" placeholder="특이사항, 요청사항 등 (선택)" />
-        </div>
-
         {/* 담당 직원 배정 */}
         <div className="rounded-lg border bg-card p-4 space-y-4">
           <h2 className="text-sm font-semibold">담당 직원 배정</h2>
@@ -378,6 +373,11 @@ export function BusinessCustomerForm() {
               주 담당자로 지정
             </label>
           )}
+        </div>
+
+        {/* 메모 */}
+        <div className="rounded-lg border bg-card p-4">
+          <TextField control={form.control} name="memo" label="메모" placeholder="특이사항, 요청사항 등 (선택)" />
         </div>
 
         <div className="flex justify-end gap-3">

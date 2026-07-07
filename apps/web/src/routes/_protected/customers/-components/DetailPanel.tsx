@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchCustomer, customerKeys } from '../-api';
 import { fetchPartner, partnerKeys } from '../../business-partners/-api';
 import { ROLE_LABEL } from '../../business-partners/-types';
@@ -29,6 +31,61 @@ function EditButton({ onClick }: { onClick: () => void }) {
     >
       상세보기
     </button>
+  );
+}
+
+function ContactsSection({ partnerId }: { partnerId: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: partner } = useQuery({
+    queryKey: partnerKeys.detail(partnerId),
+    queryFn: () => fetchPartner(partnerId),
+  });
+
+  const contacts = partner?.contacts ?? [];
+  if (contacts.length === 0) return null;
+
+  return (
+    <div className="border-t border-[#eef0f4] dark:border-border pt-3 mt-1">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center justify-between w-full text-[13px] cursor-pointer"
+      >
+        <span className="text-[#8a919e] dark:text-muted-foreground">담당자</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-1.5 py-0.5 rounded-md">
+            {contacts.length}명
+          </span>
+          {expanded
+            ? <ChevronUp className="w-3.5 h-3.5 text-[#98a0ad] dark:text-muted-foreground" />
+            : <ChevronDown className="w-3.5 h-3.5 text-[#98a0ad] dark:text-muted-foreground" />}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="flex flex-col gap-3 mt-3">
+          {contacts.map((c) => (
+            <div key={c.id} className="flex flex-col gap-0.5 text-[12.5px]">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-[#1c2230] dark:text-foreground">{c.name}</span>
+                {c.isPrimary && (
+                  <span className="text-[10.5px] font-bold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-1.5 py-0.5 rounded">
+                    대표
+                  </span>
+                )}
+              </div>
+              {(c.department ?? c.position) && (
+                <div className="text-[#98a0ad] dark:text-muted-foreground">
+                  {[c.department, c.position].filter(Boolean).join(' · ')}
+                </div>
+              )}
+              {c.phone && <div className="text-[#5b6472] dark:text-muted-foreground">{c.phone}</div>}
+              {c.email && <div className="text-[#5b6472] dark:text-muted-foreground">{c.email}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -98,6 +155,7 @@ function CustomerPanel({ id }: { id: string }) {
           </>
         )}
       </div>
+      {data.businessPartner && <ContactsSection partnerId={data.businessPartner.id} />}
     </>
   );
 }

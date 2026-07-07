@@ -14,7 +14,7 @@ type Props = {
 
 export function FilterTabs({ tabs, activeTab, onTabChange }: Props) {
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -22,8 +22,8 @@ export function FilterTabs({ tabs, activeTab, onTabChange }: Props) {
           onClick={() => onTabChange(t.value)}
           className={
             t.value === activeTab
-              ? 'text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 font-bold text-[13px] px-[13px] py-[7px] rounded-lg border-0 cursor-pointer'
-              : 'text-[#5b6472] dark:text-muted-foreground bg-white dark:bg-card border border-[#e5e8ee] dark:border-border font-medium text-[13px] px-[13px] py-[7px] rounded-lg cursor-pointer hover:bg-[#f6f7f9] dark:hover:bg-muted/30'
+              ? 'flex-shrink-0 text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 font-bold text-[13px] px-[13px] py-[7px] rounded-lg border-0 cursor-pointer'
+              : 'flex-shrink-0 text-[#5b6472] dark:text-muted-foreground bg-white dark:bg-card border border-[#e5e8ee] dark:border-border font-medium text-[13px] px-[13px] py-[7px] rounded-lg cursor-pointer hover:bg-[#f6f7f9] dark:hover:bg-muted/30'
           }
         >
           {t.label} {t.count}

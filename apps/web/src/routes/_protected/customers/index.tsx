@@ -87,10 +87,18 @@ function CustomersPartnersPage() {
   const isLoading = isPartnerTab ? loadingPartners : loadingCustomers;
 
   const handleCustomerSelect = (id: string) => {
+    if (window.innerWidth < 1024) {
+      void navigate({ to: '/customers/$id', params: { id } });
+      return;
+    }
     setSelectedItem((prev) => (prev?.type === 'customer' && prev.id === id ? null : { type: 'customer', id }));
   };
 
   const handlePartnerSelect = (id: string) => {
+    if (window.innerWidth < 1024) {
+      void navigate({ to: '/business-partners/$id', params: { id } });
+      return;
+    }
     setSelectedItem((prev) => (prev?.type === 'partner' && prev.id === id ? null : { type: 'partner', id }));
   };
 
@@ -109,7 +117,7 @@ function CustomersPartnersPage() {
         placeholder={isPartnerTab ? '상호명 검색' : '이름 · 연락처 검색'}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className="max-w-xs bg-white dark:bg-card"
+        className="w-full sm:max-w-xs bg-white dark:bg-card"
       />
 
       <div className="flex gap-[14px] items-start">
@@ -130,7 +138,11 @@ function CustomersPartnersPage() {
             />
           )}
         </div>
-        {selectedItem && <DetailPanel selected={selectedItem} />}
+        {selectedItem && (
+          <div className="hidden lg:block">
+            <DetailPanel selected={selectedItem} />
+          </div>
+        )}
       </div>
     </div>
   );

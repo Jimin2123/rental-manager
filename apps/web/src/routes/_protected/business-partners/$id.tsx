@@ -79,7 +79,7 @@ function BusinessPartnerDetailPage() {
         />
       )}
 
-      <SuppliedAssetsCard partnerId={id} />
+      {partner.roles.some((r) => r.type === 'PURCHASE') && <SuppliedAssetsCard partnerId={id} />}
     </div>
   );
 }

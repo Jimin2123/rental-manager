@@ -10,13 +10,6 @@ type Props = {
   selected: SelectedItem;
 };
 
-function InitialAvatar({ name }: { name: string }) {
-  return (
-    <div className="w-10 h-10 rounded-xl bg-[#eef1f9] dark:bg-primary/10 text-[#2456e0] dark:text-primary flex items-center justify-center font-bold text-[15px] flex-none">
-      {name.charAt(0)}
-    </div>
-  );
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -57,7 +50,6 @@ function CustomerPanel({ id }: { id: string }) {
   return (
     <>
       <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4] dark:border-border">
-        <InitialAvatar name={name} />
         <div className="min-w-0 flex-1">
           <div className="text-[15.5px] font-bold text-[#1c2230] dark:text-foreground truncate">{name}</div>
           <div className="text-[12px] text-[#98a0ad] dark:text-muted-foreground mt-0.5">
@@ -109,7 +101,6 @@ function PartnerPanel({ id }: { id: string }) {
   return (
     <>
       <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4] dark:border-border">
-        <InitialAvatar name={data.businessProfile.name} />
         <div className="min-w-0 flex-1">
           <div className="text-[15.5px] font-bold text-[#1c2230] dark:text-foreground truncate">{data.businessProfile.name}</div>
           <div className="text-[12px] text-[#98a0ad] dark:text-muted-foreground mt-0.5">사업자 {data.businessProfile.businessRegistrationNo}</div>

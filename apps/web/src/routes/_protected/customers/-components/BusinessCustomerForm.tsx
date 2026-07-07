@@ -202,7 +202,7 @@ export function BusinessCustomerForm() {
                     <p className={`text-xs ${brnStatus === 'valid' ? 'text-green-600' : 'text-destructive'}`}>
                       {brnStatus === 'valid'
                         ? `✓ ${brnMessage}`
-                        : `✗ 사용할 수 없는 사업자입니다. (${brnMessage})`}
+                        : `✗ 사용할 수 없는 사업자입니다.${brnMessage ? ` (${brnMessage})` : ''}`}
                     </p>
                   ) : (
                     <FormMessage />

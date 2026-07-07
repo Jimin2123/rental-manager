@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,14 @@ function CustomersPartnersPage() {
   const setQ = (newQ: string) => {
     void navigate({ to: '/customers', search: { tab, q: newQ } });
   };
+
+  const [inputValue, setInputValue] = useState(q);
+  const composingRef = useRef(false);
+
+  // URL의 q가 외부에서 바뀌면 (뒤로가기 등) 인풋 동기화
+  useEffect(() => {
+    if (!composingRef.current) setInputValue(q);
+  }, [q]);
 
   const { data: customers = [], isLoading: loadingCustomers } = useQuery<CustomerListItem[]>({
     queryKey: customerKeys.list({}),
@@ -115,8 +123,16 @@ function CustomersPartnersPage() {
 
       <Input
         placeholder={isPartnerTab ? '상호명 검색' : '이름 · 연락처 검색'}
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          if (!composingRef.current) setQ(e.target.value);
+        }}
+        onCompositionStart={() => { composingRef.current = true; }}
+        onCompositionEnd={(e) => {
+          composingRef.current = false;
+          setQ(e.currentTarget.value);
+        }}
         className="w-full sm:max-w-xs bg-white dark:bg-card"
       />
 

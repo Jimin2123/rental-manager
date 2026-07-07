@@ -1,115 +1,164 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { CustomerListItem } from './-types';
-import { CUSTOMER_TYPE_LABEL } from './-types';
 import { customerKeys, fetchCustomers } from './-api';
+import { partnerKeys, fetchPartners } from '../business-partners/-api';
+import type { CustomerListItem } from './-types';
+import type { BusinessPartnerListItem } from '../business-partners/-types';
+import { FilterTabs } from './-components/FilterTabs';
+import type { TabValue } from './-components/FilterTabs';
+import { CustomerTable } from './-components/CustomerTable';
+import { PartnerTable } from './-components/PartnerTable';
+import { DetailPanel } from './-components/DetailPanel';
 
-export const Route = createFileRoute('/_protected/customers/')({
-  component: CustomersPage,
+const searchSchema = z.object({
+  tab: z.enum(['all', 'business', 'individual', 'partners', 'overdue']).catch('all'),
+  q: z.string().catch(''),
 });
 
-type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
+export const Route = createFileRoute('/_protected/customers/')({
+  validateSearch: searchSchema,
+  component: CustomersPartnersPage,
+});
 
-const STATUS_LABEL: Record<StatusFilter, string> = {
-  ALL: '전체',
-  ACTIVE: '활성',
-  INACTIVE: '거래정지',
-};
+type SelectedItem =
+  | { type: 'customer'; id: string }
+  | { type: 'partner'; id: string }
+  | null;
 
-// 이름은 개인=프로필명, 법인=상호명. 연락처/이메일은 개인 프로필에서만 노출된다.
-function nameOf(c: CustomerListItem): string {
-  return c.individualProfile?.name ?? c.businessPartner?.businessProfile.name ?? '-';
-}
-
-function CustomersPage() {
+function CustomersPartnersPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('ALL');
+  const { tab, q } = Route.useSearch();
+  const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
 
-  const filters = {
-    q: search || undefined,
-    isActive: status === 'ALL' ? undefined : status === 'ACTIVE',
+  const setTab = (newTab: TabValue) => {
+    void navigate({ to: '/customers', search: { tab: newTab, q } });
+    setSelectedItem(null);
   };
-  const { data = [], isLoading } = useQuery<CustomerListItem[]>({
-    queryKey: customerKeys.list(filters),
-    queryFn: () => fetchCustomers(filters),
+
+  const setQ = (newQ: string) => {
+    void navigate({ to: '/customers', search: { tab, q: newQ } });
+  };
+
+  const { data: customers = [], isLoading: loadingCustomers } = useQuery<CustomerListItem[]>({
+    queryKey: customerKeys.list({}),
+    queryFn: () => fetchCustomers({}),
   });
 
+  const { data: partners = [], isLoading: loadingPartners } = useQuery<BusinessPartnerListItem[]>({
+    queryKey: partnerKeys.list({}),
+    queryFn: () => fetchPartners({}),
+  });
+
+  const filteredCustomers = useMemo(() => {
+    let list = customers;
+    if (tab === 'business') list = list.filter((c) => c.type === 'BUSINESS');
+    else if (tab === 'individual') list = list.filter((c) => c.type === 'INDIVIDUAL');
+    else if (tab === 'overdue') list = list.filter((c) => c.isActive);
+    if (q) {
+      const lower = q.toLowerCase();
+      list = list.filter((c) => {
+        const name = (
+          c.individualProfile?.name ??
+          c.businessPartner?.businessProfile.name ??
+          ''
+        ).toLowerCase();
+        const phone = c.individualProfile?.phone ?? '';
+        return name.includes(lower) || phone.includes(lower);
+      });
+    }
+    return list;
+  }, [customers, tab, q]);
+
+  const filteredPartners = useMemo(() => {
+    if (!q) return partners;
+    const lower = q.toLowerCase();
+    return partners.filter((p) =>
+      p.businessProfile.name.toLowerCase().includes(lower),
+    );
+  }, [partners, q]);
+
+  const tabs = [
+    { value: 'all' as const, label: '전체', count: customers.length },
+    {
+      value: 'business' as const,
+      label: '사업자',
+      count: customers.filter((c) => c.type === 'BUSINESS').length,
+    },
+    {
+      value: 'individual' as const,
+      label: '개인',
+      count: customers.filter((c) => c.type === 'INDIVIDUAL').length,
+    },
+    { value: 'partners' as const, label: '매입처', count: partners.length },
+    {
+      value: 'overdue' as const,
+      label: '미수 있음',
+      count: customers.filter((c) => c.isActive).length,
+    },
+  ];
+
+  const isPartnerTab = tab === 'partners';
+  const isLoading = isPartnerTab ? loadingPartners : loadingCustomers;
+
+  const handleCustomerSelect = (id: string) => {
+    setSelectedItem((prev) =>
+      prev?.type === 'customer' && prev.id === id ? null : { type: 'customer', id },
+    );
+  };
+
+  const handlePartnerSelect = (id: string) => {
+    setSelectedItem((prev) =>
+      prev?.type === 'partner' && prev.id === id ? null : { type: 'partner', id },
+    );
+  };
+
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-foreground">고객</h1>
-        <Button onClick={() => void navigate({ to: '/customers/new' })}>고객 등록</Button>
+    <div className="-m-6 p-6 min-h-full bg-[#f6f7f9] flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-[21px] font-extrabold text-[#1c2230] tracking-tight">
+          고객 · 거래처
+        </h1>
+        <Button
+          onClick={() =>
+            void navigate({ to: isPartnerTab ? '/business-partners/new' : '/customers/new' })
+          }
+        >
+          {isPartnerTab ? '+ 거래처 등록' : '+ 고객 등록'}
+        </Button>
       </div>
 
-      <div className="mb-4 flex gap-3">
-        <Input
-          placeholder="이름·전화 검색"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <div className="flex gap-1">
-          {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((s) => (
-            <Button key={s} variant={status === s ? 'default' : 'outline'} size="sm" onClick={() => setStatus(s)}>
-              {STATUS_LABEL[s]}
-            </Button>
-          ))}
+      <FilterTabs tabs={tabs} activeTab={tab} onTabChange={setTab} />
+
+      <Input
+        placeholder={isPartnerTab ? '상호명 검색' : '이름 · 연락처 검색'}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="max-w-xs bg-white"
+      />
+
+      <div className="flex gap-[14px] items-start">
+        <div className="flex-1 min-w-0">
+          {isPartnerTab ? (
+            <PartnerTable
+              items={filteredPartners}
+              isLoading={isLoading}
+              selectedId={selectedItem?.type === 'partner' ? selectedItem.id : null}
+              onSelect={handlePartnerSelect}
+            />
+          ) : (
+            <CustomerTable
+              items={filteredCustomers}
+              isLoading={isLoading}
+              selectedId={selectedItem?.type === 'customer' ? selectedItem.id : null}
+              onSelect={handleCustomerSelect}
+            />
+          )}
         </div>
-      </div>
-
-      <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>이름</TableHead>
-              <TableHead>유형</TableHead>
-              <TableHead>연락처</TableHead>
-              <TableHead>이메일</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead>등록일</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                  불러오는 중...
-                </TableCell>
-              </TableRow>
-            ) : data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                  등록된 고객이 없습니다.
-                </TableCell>
-              </TableRow>
-            ) : (
-              data.map((c) => (
-                <TableRow
-                  key={c.id}
-                  className="cursor-pointer"
-                  onClick={() => void navigate({ to: '/customers/$id', params: { id: c.id } })}
-                >
-                  <TableCell className="font-medium">{nameOf(c)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{CUSTOMER_TYPE_LABEL[c.type]}</Badge>
-                  </TableCell>
-                  <TableCell>{c.individualProfile?.phone ?? '-'}</TableCell>
-                  <TableCell>{c.individualProfile?.email ?? '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={c.isActive ? 'default' : 'outline'}>{c.isActive ? '활성' : '거래정지'}</Badge>
-                  </TableCell>
-                  <TableCell>{new Date(c.createdAt).toLocaleDateString('ko-KR')}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {selectedItem && <DetailPanel selected={selectedItem} />}
       </div>
     </div>
   );

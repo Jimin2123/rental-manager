@@ -139,7 +139,7 @@ function PartnerPanel({ id }: { id: string }) {
 
 export function DetailPanel({ selected }: Props) {
   return (
-    <div className="w-80 flex-none bg-white dark:bg-card border border-[#e5e8ee] dark:border-border rounded-xl p-5">
+    <div className="w-96 flex-none bg-white dark:bg-card border border-[#e5e8ee] dark:border-border rounded-xl p-5">
       {selected.type === 'customer' ? <CustomerPanel id={selected.id} /> : <PartnerPanel id={selected.id} />}
     </div>
   );

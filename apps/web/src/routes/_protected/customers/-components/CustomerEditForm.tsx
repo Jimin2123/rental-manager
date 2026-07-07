@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -12,7 +12,9 @@ import { formatPhone } from '@/lib/format';
 import type { CustomerDetail } from '../-types';
 import { customerFormSchema, type CustomerFormValues } from '../-schemas';
 import { partnerEditSchema, type PartnerEditValues } from '../../business-partners/-schemas';
+import { partnerKeys, fetchPartner } from '../../business-partners/-api';
 import { RolesField } from '../../business-partners/-components/fields';
+import { ContactSection } from '../../business-partners/-components/ContactSection';
 import { IndividualFields, AddressFields } from './fields';
 import { toAddressPayload } from './payload';
 
@@ -102,6 +104,12 @@ function BusinessCustomerEditForm({ customer, onCancel, onSaved }: Props) {
   const bp = customer.businessPartner!;
   const bpf = bp.businessProfile;
   const addr = bpf.address;
+  const queryClient = useQueryClient();
+
+  const { data: partnerDetail } = useQuery({
+    queryKey: partnerKeys.detail(bp.id),
+    queryFn: () => fetchPartner(bp.id),
+  });
 
   const form = useForm<PartnerEditValues>({
     resolver: zodResolver(partnerEditSchema),
@@ -245,6 +253,15 @@ function BusinessCustomerEditForm({ customer, onCancel, onSaved }: Props) {
             />
           </div>
         </div>
+
+        {/* 담당자 */}
+        <ContactSection
+          partnerId={bp.id}
+          contacts={partnerDetail?.contacts ?? []}
+          onChanged={() => {
+            void queryClient.invalidateQueries({ queryKey: partnerKeys.detail(bp.id) });
+          }}
+        />
 
         {/* 메모 */}
         <div className="rounded-xl border bg-card p-6">

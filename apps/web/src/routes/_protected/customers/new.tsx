@@ -20,7 +20,7 @@ function NewCustomerPage() {
   const [customerType, setCustomerType] = useState<CustomerType>('INDIVIDUAL');
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-center gap-4">
         <Button variant="outline" size="sm" onClick={() => void navigate({ to: '/customers' })}>
           ← 목록

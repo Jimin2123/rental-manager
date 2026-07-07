@@ -112,13 +112,7 @@ export function BusinessCustomerForm() {
       });
       setBrnStatus(data.valid ? 'valid' : 'invalid');
       setBrnMessage(data.status);
-      if (!data.valid) {
-        form.setError('businessProfile.businessRegistrationNo', {
-          message: `사용할 수 없는 사업자입니다. (${data.status})`,
-        });
-      } else {
-        form.clearErrors('businessProfile.businessRegistrationNo');
-      }
+      form.clearErrors('businessProfile.businessRegistrationNo');
     } catch {
       setBrnStatus('invalid');
       setBrnMessage('조회 실패');
@@ -204,11 +198,12 @@ export function BusinessCustomerForm() {
                       {brnVerifying ? '조회 중...' : '조회'}
                     </Button>
                   </div>
-                  <FormMessage />
-                  {brnStatus !== 'idle' && (
+                  {brnStatus !== 'idle' ? (
                     <p className={`text-xs ${brnStatus === 'valid' ? 'text-green-600' : 'text-destructive'}`}>
                       {brnStatus === 'valid' ? `✓ ${brnMessage}` : `✗ ${brnMessage}`}
                     </p>
+                  ) : (
+                    <FormMessage />
                   )}
                 </FormItem>
               )}

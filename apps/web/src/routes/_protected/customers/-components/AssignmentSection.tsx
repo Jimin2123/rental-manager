@@ -21,7 +21,7 @@ export function AssignmentSection({
   individualProfileId,
 }: {
   customerId: string;
-  individualProfileId: string;
+  individualProfileId?: string;
 }) {
   const queryClient = useQueryClient();
   const orgId = useAuthStore((s) => s.currentOrganization?.id);

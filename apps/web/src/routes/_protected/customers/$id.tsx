@@ -1,12 +1,15 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import type { CustomerDetail } from './-types';
 import { customerKeys, fetchCustomer, invalidateCustomer } from './-api';
-import { CustomerDetailView } from './-components/CustomerDetailView';
+import { CustomerProfileCard } from './-components/CustomerProfileCard';
 import { CustomerEditForm } from './-components/CustomerEditForm';
 import { AssignmentSection } from './-components/AssignmentSection';
+import { TransactionHistoryCard } from './-components/TransactionHistoryCard';
 
 export const Route = createFileRoute('/_protected/customers/$id')({
   component: CustomerDetailPage,
@@ -23,20 +26,27 @@ function CustomerDetailPage() {
     queryFn: () => fetchCustomer(id),
   });
 
-  const invalidate = () => invalidateCustomer(queryClient, id);
+  const toggleStatusMutation = useMutation({
+    mutationFn: () =>
+      api.patch(`/customers/${id}`, { isActive: !customer?.isActive }),
+    onSuccess: () => {
+      toast.success(customer?.isActive ? '거래가 정지되었습니다.' : '거래가 재개되었습니다.');
+      invalidateCustomer(queryClient, id);
+    },
+    onError: () => toast.error('상태 변경 중 오류가 발생했습니다.'),
+  });
 
   if (isLoading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
   if (!customer) return <div className="p-6 text-muted-foreground">고객을 찾을 수 없습니다.</div>;
 
-  const title = customer.individualProfile?.name ?? customer.businessPartner?.businessProfile.name ?? '고객';
+  const isBusiness = customer.type === 'BUSINESS';
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <div className="flex items-center gap-4">
+    <div className="mx-auto max-w-5xl space-y-4">
+      <div className="flex items-center gap-3">
         <Button variant="outline" size="sm" onClick={() => void navigate({ to: '/customers' })}>
           ← 목록
         </Button>
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
       </div>
 
       {isEditing ? (
@@ -45,24 +55,29 @@ function CustomerDetailPage() {
           onCancel={() => setIsEditing(false)}
           onSaved={() => {
             setIsEditing(false);
-            invalidate();
+            invalidateCustomer(queryClient, id);
           }}
         />
       ) : (
-        <CustomerDetailView
+        <CustomerProfileCard
           customer={customer}
           onEdit={() => setIsEditing(true)}
-          onChanged={invalidate}
-          onDeleted={() => {
-            invalidate();
-            void navigate({ to: '/customers' });
-          }}
+          onToggleStatus={() => void toggleStatusMutation.mutate()}
+          isTogglingStatus={toggleStatusMutation.isPending}
         />
       )}
 
-      {/* 담당자 배정 — 개인 고객만 (법인은 거래처에서 관리) */}
-      {customer.type === 'INDIVIDUAL' && customer.individualProfile && (
-        <AssignmentSection customerId={customer.id} individualProfileId={customer.individualProfile.id} />
+      {/* 담당자 배정 관리 */}
+      {!isEditing && (
+        <AssignmentSection
+          customerId={customer.id}
+          individualProfileId={customer.individualProfile?.id}
+        />
+      )}
+
+      {/* 거래 이력 */}
+      {!isEditing && (
+        <TransactionHistoryCard customerId={id} isBusiness={isBusiness} />
       )}
     </div>
   );

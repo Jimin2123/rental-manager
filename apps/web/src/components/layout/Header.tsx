@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Menu, Moon, Search, Sun } from 'lucide-react';
+import { Menu, Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { HeaderSearch } from './HeaderSearch';
 import { InvitationBell } from './InvitationBell';
 
 function useTheme() {
@@ -54,23 +55,25 @@ export function Header({ onMenuClick }: HeaderProps) {
   const initials = currentOrganization?.name?.slice(0, 2).toUpperCase() ?? 'RM';
 
   return (
-    <header className="flex h-14 flex-none items-center gap-3 border-b bg-card px-4 sm:h-[62px] sm:px-6">
+    <header className="flex h-14 flex-none items-center gap-3 border-b bg-card px-4 sm:h-[62px] sm:gap-4 sm:px-6">
       {/* 햄버거 버튼 — 모바일 전용 */}
       <Button variant="ghost" size="icon" className="sm:hidden" onClick={onMenuClick} aria-label="메뉴 열기">
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* 로고 — 모든 뷰포트에서 표시 */}
-      <span className="text-base font-bold text-foreground">렌탈 매니저</span>
+      {/* 로고 */}
+      <div className="flex flex-none items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-extrabold text-primary-foreground">
+          RM
+        </div>
+        <span className="text-base font-bold text-foreground">렌탈 매니저</span>
+      </div>
 
       {/* 구분선 — 태블릿·데스크톱 */}
       <div className="hidden h-5 w-px bg-border sm:block" />
 
-      {/* 검색 skeleton — 태블릿·데스크톱 */}
-      <div className="hidden items-center gap-2 rounded-md border px-3 py-1.5 text-sm text-muted-foreground sm:flex sm:w-48 lg:w-64">
-        <Search className="h-3.5 w-3.5 flex-none" />
-        <span>검색</span>
-      </div>
+      {/* 검색 */}
+      <HeaderSearch />
 
       <div className="flex-1" />
 
@@ -88,15 +91,17 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* 프로필 드롭다운 */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
+          <button className="flex items-center gap-2.5 rounded-lg p-1 hover:bg-accent">
+            <Avatar className="h-[30px] w-[30px] flex-none">
+              <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">{initials}</AvatarFallback>
             </Avatar>
-          </Button>
+            <div className="hidden text-left sm:block">
+              <div className="text-[13px] font-semibold leading-tight text-foreground">{currentOrganization?.name}</div>
+              <div className="text-[11px] leading-tight text-muted-foreground">{currentOrganization?.role}</div>
+            </div>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <div className="px-2 py-1.5 text-xs font-medium">{currentOrganization?.name}</div>
-          <div className="px-2 pb-1.5 text-xs text-muted-foreground">{currentOrganization?.role}</div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
             로그아웃

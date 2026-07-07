@@ -75,9 +75,12 @@ function CustomersPartnersPage() {
   }, [customers, tab, q]);
 
   const filteredPartners = useMemo(() => {
-    if (!q) return partners;
-    const lower = q.toLowerCase();
-    return partners.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
+    let list = partners.filter((p) => p.roles.some((r) => r.type === 'PURCHASE'));
+    if (q) {
+      const lower = q.toLowerCase();
+      list = list.filter((p) => p.businessProfile.name.toLowerCase().includes(lower));
+    }
+    return list;
   }, [partners, q]);
 
   const tabs = useMemo(
@@ -85,7 +88,7 @@ function CustomersPartnersPage() {
       { value: 'all' as const, label: '전체', count: customers.length },
       { value: 'business' as const, label: '사업자', count: customers.filter((c) => c.type === 'BUSINESS').length },
       { value: 'individual' as const, label: '개인', count: customers.filter((c) => c.type === 'INDIVIDUAL').length },
-      { value: 'partners' as const, label: '매입처', count: partners.length },
+      { value: 'partners' as const, label: '매입처', count: partners.filter((p) => p.roles.some((r) => r.type === 'PURCHASE')).length },
       { value: 'overdue' as const, label: '미수 있음', count: customers.filter((c) => c.isActive).length },
     ],
     [customers, partners],

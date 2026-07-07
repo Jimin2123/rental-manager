@@ -172,8 +172,6 @@ function PartnerPanel({ id }: { id: string }) {
   }
   if (!data) return null;
 
-  const primaryContact = data.contacts.find((c) => c.isPrimary) ?? data.contacts[0];
-
   return (
     <>
       <div className="flex items-center gap-[11px] pb-[14px] border-b border-[#eef0f4] dark:border-border">
@@ -201,14 +199,9 @@ function PartnerPanel({ id }: { id: string }) {
             ))}
           </div>
         </div>
-        {primaryContact && (
-          <Row
-            label="대표 담당자"
-            value={`${primaryContact.name}${primaryContact.phone ? ` · ${primaryContact.phone}` : ''}`}
-          />
-        )}
         {data.businessProfile.address && <Row label="주소" value={data.businessProfile.address.address} />}
       </div>
+      <ContactsSection partnerId={id} />
     </>
   );
 }

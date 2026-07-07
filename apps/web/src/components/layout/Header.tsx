@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { HeaderSearch } from './HeaderSearch';
 import { InvitationBell } from './InvitationBell';
+import { SelenteLogo } from './SelenteLogo';
 
 function useTheme() {
   const [isDark, setIsDark] = useState(() => {
@@ -63,9 +64,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* 로고 */}
       <div className="flex flex-none items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-extrabold text-primary-foreground">
-          셀
-        </div>
+        <SelenteLogo />
         <span className="text-base font-bold text-foreground">셀렌트</span>
       </div>
 

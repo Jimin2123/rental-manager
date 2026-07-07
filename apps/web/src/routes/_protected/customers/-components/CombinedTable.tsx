@@ -30,10 +30,18 @@ function phoneOf(item: CombinedItem): string {
 
 function KindBadge({ item }: { item: CombinedItem }) {
   if (item.kind === 'partner') {
+    const isAlsoSales = item.data.roles.some((r) => r.type === 'SALES');
     return (
-      <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md">
-        매입처
-      </span>
+      <div className="flex flex-wrap gap-1">
+        <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md">
+          매입처
+        </span>
+        {isAlsoSales && (
+          <span className="text-[11.5px] font-semibold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-2 py-0.5 rounded-md">
+            매출처
+          </span>
+        )}
+      </div>
     );
   }
   if (item.data.type === 'INDIVIDUAL') {

@@ -36,14 +36,14 @@ export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
             to={item.to}
             activeOptions={item.to === '/' ? { exact: true } : undefined}
             className={cn(
-              'flex items-center rounded-md py-2 text-sm font-medium transition-colors',
+              'flex items-center rounded-md py-2.5 text-sm font-medium transition-colors',
               'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               '[&.active]:bg-accent [&.active]:text-accent-foreground',
               collapsed ? 'justify-center px-2' : 'gap-3 px-3',
             )}
             title={collapsed ? item.label : undefined}
           >
-            <item.icon className="h-4 w-4 flex-none" />
+            <item.icon className="h-5 w-5 flex-none" />
             {!collapsed && <span>{item.label}</span>}
           </Link>
         ))}
@@ -56,7 +56,7 @@ export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
         <Link
           to={SETTINGS_ITEM.to}
           className={cn(
-            'flex items-center rounded-md py-2 text-sm font-medium transition-colors',
+            'flex items-center rounded-md py-2.5 text-sm font-medium transition-colors',
             'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
             '[&.active]:bg-accent [&.active]:text-accent-foreground',
             collapsed ? 'justify-center px-2' : 'gap-3 px-3',

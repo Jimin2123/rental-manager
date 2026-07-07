@@ -76,7 +76,7 @@ function ContactsSection({ partnerId }: { partnerId: string }) {
               </div>
               {(c.department ?? c.position ?? c.role) && (
                 <div className="text-[#98a0ad] dark:text-muted-foreground">
-                  {[c.department, c.position, c.role].filter(Boolean).join(' · ')}
+                  {[c.role, c.department, c.position].filter(Boolean).join(' · ')}
                 </div>
               )}
               {c.phone && <div className="text-[#5b6472] dark:text-muted-foreground">{c.phone}</div>}

@@ -8,6 +8,7 @@ import type { BusinessPartnerDetail } from './-types';
 import { partnerKeys, fetchPartner, invalidatePartner } from './-api';
 import { PartnerProfileCard } from './-components/PartnerProfileCard';
 import { PartnerEditForm } from './-components/PartnerEditForm';
+import { SuppliedAssetsCard } from './-components/SuppliedAssetsCard';
 
 export const Route = createFileRoute('/_protected/business-partners/$id')({
   component: BusinessPartnerDetailPage,
@@ -77,6 +78,8 @@ function BusinessPartnerDetailPage() {
           isDeleting={deleteMutation.isPending}
         />
       )}
+
+      <SuppliedAssetsCard partnerId={id} />
     </div>
   );
 }

@@ -68,7 +68,7 @@ export class AssetService {
   }
 
   async findAll(organizationId: string, query: QueryAssetDto) {
-    const { productId, status, search } = query;
+    const { productId, status, search, supplierId } = query;
     return this.prisma.asset.findMany({
       where: {
         organizationId,
@@ -76,6 +76,7 @@ export class AssetService {
         ...(productId && { productId }),
         ...(status && { status }),
         ...(search && { serialNumber: { contains: search } }),
+        ...(supplierId && { supplierId }),
       },
       include: {
         product: { select: { id: true, name: true, manufacturer: true, modelName: true, category: true } },

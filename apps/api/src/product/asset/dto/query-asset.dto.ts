@@ -13,4 +13,8 @@ export class QueryAssetDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsString()
+  supplierId?: string;
 }

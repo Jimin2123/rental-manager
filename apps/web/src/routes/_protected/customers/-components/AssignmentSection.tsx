@@ -105,7 +105,7 @@ export function AssignmentSection({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">담당자 배정 ({current.length}명)</h2>
         {!showAddForm && (
-          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
             + 담당자 배정
           </Button>
         )}
@@ -136,6 +136,7 @@ export function AssignmentSection({
           <div className="flex gap-1 shrink-0">
             {!a.isPrimary && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => void primaryMutation.mutate(a.id)}
@@ -145,6 +146,7 @@ export function AssignmentSection({
               </Button>
             )}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               className="text-destructive"
@@ -212,6 +214,7 @@ export function AssignmentSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 className="text-destructive"

@@ -17,6 +17,7 @@ import { RolesField } from '../../business-partners/-components/fields';
 import { ContactSection } from '../../business-partners/-components/ContactSection';
 import { IndividualFields, AddressFields } from './fields';
 import { toAddressPayload } from './payload';
+import { AssignmentSection } from './AssignmentSection';
 
 type Props = { customer: CustomerDetail; onCancel: () => void; onSaved: () => void };
 
@@ -83,6 +84,8 @@ function IndividualEditForm({ customer, onCancel, onSaved }: Props) {
           <IndividualFields control={form.control} />
           <AddressFields control={form.control} onSearch={handleAddressSearch} />
         </div>
+
+        <AssignmentSection customerId={customer.id} individualProfileId={customer.individualProfile?.id} />
 
         <div className="rounded-xl border bg-card p-6">
           <TextField control={form.control} name="memo" label="메모" placeholder="내부 메모 (선택)" />
@@ -262,6 +265,9 @@ function BusinessCustomerEditForm({ customer, onCancel, onSaved }: Props) {
             void queryClient.invalidateQueries({ queryKey: partnerKeys.detail(bp.id) });
           }}
         />
+
+        {/* 담당 직원 배정 */}
+        <AssignmentSection customerId={customer.id} />
 
         {/* 메모 */}
         <div className="rounded-xl border bg-card p-6">

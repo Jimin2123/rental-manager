@@ -79,7 +79,7 @@ function BusinessPartnerDetailPage() {
         />
       )}
 
-      {partner.roles.some((r) => r.type === 'PURCHASE') && <SuppliedAssetsCard partnerId={id} />}
+      {!isEditing && partner.roles.some((r) => r.type === 'PURCHASE') && <SuppliedAssetsCard partnerId={id} />}
     </div>
   );
 }

@@ -31,7 +31,7 @@ function KindBadge({ item }: { item: CombinedItem }) {
   if (item.kind === 'individual') {
     return (
       <span className="text-[11.5px] font-semibold text-[#6d28d9] dark:text-violet-400 bg-[#ede9ff] dark:bg-violet-900/30 px-2 py-0.5 rounded-md">
-        고객(개인)
+        개인
       </span>
     );
   }
@@ -41,7 +41,7 @@ function KindBadge({ item }: { item: CombinedItem }) {
     <div className="flex flex-wrap gap-1">
       {hasSales && (
         <span className="text-[11.5px] font-semibold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-2 py-0.5 rounded-md">
-          사업자
+          판매처
         </span>
       )}
       {hasPurchase && (

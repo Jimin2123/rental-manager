@@ -97,8 +97,8 @@ function CustomersPartnersPage() {
   const tabs = useMemo(
     () => [
       { value: 'all' as const, label: '전체', count: individuals.length + partners.length },
-      { value: 'business' as const, label: '사업자', count: salesPartnersCount },
       { value: 'individual' as const, label: '개인', count: individuals.length },
+      { value: 'business' as const, label: '판매처', count: salesPartnersCount },
       { value: 'partners' as const, label: '매입처', count: purchasePartnersCount },
     ],
     [individuals, partners, salesPartnersCount, purchasePartnersCount],

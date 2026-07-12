@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,19 @@ function CustomerDetailPage() {
     queryFn: () => fetchCustomer(id),
   });
 
+  // BUSINESS 고객은 거래처 상세 페이지로 리다이렉트
+  useEffect(() => {
+    if (customer?.type === 'BUSINESS' && customer.businessPartner?.id) {
+      void navigate({
+        to: '/business-partners/$id',
+        params: { id: customer.businessPartner.id },
+        replace: true,
+      });
+    }
+  }, [customer, navigate]);
+
   const toggleStatusMutation = useMutation({
-    mutationFn: () =>
-      api.patch(`/customers/${id}`, { isActive: !customer?.isActive }),
+    mutationFn: () => api.patch(`/customers/${id}`, { isActive: !customer?.isActive }),
     onSuccess: () => {
       toast.success(customer?.isActive ? '거래가 정지되었습니다.' : '거래가 재개되었습니다.');
       invalidateCustomer(queryClient, id);
@@ -38,8 +48,8 @@ function CustomerDetailPage() {
 
   if (isLoading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
   if (!customer) return <div className="p-6 text-muted-foreground">고객을 찾을 수 없습니다.</div>;
-
-  const isBusiness = customer.type === 'BUSINESS';
+  // BUSINESS 리다이렉트 중에는 아무것도 렌더하지 않음
+  if (customer.type === 'BUSINESS') return null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
@@ -67,18 +77,11 @@ function CustomerDetailPage() {
         />
       )}
 
-      {/* 담당자 배정 관리 */}
       {!isEditing && (
-        <AssignmentSection
-          customerId={customer.id}
-          individualProfileId={customer.individualProfile?.id}
-        />
+        <AssignmentSection customerId={customer.id} individualProfileId={customer.individualProfile?.id} />
       )}
 
-      {/* 거래 이력 */}
-      {!isEditing && (
-        <TransactionHistoryCard customerId={id} isBusiness={isBusiness} />
-      )}
+      {!isEditing && <TransactionHistoryCard customerId={id} isBusiness={false} />}
     </div>
   );
 }

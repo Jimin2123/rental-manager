@@ -9,6 +9,8 @@ import { partnerKeys, fetchPartner, invalidatePartner } from './-api';
 import { PartnerProfileCard } from './-components/PartnerProfileCard';
 import { PartnerEditForm } from './-components/PartnerEditForm';
 import { SuppliedAssetsCard } from './-components/SuppliedAssetsCard';
+import { AssignmentSection } from '../customers/-components/AssignmentSection';
+import { TransactionHistoryCard } from '../customers/-components/TransactionHistoryCard';
 
 export const Route = createFileRoute('/_protected/business-partners/$id')({
   component: BusinessPartnerDetailPage,
@@ -50,6 +52,9 @@ function BusinessPartnerDetailPage() {
   if (isLoading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
   if (!partner) return <div className="p-6 text-muted-foreground">거래처를 찾을 수 없습니다.</div>;
 
+  const hasSales = partner.roles.some((r) => r.type === 'SALES');
+  const hasPurchase = partner.roles.some((r) => r.type === 'PURCHASE');
+
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="flex items-center gap-3">
@@ -79,7 +84,14 @@ function BusinessPartnerDetailPage() {
         />
       )}
 
-      {!isEditing && partner.roles.some((r) => r.type === 'PURCHASE') && <SuppliedAssetsCard partnerId={id} />}
+      {!isEditing && hasSales && partner.customer && (
+        <>
+          <AssignmentSection customerId={partner.customer.id} />
+          <TransactionHistoryCard customerId={partner.customer.id} isBusiness={true} />
+        </>
+      )}
+
+      {!isEditing && hasPurchase && <SuppliedAssetsCard partnerId={id} />}
     </div>
   );
 }

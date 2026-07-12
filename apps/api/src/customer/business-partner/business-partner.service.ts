@@ -78,10 +78,16 @@ export class BusinessPartnerService {
           where: { organizationId },
           orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
         },
+        customers: {
+          where: { deletedAt: null },
+          select: { id: true, isActive: true, memo: true },
+          take: 1,
+        },
       },
     });
     if (!partner || partner.deletedAt) throw new NotFoundException('거래처를 찾을 수 없습니다.');
-    return partner;
+    const { customers, ...rest } = partner;
+    return { ...rest, customer: customers[0] ?? null };
   }
 
   async update(organizationId: string, id: string, dto: UpdateBusinessPartnerDto): Promise<void> {
@@ -124,6 +130,17 @@ export class BusinessPartnerService {
           if (toCreate.length) {
             await tx.businessPartnerRole.createMany({
               data: toCreate.map((type) => ({ organizationId, businessPartnerId: id, type })),
+            });
+          }
+          if (toCreate.includes(BusinessPartnerRoleType.SALES)) {
+            await tx.customer.create({
+              data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: id },
+            });
+          }
+          if (toDelete.some((r) => r.type === BusinessPartnerRoleType.SALES)) {
+            await tx.customer.updateMany({
+              where: { organizationId, businessPartnerId: id, deletedAt: null },
+              data: { deletedAt: new Date() },
             });
           }
         }

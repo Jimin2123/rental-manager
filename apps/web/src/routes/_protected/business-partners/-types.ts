@@ -51,4 +51,5 @@ export type BusinessPartnerDetail = {
   };
   roles: { id: string; type: RoleType }[];
   contacts: Contact[];
+  customer: { id: string; isActive: boolean; memo: string | null } | null;
 };

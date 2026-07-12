@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,15 +13,78 @@ import {
 } from '@/components/ui/dialog';
 import type { BusinessPartnerDetail } from '../-types';
 import { ROLE_LABEL } from '../-types';
+import { assignmentKeys, fetchAssignments } from '../../customers/-api';
+import { ROLE_LABEL as MEMBER_ROLE_LABEL } from '../../settings/members/-types';
 
 type Props = {
   partner: BusinessPartnerDetail;
+  customerId?: string;
   onEdit: () => void;
   onToggleStatus: () => void;
   isTogglingStatus: boolean;
   onDelete: () => void;
   isDeleting: boolean;
 };
+
+const formatDate = (iso: string) => new Date(iso).toLocaleDateString('ko-KR');
+
+function AssignmentColumn({ customerId }: { customerId: string }) {
+  const { data: assignments = [] } = useQuery({
+    queryKey: assignmentKeys.list(customerId),
+    queryFn: () => fetchAssignments(customerId),
+  });
+  const current = assignments.filter((a) => !a.endedAt);
+  const ended = assignments.filter((a) => a.endedAt);
+
+  return (
+    <div className="border-l border-border pl-8 flex flex-col gap-2">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">담당 직원</p>
+      {current.length === 0 ? (
+        <p className="text-sm text-muted-foreground">배정 없음</p>
+      ) : (
+        current.map((a) => (
+          <div key={a.id} className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">
+                {a.organizationMember.name}
+                <span className="text-muted-foreground font-normal text-xs ml-1">
+                  ({MEMBER_ROLE_LABEL[a.organizationMember.role]})
+                </span>
+              </span>
+              {a.role && <span className="text-xs text-muted-foreground">{a.role}</span>}
+            </div>
+            {a.isPrimary && (
+              <span className="text-[10.5px] font-semibold text-muted-foreground border border-border rounded-full px-2 py-0.5 shrink-0">
+                주담당
+              </span>
+            )}
+          </div>
+        ))
+      )}
+      {ended.length > 0 && (
+        <>
+          <Separator className="my-1" />
+          <p className="text-xs font-medium text-muted-foreground">이전 담당자</p>
+          {ended.map((a) => (
+            <div key={a.id} className="flex items-start justify-between gap-2 opacity-50">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">
+                  {a.organizationMember.name}
+                  <span className="text-muted-foreground font-normal text-xs ml-1">
+                    ({MEMBER_ROLE_LABEL[a.organizationMember.role]})
+                  </span>
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(a.startedAt)} ~ {formatDate(a.endedAt!)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -31,7 +95,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function PartnerProfileCard({ partner, onEdit, onToggleStatus, isTogglingStatus, onDelete, isDeleting }: Props) {
+export function PartnerProfileCard({ partner, customerId, onEdit, onToggleStatus, isTogglingStatus, onDelete, isDeleting }: Props) {
   const bp = partner.businessProfile;
 
   return (
@@ -103,8 +167,8 @@ export function PartnerProfileCard({ partner, onEdit, onToggleStatus, isToggling
 
       <Separator />
 
-      {/* 정보 그리드: 사업자정보 | 거래처담당자 */}
-      <div className="grid grid-cols-2 gap-x-8">
+      {/* 정보 그리드: 사업자정보 | 거래처담당자 | 담당직원 */}
+      <div className={`grid gap-x-8 ${customerId ? 'grid-cols-3' : 'grid-cols-2'}`}>
         {/* 사업자 정보 */}
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">사업자 정보</p>
@@ -148,6 +212,9 @@ export function PartnerProfileCard({ partner, onEdit, onToggleStatus, isToggling
             ))
           )}
         </div>
+
+        {/* 담당 직원 */}
+        {customerId && <AssignmentColumn customerId={customerId} />}
       </div>
     </div>
   );

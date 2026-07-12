@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { BusinessPartnerRoleType, CustomerType, Prisma } from '@prisma/client';
+import { CustomerType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateBusinessPartnerDto, CreateContactDto } from './dto/create-business-partner.dto';
 import type { UpdateBusinessPartnerDto, UpdateContactDto } from './dto/update-business-partner.dto';
@@ -37,11 +37,9 @@ export class BusinessPartnerService {
           data: dto.contacts.map((c) => ({ ...c, organizationId, businessPartnerId: partner.id })),
         });
       }
-      if (dto.roles.includes(BusinessPartnerRoleType.SALES)) {
-        await tx.customer.create({
-          data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: partner.id },
-        });
-      }
+      await tx.customer.create({
+        data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: partner.id },
+      });
       return partner;
     });
     return { id: result.id };
@@ -130,17 +128,6 @@ export class BusinessPartnerService {
           if (toCreate.length) {
             await tx.businessPartnerRole.createMany({
               data: toCreate.map((type) => ({ organizationId, businessPartnerId: id, type })),
-            });
-          }
-          if (toCreate.includes(BusinessPartnerRoleType.SALES)) {
-            await tx.customer.create({
-              data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: id },
-            });
-          }
-          if (toDelete.some((r) => r.type === BusinessPartnerRoleType.SALES)) {
-            await tx.customer.updateMany({
-              where: { organizationId, businessPartnerId: id, deletedAt: null },
-              data: { deletedAt: new Date() },
             });
           }
         }

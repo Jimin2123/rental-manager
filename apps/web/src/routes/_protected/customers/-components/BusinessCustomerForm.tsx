@@ -70,6 +70,7 @@ export function BusinessCustomerForm() {
     mutationFn: async (data: PartnerCreateValues) => {
       const partnerRes = await api.post<{ id: string }>('/business-partners', {
         roles: data.roles,
+        memo: data.memo || undefined,
         businessProfile: {
           ...data.businessProfile,
           email: data.businessProfile.email || undefined,
@@ -77,29 +78,28 @@ export function BusinessCustomerForm() {
         contacts: data.contacts?.map((c) => ({ ...c, email: c.email || undefined })) ?? [],
       });
 
-      const customerRes = await api.post<{ id: string }>('/customers', {
-        type: 'BUSINESS',
-        businessPartnerId: partnerRes.data.id,
-        memo: data.memo || undefined,
-      });
-
       if (assignmentMemberId) {
-        await api.post(`/customers/${customerRes.data.id}/assignments`, {
-          organizationMemberId: assignmentMemberId,
-          startedAt: new Date(assignmentStartedAt).toISOString(),
-          isPrimary: assignmentIsPrimary,
-        });
+        const partnerDetail = await api.get<{ customer: { id: string } | null }>(
+          `/business-partners/${partnerRes.data.id}`,
+        );
+        if (partnerDetail.data.customer) {
+          await api.post(`/customers/${partnerDetail.data.customer.id}/assignments`, {
+            organizationMemberId: assignmentMemberId,
+            startedAt: new Date(assignmentStartedAt).toISOString(),
+            isPrimary: assignmentIsPrimary,
+          });
+        }
       }
 
-      return customerRes;
+      return partnerRes;
     },
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: customerKeys.all });
       void queryClient.invalidateQueries({ queryKey: partnerKeys.all });
-      toast.success('고객이 등록되었습니다.');
-      void navigate({ to: '/customers/$id', params: { id: res.data.id } });
+      toast.success('거래처가 등록되었습니다.');
+      void navigate({ to: '/business-partners/$id', params: { id: res.data.id } });
     },
-    onError: () => toast.error('고객 등록 중 오류가 발생했습니다.'),
+    onError: () => toast.error('거래처 등록 중 오류가 발생했습니다.'),
   });
 
   const handleVerifyBrn = async () => {

@@ -9,7 +9,6 @@ import { partnerKeys, fetchPartner, invalidatePartner } from './-api';
 import { PartnerProfileCard } from './-components/PartnerProfileCard';
 import { PartnerEditForm } from './-components/PartnerEditForm';
 import { SuppliedAssetsCard } from './-components/SuppliedAssetsCard';
-import { AssignmentSection } from '../customers/-components/AssignmentSection';
 import { TransactionHistoryCard } from '../customers/-components/TransactionHistoryCard';
 
 export const Route = createFileRoute('/_protected/business-partners/$id')({
@@ -53,10 +52,9 @@ function BusinessPartnerDetailPage() {
   if (!partner) return <div className="p-6 text-muted-foreground">거래처를 찾을 수 없습니다.</div>;
 
   const hasSales = partner.roles.some((r) => r.type === 'SALES');
-  const hasPurchase = partner.roles.some((r) => r.type === 'PURCHASE');
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex items-center gap-3">
         <Button variant="outline" size="sm" onClick={() => void navigate({ to: '/business-partners' })}>
           ← 목록
@@ -72,11 +70,12 @@ function BusinessPartnerDetailPage() {
             invalidate();
           }}
           onContactChanged={invalidate}
-          customerId={hasSales && partner.customer ? partner.customer.id : undefined}
+          customerId={partner.customer?.id}
         />
       ) : (
         <PartnerProfileCard
           partner={partner}
+          customerId={partner.customer?.id}
           onEdit={() => setIsEditing(true)}
           onToggleStatus={() => void toggleStatusMutation.mutate()}
           isTogglingStatus={toggleStatusMutation.isPending}
@@ -86,13 +85,12 @@ function BusinessPartnerDetailPage() {
       )}
 
       {!isEditing && hasSales && partner.customer && (
-        <>
-          <AssignmentSection customerId={partner.customer.id} />
-          <TransactionHistoryCard customerId={partner.customer.id} isBusiness={true} />
-        </>
+        <TransactionHistoryCard customerId={partner.customer.id} isBusiness={true} />
       )}
 
-      {!isEditing && hasPurchase && <SuppliedAssetsCard partnerId={id} />}
+      {!isEditing && partner.roles.some((r) => r.type === 'PURCHASE') && (
+        <SuppliedAssetsCard partnerId={id} />
+      )}
     </div>
   );
 }

@@ -132,8 +132,8 @@ function CustomersPartnersPage() {
     <div className="-m-6 p-6 min-h-full bg-[#f6f7f9] dark:bg-background flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-[21px] font-extrabold text-[#1c2230] dark:text-foreground tracking-tight">고객 · 거래처</h1>
-        <Button onClick={() => void navigate({ to: isIndividualTab ? '/customers/new' : '/business-partners/new' })}>
-          {isIndividualTab ? '+ 고객 등록' : '+ 거래처 등록'}
+        <Button onClick={() => void navigate({ to: '/customers/new' })}>
+          + 고객 등록
         </Button>
       </div>
 

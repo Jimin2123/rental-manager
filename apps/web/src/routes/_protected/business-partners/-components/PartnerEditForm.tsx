@@ -14,17 +14,20 @@ import type { BusinessPartnerDetail } from '../-types';
 import { partnerEditSchema, type PartnerEditValues } from '../-schemas';
 import { RolesField } from './fields';
 import { ContactSection } from './ContactSection';
+import { AssignmentSection } from '../../customers/-components/AssignmentSection';
 
 export function PartnerEditForm({
   partner,
   onCancel,
   onSaved,
   onContactChanged,
+  customerId,
 }: {
   partner: BusinessPartnerDetail;
   onCancel: () => void;
   onSaved: () => void;
   onContactChanged: () => void;
+  customerId?: string;
 }) {
   const bp = partner.businessProfile;
   const form = useForm<PartnerEditValues>({
@@ -182,6 +185,9 @@ export function PartnerEditForm({
 
         {/* 담당자 */}
         <ContactSection partnerId={partner.id} contacts={partner.contacts} onChanged={onContactChanged} />
+
+        {/* 담당 직원 배정 */}
+        {customerId && <AssignmentSection customerId={customerId} />}
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel}>취소</Button>

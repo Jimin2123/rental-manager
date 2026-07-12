@@ -72,6 +72,7 @@ function BusinessPartnerDetailPage() {
             invalidate();
           }}
           onContactChanged={invalidate}
+          customerId={hasSales && partner.customer ? partner.customer.id : undefined}
         />
       ) : (
         <PartnerProfileCard

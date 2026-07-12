@@ -55,7 +55,6 @@ export function AssignmentSection({
     mutationFn: () =>
       api.post(`/customers/${customerId}/assignments`, {
         organizationMemberId: memberId,
-        // 개인 고객 배정은 해당 고객의 개인 프로필을 가리켜야 한다(DB 가드).
         individualProfileId,
         role: role || undefined,
         isPrimary,
@@ -103,16 +102,16 @@ export function AssignmentSection({
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">담당자 배정 ({current.length}명)</h2>
+        <h2 className="text-sm font-semibold">담당 직원 배정 ({current.length}명)</h2>
         {!showAddForm && (
           <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
-            + 담당자 배정
+            + 담당 직원 배정
           </Button>
         )}
       </div>
 
       {current.length === 0 && !showAddForm && (
-        <p className="text-xs text-muted-foreground">배정된 담당자가 없습니다.</p>
+        <p className="text-xs text-muted-foreground">배정된 담당 직원이 없습니다.</p>
       )}
 
       {/* 현재 배정 */}
@@ -130,6 +129,9 @@ export function AssignmentSection({
                 {ROLE_LABEL[a.organizationMember.role]}
               </Badge>
             </div>
+            {a.customerContact && (
+              <p className="text-muted-foreground text-xs">거래처 담당자: {a.customerContact.name}</p>
+            )}
             {a.role && <p className="text-muted-foreground text-xs">{a.role}</p>}
             <p className="text-muted-foreground text-xs">배정일 {formatDate(a.startedAt)}</p>
           </div>

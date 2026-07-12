@@ -70,10 +70,10 @@ export function ContactSection({
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">담당자 ({contacts.length}명)</h2>
+        <h2 className="text-sm font-semibold">거래처 담당자 ({contacts.length}명)</h2>
         {!showAddForm && (
           <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
-            + 담당자 추가
+            + 거래처 담당자 추가
           </Button>
         )}
       </div>

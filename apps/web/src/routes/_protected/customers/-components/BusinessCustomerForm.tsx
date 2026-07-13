@@ -300,10 +300,10 @@ export function BusinessCustomerForm() {
           </div>
         </div>
 
-        {/* 담당자 */}
+        {/* 거래처 담당자 */}
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">담당자</h2>
+            <h2 className="text-sm font-semibold">거래처 담당자</h2>
             <Button
               type="button"
               variant="outline"
@@ -321,16 +321,16 @@ export function BusinessCustomerForm() {
                 })
               }
             >
-              + 담당자 추가
+              + 거래처 담당자 추가
             </Button>
           </div>
           {contactFields.length === 0 && (
-            <p className="text-xs text-muted-foreground">담당자를 추가하면 거래처와 함께 저장됩니다.</p>
+            <p className="text-xs text-muted-foreground">거래처 담당자를 추가하면 함께 저장됩니다.</p>
           )}
           {contactFields.map((field, index) => (
             <div key={field.id} className="rounded-md border p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">담당자 {index + 1}</span>
+                <span className="text-xs font-medium text-muted-foreground">거래처 담당자 {index + 1}</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => removeContact(index)}>
                   삭제
                 </Button>

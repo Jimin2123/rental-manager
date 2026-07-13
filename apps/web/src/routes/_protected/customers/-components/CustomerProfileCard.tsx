@@ -1,6 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { date } from '@/lib/format';
 import { assignmentKeys, fetchAssignments } from '../-api';
 import { fetchPartner, partnerKeys } from '../../business-partners/-api';
@@ -13,6 +23,8 @@ type Props = {
   onEdit: () => void;
   onToggleStatus: () => void;
   isTogglingStatus: boolean;
+  onDelete: () => void;
+  isDeleting: boolean;
 };
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -98,7 +110,7 @@ function ContactsColumn({ partnerId }: { partnerId: string }) {
   );
 }
 
-export function CustomerProfileCard({ customer, onEdit, onToggleStatus, isTogglingStatus }: Props) {
+export function CustomerProfileCard({ customer, onEdit, onToggleStatus, isTogglingStatus, onDelete, isDeleting }: Props) {
   const isIndividual = customer.type === 'INDIVIDUAL';
   const name =
     customer.individualProfile?.name ??
@@ -150,6 +162,29 @@ export function CustomerProfileCard({ customer, onEdit, onToggleStatus, isToggli
           >
             {customer.isActive ? '거래 정지' : '거래 재개'}
           </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                삭제
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>고객 삭제</DialogTitle>
+                <DialogDescription>
+                  &ldquo;{name}&rdquo;을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">취소</Button>
+                </DialogClose>
+                <Button variant="destructive" onClick={onDelete} disabled={isDeleting}>
+                  {isDeleting ? '삭제 중...' : '삭제'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

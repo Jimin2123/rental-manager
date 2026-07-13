@@ -46,6 +46,15 @@ function CustomerDetailPage() {
     onError: () => toast.error('상태 변경 중 오류가 발생했습니다.'),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/customers/${id}`),
+    onSuccess: () => {
+      toast.success('고객이 삭제되었습니다.');
+      void navigate({ to: '/customers' });
+    },
+    onError: () => toast.error('삭제 중 오류가 발생했습니다.'),
+  });
+
   if (isLoading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
   if (!customer) return <div className="p-6 text-muted-foreground">고객을 찾을 수 없습니다.</div>;
   // BUSINESS 리다이렉트 중에는 아무것도 렌더하지 않음
@@ -74,6 +83,8 @@ function CustomerDetailPage() {
           onEdit={() => setIsEditing(true)}
           onToggleStatus={() => void toggleStatusMutation.mutate()}
           isTogglingStatus={toggleStatusMutation.isPending}
+          onDelete={() => void deleteMutation.mutate()}
+          isDeleting={deleteMutation.isPending}
         />
       )}
 

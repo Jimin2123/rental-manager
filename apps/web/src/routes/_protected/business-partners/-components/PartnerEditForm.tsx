@@ -95,7 +95,7 @@ export function PartnerEditForm({
         {/* 역할 */}
         <div className="rounded-xl border bg-card p-6">
           <h2 className="mb-3 text-sm font-semibold">
-            역할 <span className="text-destructive">*</span>
+            거래 유형 <span className="text-destructive">*</span>
           </h2>
           <RolesField control={form.control} name="roles" idPrefix="edit-role-" />
           {form.formState.errors.roles && (

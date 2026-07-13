@@ -11,12 +11,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { date } from '@/lib/format';
-import { assignmentKeys, fetchAssignments } from '../-api';
 import { fetchPartner, partnerKeys } from '../../business-partners/-api';
 import { ROLE_LABEL as PARTNER_ROLE_LABEL } from '../../business-partners/-types';
-import { ROLE_LABEL as MEMBER_ROLE_LABEL } from '../../settings/members/-types';
 import type { CustomerDetail } from '../-types';
+import { AssignmentColumn } from './AssignmentColumn';
 
 type Props = {
   customer: CustomerDetail;
@@ -36,42 +34,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AssignmentColumn({ customerId }: { customerId: string }) {
-  const { data: assignments = [] } = useQuery({
-    queryKey: assignmentKeys.list(customerId),
-    queryFn: () => fetchAssignments(customerId),
-  });
-
-  const current = assignments.filter((a) => !a.endedAt);
-
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">담당 직원</p>
-      {current.length === 0 ? (
-        <p className="text-sm text-muted-foreground">배정 없음</p>
-      ) : (
-        current.map((a) => (
-          <div key={a.id} className="flex items-start justify-between gap-2">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">
-                {a.organizationMember.name}
-                <span className="text-muted-foreground font-normal">
-                  {' '}({MEMBER_ROLE_LABEL[a.organizationMember.role]})
-                </span>
-              </span>
-              <span className="text-xs text-muted-foreground">배정일 {date(a.startedAt)} ~</span>
-            </div>
-            {a.isPrimary && (
-              <span className="text-[10.5px] font-semibold text-muted-foreground border border-border rounded-full px-2 py-0.5 shrink-0">
-                주 담당
-              </span>
-            )}
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
 
 function ContactsColumn({ partnerId }: { partnerId: string }) {
   const { data: partner } = useQuery({

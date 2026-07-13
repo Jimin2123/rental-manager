@@ -43,7 +43,7 @@ function BusinessPartnerDetailPage() {
     onSuccess: () => {
       toast.success('거래처가 삭제되었습니다.');
       invalidate();
-      void navigate({ to: '/business-partners' });
+      void navigate({ to: '/customers', search: { tab: 'partners', q: '' } });
     },
     onError: () => toast.error('삭제 중 오류가 발생했습니다.'),
   });
@@ -56,7 +56,7 @@ function BusinessPartnerDetailPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={() => void navigate({ to: '/business-partners' })}>
+        <Button variant="outline" size="sm" onClick={() => void navigate({ to: '/customers', search: { tab: 'partners', q: '' } })}>
           ← 목록
         </Button>
       </div>

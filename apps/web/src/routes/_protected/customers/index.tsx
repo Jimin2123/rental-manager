@@ -140,7 +140,7 @@ function CustomersPartnersPage() {
       <FilterTabs tabs={tabs} activeTab={tab} onTabChange={setTab} />
 
       <Input
-        placeholder={isIndividualTab ? '이름 · 연락처 검색' : '상호명 검색'}
+        placeholder={isIndividualTab ? '이름 · 연락처 검색' : isCombinedTab ? '이름 · 상호명 검색' : '상호명 검색'}
         value={inputValue}
         onChange={(e) => {
           setInputValue(e.target.value);

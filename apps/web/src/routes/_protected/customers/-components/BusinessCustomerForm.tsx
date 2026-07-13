@@ -146,7 +146,7 @@ export function BusinessCustomerForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* 거래 유형 */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <h2 className="mb-3 text-sm font-semibold">
             거래 유형 <span className="text-destructive">*</span>
           </h2>
@@ -157,7 +157,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 사업자 정보 */}
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">사업자 정보</h2>
 
           <TextField
@@ -301,7 +301,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 거래처 담당자 */}
-        <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div className="rounded-xl border bg-card p-6 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">거래처 담당자</h2>
             <Button
@@ -341,7 +341,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 담당 직원 배정 */}
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">담당 직원 배정</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -376,7 +376,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 메모 */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <TextField control={form.control} name="memo" label="메모" placeholder="특이사항, 요청사항 등 (선택)" />
         </div>
 

@@ -6,7 +6,7 @@ import { fetchCustomer, customerKeys } from '../-api';
 import { fetchPartner, partnerKeys } from '../../business-partners/-api';
 import { ROLE_LABEL } from '../../business-partners/-types';
 
-type SelectedItem = { type: 'customer'; id: string } | { type: 'partner'; id: string };
+type SelectedItem = { type: 'individual'; id: string } | { type: 'partner'; id: string };
 
 type Props = {
   selected: SelectedItem;
@@ -209,7 +209,7 @@ function PartnerPanel({ id }: { id: string }) {
 export function DetailPanel({ selected }: Props) {
   return (
     <div className="w-96 flex-none bg-white dark:bg-card border border-[#e5e8ee] dark:border-border rounded-xl p-5">
-      {selected.type === 'customer' ? <CustomerPanel id={selected.id} /> : <PartnerPanel id={selected.id} />}
+      {selected.type === 'individual' ? <CustomerPanel id={selected.id} /> : <PartnerPanel id={selected.id} />}
     </div>
   );
 }

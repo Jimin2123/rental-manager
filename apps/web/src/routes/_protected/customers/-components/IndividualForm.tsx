@@ -93,13 +93,13 @@ export function IndividualForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((d) => void mutation.mutate(d))} className="space-y-6">
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">개인 정보</h2>
           <IndividualFields control={form.control} />
           <AddressFields control={form.control} onSearch={handleAddressSearch} />
         </div>
 
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">담당 직원 배정</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -133,7 +133,7 @@ export function IndividualForm() {
           )}
         </div>
 
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <TextField control={form.control} name="memo" label="메모" placeholder="특이사항, 요청사항 등 (선택)" />
         </div>
 

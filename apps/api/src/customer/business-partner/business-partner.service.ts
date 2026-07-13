@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { BusinessPartnerRoleType, CustomerType, Prisma } from '@prisma/client';
+import { CustomerType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateBusinessPartnerDto, CreateContactDto } from './dto/create-business-partner.dto';
 import type { UpdateBusinessPartnerDto, UpdateContactDto } from './dto/update-business-partner.dto';
@@ -37,11 +37,9 @@ export class BusinessPartnerService {
           data: dto.contacts.map((c) => ({ ...c, organizationId, businessPartnerId: partner.id })),
         });
       }
-      if (dto.roles.includes(BusinessPartnerRoleType.SALES)) {
-        await tx.customer.create({
-          data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: partner.id },
-        });
-      }
+      await tx.customer.create({
+        data: { organizationId, type: CustomerType.BUSINESS, businessPartnerId: partner.id },
+      });
       return partner;
     });
     return { id: result.id };
@@ -78,10 +76,16 @@ export class BusinessPartnerService {
           where: { organizationId },
           orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
         },
+        customers: {
+          where: { deletedAt: null },
+          select: { id: true, isActive: true, memo: true },
+          take: 1,
+        },
       },
     });
     if (!partner || partner.deletedAt) throw new NotFoundException('거래처를 찾을 수 없습니다.');
-    return partner;
+    const { customers, ...rest } = partner;
+    return { ...rest, customer: customers[0] ?? null };
   }
 
   async update(organizationId: string, id: string, dto: UpdateBusinessPartnerDto): Promise<void> {

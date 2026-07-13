@@ -21,13 +21,14 @@ export function AssignmentSection({
   individualProfileId,
 }: {
   customerId: string;
-  individualProfileId: string;
+  individualProfileId?: string;
 }) {
   const queryClient = useQueryClient();
   const orgId = useAuthStore((s) => s.currentOrganization?.id);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [memberId, setMemberId] = useState('');
+  const [startedAt, setStartedAt] = useState(new Date().toISOString().split('T')[0]);
   const [role, setRole] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
 
@@ -47,6 +48,7 @@ export function AssignmentSection({
   const resetForm = () => {
     setShowAddForm(false);
     setMemberId('');
+    setStartedAt(new Date().toISOString().split('T')[0]);
     setRole('');
     setIsPrimary(false);
   };
@@ -55,24 +57,24 @@ export function AssignmentSection({
     mutationFn: () =>
       api.post(`/customers/${customerId}/assignments`, {
         organizationMemberId: memberId,
-        // 개인 고객 배정은 해당 고객의 개인 프로필을 가리켜야 한다(DB 가드).
         individualProfileId,
+        startedAt: new Date(startedAt).toISOString(),
         role: role || undefined,
         isPrimary,
       }),
     onSuccess: () => {
-      toast.success('담당자가 배정되었습니다.');
+      toast.success('담당 직원이 배정되었습니다.');
       resetForm();
       void invalidate();
     },
-    onError: () => toast.error('담당자 배정 중 오류가 발생했습니다.'),
+    onError: () => toast.error('담당 직원 배정 중 오류가 발생했습니다.'),
   });
 
   const endMutation = useMutation({
     mutationFn: (assignmentId: string) =>
       api.patch(`/customers/${customerId}/assignments/${assignmentId}`, { endedAt: new Date().toISOString() }),
     onSuccess: () => {
-      toast.success('담당자 배정이 해제되었습니다.');
+      toast.success('담당 직원 배정이 해제되었습니다.');
       void invalidate();
     },
     onError: () => toast.error('배정 해제 중 오류가 발생했습니다.'),
@@ -82,10 +84,10 @@ export function AssignmentSection({
     mutationFn: (assignmentId: string) =>
       api.patch(`/customers/${customerId}/assignments/${assignmentId}`, { isPrimary: true }),
     onSuccess: () => {
-      toast.success('주담당자가 변경되었습니다.');
+      toast.success('주 담당자가 변경되었습니다.');
       void invalidate();
     },
-    onError: () => toast.error('주담당자 변경 중 오류가 발생했습니다.'),
+    onError: () => toast.error('주 담당자 변경 중 오류가 발생했습니다.'),
   });
 
   const deleteMutation = useMutation({
@@ -103,16 +105,16 @@ export function AssignmentSection({
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">담당자 배정 ({current.length}명)</h2>
+        <h2 className="text-sm font-semibold">담당 직원 배정 ({current.length}명)</h2>
         {!showAddForm && (
-          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
-            + 담당자 배정
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
+            + 담당 직원 배정
           </Button>
         )}
       </div>
 
       {current.length === 0 && !showAddForm && (
-        <p className="text-xs text-muted-foreground">배정된 담당자가 없습니다.</p>
+        <p className="text-xs text-muted-foreground">배정된 담당 직원이 없습니다.</p>
       )}
 
       {/* 현재 배정 */}
@@ -130,12 +132,16 @@ export function AssignmentSection({
                 {ROLE_LABEL[a.organizationMember.role]}
               </Badge>
             </div>
+            {a.customerContact && (
+              <p className="text-muted-foreground text-xs">거래처 담당자: {a.customerContact.name}</p>
+            )}
             {a.role && <p className="text-muted-foreground text-xs">{a.role}</p>}
             <p className="text-muted-foreground text-xs">배정일 {formatDate(a.startedAt)}</p>
           </div>
           <div className="flex gap-1 shrink-0">
             {!a.isPrimary && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => void primaryMutation.mutate(a.id)}
@@ -145,6 +151,7 @@ export function AssignmentSection({
               </Button>
             )}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               className="text-destructive"
@@ -160,18 +167,29 @@ export function AssignmentSection({
       {/* 배정 추가 폼 */}
       {showAddForm && (
         <div className="rounded-md border p-3 space-y-3">
-          <div className="space-y-1">
-            <p className="text-xs font-medium">담당 직원</p>
-            <NativeSelect value={memberId} onChange={(e) => setMemberId(e.target.value)}>
-              <option value="">직원을 선택하세요</option>
-              {members
-                .filter((m) => m.isActive)
-                .map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({ROLE_LABEL[m.role]})
-                  </option>
-                ))}
-            </NativeSelect>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium">담당 직원</p>
+              <NativeSelect value={memberId} onChange={(e) => setMemberId(e.target.value)}>
+                <option value="">직원을 선택하세요</option>
+                {members
+                  .filter((m) => m.isActive)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({ROLE_LABEL[m.role]})
+                    </option>
+                  ))}
+              </NativeSelect>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium">배정 시작일</p>
+              <Input
+                type="date"
+                value={startedAt}
+                disabled={!memberId}
+                onChange={(e) => setStartedAt(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-1">
             <p className="text-xs font-medium">역할 (선택)</p>
@@ -212,6 +230,7 @@ export function AssignmentSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 className="text-destructive"

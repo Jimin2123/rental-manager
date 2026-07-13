@@ -1,52 +1,55 @@
 import type { CustomerListItem } from '../-types';
 import type { BusinessPartnerListItem } from '../../business-partners/-types';
-import { ROLE_LABEL } from '../../business-partners/-types';
 import { StatusBadge } from './StatusBadge';
 
 export type CombinedItem =
-  | { kind: 'customer'; data: CustomerListItem }
+  | { kind: 'individual'; data: CustomerListItem }
   | { kind: 'partner'; data: BusinessPartnerListItem };
 
 type Props = {
   items: CombinedItem[];
   isLoading: boolean;
-  selectedKey: string | null; // 'customer:id' | 'partner:id'
-  onSelect: (kind: 'customer' | 'partner', id: string) => void;
+  selectedKey: string | null; // 'individual:id' | 'partner:id'
+  onSelect: (kind: 'individual' | 'partner', id: string) => void;
 };
 
 const GRID = 'grid-cols-[1fr_auto] sm:grid-cols-[1.4fr_.7fr_.9fr_.7fr] lg:grid-cols-[1.4fr_.7fr_.9fr_.7fr_.7fr]';
 
 function nameOf(item: CombinedItem): string {
-  if (item.kind === 'customer') {
-    return item.data.individualProfile?.name ?? item.data.businessPartner?.businessProfile.name ?? '-';
+  if (item.kind === 'individual') {
+    return item.data.individualProfile?.name ?? '-';
   }
   return item.data.businessProfile.name;
 }
 
 function phoneOf(item: CombinedItem): string {
-  if (item.kind === 'customer') return item.data.individualProfile?.phone ?? '—';
+  if (item.kind === 'individual') return item.data.individualProfile?.phone ?? '—';
   return '—';
 }
 
 function KindBadge({ item }: { item: CombinedItem }) {
-  if (item.kind === 'partner') {
-    return (
-      <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md">
-        매입처
-      </span>
-    );
-  }
-  if (item.data.type === 'INDIVIDUAL') {
+  if (item.kind === 'individual') {
     return (
       <span className="text-[11.5px] font-semibold text-[#6d28d9] dark:text-violet-400 bg-[#ede9ff] dark:bg-violet-900/30 px-2 py-0.5 rounded-md">
-        고객(개인)
+        개인
       </span>
     );
   }
+  const hasSales = item.data.roles.some((r) => r.type === 'SALES');
+  const hasPurchase = item.data.roles.some((r) => r.type === 'PURCHASE');
   return (
-    <span className="text-[11.5px] font-semibold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-2 py-0.5 rounded-md">
-      고객(사업자)
-    </span>
+    <div className="flex flex-wrap gap-1">
+      {hasSales && (
+        <span className="text-[11.5px] font-semibold text-[#2456e0] dark:text-primary bg-[#eef1f9] dark:bg-primary/10 px-2 py-0.5 rounded-md">
+          판매처
+        </span>
+      )}
+      {hasPurchase && (
+        <span className="text-[11.5px] font-semibold text-[#5b6472] dark:text-muted-foreground bg-[#eef0f4] dark:bg-muted/50 px-2 py-0.5 rounded-md">
+          매입처
+        </span>
+      )}
+    </div>
   );
 }
 

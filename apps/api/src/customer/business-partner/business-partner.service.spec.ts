@@ -139,10 +139,26 @@ describe('BusinessPartnerService', () => {
       await expect(service.findOne('org-1', 'p-1')).rejects.toThrow(NotFoundException);
     });
 
-    it('returns partner with contacts', async () => {
-      prisma.businessPartner.findUnique.mockResolvedValue({ id: 'p-1', deletedAt: null, contacts: [] });
+    it('returns partner with contacts and customer field', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'p-1',
+        deletedAt: null,
+        contacts: [],
+        customers: [{ id: 'cust-1', isActive: true, memo: null }],
+      });
       const result = await service.findOne('org-1', 'p-1');
-      expect(result).toMatchObject({ id: 'p-1' });
+      expect(result).toMatchObject({ id: 'p-1', customer: { id: 'cust-1', isActive: true, memo: null } });
+    });
+
+    it('returns customer: null when no active customer linked', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'p-1',
+        deletedAt: null,
+        contacts: [],
+        customers: [],
+      });
+      const result = await service.findOne('org-1', 'p-1');
+      expect(result).toMatchObject({ id: 'p-1', customer: null });
     });
   });
 
@@ -182,6 +198,54 @@ describe('BusinessPartnerService', () => {
           data: expect.arrayContaining([
             expect.objectContaining({ organizationId: 'org-1', businessPartnerId: 'p-1', type: 'PURCHASE' }),
           ]),
+        }),
+      );
+    });
+
+    it('SALES role이 새로 추가되면 Customer를 생성한다', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        businessProfileId: 'bp-1',
+        deletedAt: null,
+      });
+      prisma.businessPartnerRole.findMany.mockResolvedValue([{ id: 'role-1', type: 'PURCHASE' }]);
+      prisma.businessPartnerRole.createMany.mockResolvedValue({ count: 1 });
+      prisma.businessPartnerRole.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.businessPartner.update.mockResolvedValue({});
+      prisma.customer.create.mockResolvedValue({ id: 'cust-new' });
+
+      await service.update('org-1', 'partner-1', { roles: ['PURCHASE', 'SALES'] });
+
+      expect(prisma.customer.create).toHaveBeenCalledWith({
+        data: { organizationId: 'org-1', type: 'BUSINESS', businessPartnerId: 'partner-1' },
+      });
+    });
+
+    it('SALES role이 제거되면 연결된 Customer를 소프트 삭제한다', async () => {
+      prisma.businessPartner.findUnique.mockResolvedValue({
+        id: 'partner-1',
+        businessProfileId: 'bp-1',
+        deletedAt: null,
+      });
+      prisma.businessPartnerRole.findMany.mockResolvedValue([
+        { id: 'role-1', type: 'SALES' },
+        { id: 'role-2', type: 'PURCHASE' },
+      ]);
+      prisma.businessPartnerRole.deleteMany.mockResolvedValue({ count: 1 });
+      prisma.businessPartnerRole.createMany.mockResolvedValue({ count: 0 });
+      prisma.businessPartner.update.mockResolvedValue({});
+      prisma.customer.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.update('org-1', 'partner-1', { roles: ['PURCHASE'] });
+
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org-1',
+            businessPartnerId: 'partner-1',
+            deletedAt: null,
+          }),
+          data: expect.objectContaining({ deletedAt: expect.any(Date) }),
         }),
       );
     });

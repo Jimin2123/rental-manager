@@ -2,7 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { CustomerListItem, CustomerDetail, Assignment } from './-types';
 
-export type CustomerListFilters = { q?: string; isActive?: boolean };
+export type CustomerListFilters = { q?: string; isActive?: boolean; type?: 'INDIVIDUAL' | 'BUSINESS' };
 
 // ─── 쿼리 키 팩토리 ───────────────────────────────────────────────
 export const customerKeys = {
@@ -19,6 +19,7 @@ export const fetchCustomers = (filters: CustomerListFilters) =>
       params: {
         ...(filters.q && { q: filters.q }),
         ...(filters.isActive !== undefined && { isActive: filters.isActive }),
+        ...(filters.type && { type: filters.type }),
       },
     })
     .then((r) => r.data);

@@ -70,6 +70,7 @@ export function BusinessCustomerForm() {
     mutationFn: async (data: PartnerCreateValues) => {
       const partnerRes = await api.post<{ id: string }>('/business-partners', {
         roles: data.roles,
+        memo: data.memo || undefined,
         businessProfile: {
           ...data.businessProfile,
           email: data.businessProfile.email || undefined,
@@ -77,29 +78,28 @@ export function BusinessCustomerForm() {
         contacts: data.contacts?.map((c) => ({ ...c, email: c.email || undefined })) ?? [],
       });
 
-      const customerRes = await api.post<{ id: string }>('/customers', {
-        type: 'BUSINESS',
-        businessPartnerId: partnerRes.data.id,
-        memo: data.memo || undefined,
-      });
-
       if (assignmentMemberId) {
-        await api.post(`/customers/${customerRes.data.id}/assignments`, {
-          organizationMemberId: assignmentMemberId,
-          startedAt: new Date(assignmentStartedAt).toISOString(),
-          isPrimary: assignmentIsPrimary,
-        });
+        const partnerDetail = await api.get<{ customer: { id: string } | null }>(
+          `/business-partners/${partnerRes.data.id}`,
+        );
+        if (partnerDetail.data.customer) {
+          await api.post(`/customers/${partnerDetail.data.customer.id}/assignments`, {
+            organizationMemberId: assignmentMemberId,
+            startedAt: new Date(assignmentStartedAt).toISOString(),
+            isPrimary: assignmentIsPrimary,
+          });
+        }
       }
 
-      return customerRes;
+      return partnerRes;
     },
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: customerKeys.all });
       void queryClient.invalidateQueries({ queryKey: partnerKeys.all });
-      toast.success('고객이 등록되었습니다.');
-      void navigate({ to: '/customers/$id', params: { id: res.data.id } });
+      toast.success('거래처가 등록되었습니다.');
+      void navigate({ to: '/business-partners/$id', params: { id: res.data.id } });
     },
-    onError: () => toast.error('고객 등록 중 오류가 발생했습니다.'),
+    onError: () => toast.error('거래처 등록 중 오류가 발생했습니다.'),
   });
 
   const handleVerifyBrn = async () => {
@@ -146,7 +146,7 @@ export function BusinessCustomerForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* 거래 유형 */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <h2 className="mb-3 text-sm font-semibold">
             거래 유형 <span className="text-destructive">*</span>
           </h2>
@@ -157,7 +157,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 사업자 정보 */}
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">사업자 정보</h2>
 
           <TextField
@@ -300,10 +300,10 @@ export function BusinessCustomerForm() {
           </div>
         </div>
 
-        {/* 담당자 */}
-        <div className="rounded-lg border bg-card p-4 space-y-3">
+        {/* 거래처 담당자 */}
+        <div className="rounded-xl border bg-card p-6 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">담당자</h2>
+            <h2 className="text-sm font-semibold">거래처 담당자</h2>
             <Button
               type="button"
               variant="outline"
@@ -321,16 +321,16 @@ export function BusinessCustomerForm() {
                 })
               }
             >
-              + 담당자 추가
+              + 거래처 담당자 추가
             </Button>
           </div>
           {contactFields.length === 0 && (
-            <p className="text-xs text-muted-foreground">담당자를 추가하면 거래처와 함께 저장됩니다.</p>
+            <p className="text-xs text-muted-foreground">거래처 담당자를 추가하면 함께 저장됩니다.</p>
           )}
           {contactFields.map((field, index) => (
             <div key={field.id} className="rounded-md border p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">담당자 {index + 1}</span>
+                <span className="text-xs font-medium text-muted-foreground">거래처 담당자 {index + 1}</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => removeContact(index)}>
                   삭제
                 </Button>
@@ -341,7 +341,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 담당 직원 배정 */}
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">담당 직원 배정</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -376,7 +376,7 @@ export function BusinessCustomerForm() {
         </div>
 
         {/* 메모 */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-xl border bg-card p-6">
           <TextField control={form.control} name="memo" label="메모" placeholder="특이사항, 요청사항 등 (선택)" />
         </div>
 

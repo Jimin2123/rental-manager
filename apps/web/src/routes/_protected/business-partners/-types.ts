@@ -1,7 +1,7 @@
 export type RoleType = 'SALES' | 'PURCHASE';
 
 export const ROLE_LABEL: Record<RoleType, string> = {
-  SALES: '매출처',
+  SALES: '판매처',
   PURCHASE: '매입처',
 };
 
@@ -51,4 +51,5 @@ export type BusinessPartnerDetail = {
   };
   roles: { id: string; type: RoleType }[];
   contacts: Contact[];
+  customer: { id: string; isActive: boolean; memo: string | null } | null;
 };
